@@ -67,8 +67,8 @@ built-in a11y support should be preserved (ARIA labels, keyboard navigation).*
 Audio transcription, LLM preprocessing, and GitHub issue creation must not
 block the UI. These operations run as queued jobs.
 
-- Local: Docker cron service processes jobs within 1 minute (identical to production)
-- Production: Cron-based scheduler processes jobs within 1 minute
+- Local: Docker cron service runs `schedule:run` every minute (same cadence as production, different trigger mechanism)
+- Production: HTTP-cron calls `/cron/work` every minute (Basic Auth)
 
 **Fit Criterion:** After clicking "Process", the UI returns to an interactive
 state within 1 second. Processing status is shown via polling.
@@ -220,16 +220,6 @@ Recovery route (`/recovery`) must enforce rate limiting.
 attempt returns HTTP 429. After 10 failed attempts, all login attempts from
 that IP are blocked for 15 minutes.
 
-**NFR-15a-05: Recovery Token Expiry**
-
-The `.herold-recovery` file must have a time-to-live of 60 minutes based on
-file modification time (`filemtime`). Expired tokens must be rejected with
-HTTP 403 and logged.
-
-**Fit Criterion:** A `.herold-recovery` file older than 60 minutes does not
-grant access to the recovery form. The rejection is logged with timestamp
-and IP.
-
 **NFR-15a-04: Audio Upload Validation**
 
 Audio uploads must be validated server-side:
@@ -239,6 +229,16 @@ Audio uploads must be validated server-side:
 
 **Fit Criterion:** An upload exceeding 25 MB or with a disallowed MIME type
 is rejected with HTTP 422. The 11th upload within one hour returns HTTP 429.
+
+**NFR-15a-05: Recovery Token Expiry**
+
+The `.herold-recovery` file must have a time-to-live of 60 minutes based on
+file modification time (`filemtime`). Expired tokens must be rejected with
+HTTP 403 and logged.
+
+**Fit Criterion:** A `.herold-recovery` file older than 60 minutes does not
+grant access to the recovery form. The rejection is logged with timestamp
+and IP.
 
 ### 15b. Integrity Requirements
 
