@@ -544,7 +544,7 @@ Kein dauerhaft laufender Worker-Prozess noetig.
 **Deployment-Workflow:**
 1. Lokal `npm run build` (kompiliert Vue/TS → `public/build/`)
 2. FTP-Upload aller Dateien (inkl. `public/build/`, `vendor/`, Migrations)
-3. Migration per SSH: `php85 artisan migrate --force`
+3. Migration per SSH: `php artisan migrate --force` (Default-PHP ist 8.5)
 4. Fallback (falls SSH nicht genutzt wird): Auto-Migration in `AppServiceProvider::boot()` — abgesichert mit File-Lock (`flock`), Pending-Check und Logging. Nur bei `app()->environment('production')` und ausstehenden Migrations.
 
 **Produktions-.env:**
