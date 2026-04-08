@@ -123,6 +123,7 @@ herold/
   routes/
     web.php                         # Browser-Routen (Inertia, Session-Auth)
     api.php                         # Agent-API-Routen (Sanctum Token-Auth)
+    console.php                     # Scheduler (Queue-Worker, lokale Entwicklung)
 ```
 
 ---
@@ -256,8 +257,13 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
 ```
 
 **Queue-Verarbeitung:**
-- **Lokal:** Cron-Service fuehrt jede Minute `schedule:run` aus (startet kurzlebigen Queue-Worker)
-- **Produktion:** HTTP-Cron ruft minuetlich `/cron/work` auf (Basic Auth), Endpoint arbeitet Queue ab
+- **Lokal:** Cron-Service fuehrt jede Minute `schedule:run` aus. Der Laravel Scheduler startet einen kurzlebigen Worker via `routes/console.php`:
+  ```php
+  Schedule::command('queue:work database --stop-when-empty --tries=3 --max-time=50')
+      ->everyMinute()
+      ->withoutOverlapping();
+  ```
+- **Produktion:** HTTP-Cron ruft minuetlich `/cron/work` auf (Basic Auth), Endpoint fuehrt denselben `queue:work`-Befehl aus
 
 **Polling fuer Status-Updates:** Inertia `router.reload()` alle 2s waehrend Processing laeuft, oder alternativ Laravel Echo + Pusher/Reverb fuer Echtzeit (kann spaeter ergaenzt werden).
 
@@ -545,7 +551,8 @@ Kein dauerhaft laufender Worker-Prozess noetig.
 1. Lokal `npm run build` (kompiliert Vue/TS → `public/build/`)
 2. FTP-Upload aller Dateien (inkl. `public/build/`, `vendor/`, Migrations)
 3. Migration per SSH: `php artisan migrate --force` (Default-PHP ist 8.5)
-4. Fallback (falls SSH nicht genutzt wird): Auto-Migration in `AppServiceProvider::boot()` — abgesichert mit File-Lock (`flock`), Pending-Check und Logging. Nur bei `app()->environment('production')` und ausstehenden Migrations.
+
+Migrationen werden **nicht** im HTTP-Request-Pfad ausgefuehrt (kein `Artisan::call('migrate')` in `boot()` oder Middleware).
 
 **Produktions-.env:**
 ```bash
