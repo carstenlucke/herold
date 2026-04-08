@@ -52,6 +52,7 @@ Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einze
 ```
 herold/
   spec/herold-spec.prompt.md
+  DESIGN.md                         # UI Design-Vorgaben (Farben, Layout, Komponenten)
   docker-compose.yml              # Orchestrierung aller Services
   Dockerfile                      # PHP 8.5 + Apache (wie Prod)
   .env.example                    # Vorlage fuer Umgebungsvariablen
