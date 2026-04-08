@@ -42,8 +42,7 @@ Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einze
 | laravel/ai | 0.4.5 | OpenAI, Anthropic, Gemini |
 | Docker Engine | 29.4.0 | |
 | Docker Compose | 5.1.1 | |
-| nginx | 1.28.3-alpine | Stable |
-| PHP Docker Image | 8.5-fpm-alpine | |
+| PHP Docker Image | 8.5-apache | Apache + PHP in einem Container |
 | SQLite | 3.51.3 | 3.52.0 zurueckgezogen |
 
 ---
@@ -54,9 +53,7 @@ Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einze
 herold/
   spec/SPEC.md
   docker-compose.yml              # Orchestrierung aller Services
-  Dockerfile                      # Multi-stage: PHP + Node Build
-  .docker/
-    nginx.conf                    # Nginx Konfiguration
+  Dockerfile                      # PHP 8.5 + Apache (wie Prod)
   .env.example                    # Vorlage fuer Umgebungsvariablen
   app/
     Http/
@@ -502,10 +499,15 @@ class MemoryService
 
 ### Umgebungen
 
-| Umgebung | Infrastruktur | Queue | Zugang |
-|----------|--------------|-------|--------|
-| **Lokal (Entwicklung)** | Docker Compose | Queue-Worker als Docker-Service | Shell, Browser |
-| **Produktion** | Shared Hosting (PHP nativ) | Cron-basiert (`schedule:run` jede Minute) | FTP, Browser |
+DEV und PROD sind absichtlich identisch aufgebaut (siehe [ADR-002](../adr/002-dev-prod-parity.md)).
+
+| Aspekt | DEV (Docker) | PROD (Shared Hosting) |
+|--------|-------------|----------------------|
+| PHP | 8.5 (php:8.5-apache) | 8.5 (nativ) |
+| Webserver | Apache (im Container) | Apache (Hosting) |
+| Queue | Cron → `schedule:run` | Cron → `schedule:run` |
+| SQLite | Docker Volume | Datei auf Server |
+| `.htaccess` | Identisch | Identisch |
 
 ### Produktion (Shared Hosting)
 
@@ -553,39 +555,33 @@ Ohne die Datei im Dateisystem ist `/recovery` nicht erreichbar (404).
 
 ---
 
-## Docker Setup (nur lokale Entwicklung)
+## Docker Setup (lokale Entwicklung)
 
 Kein lokales PHP/Composer/Node noetig. Alles laeuft in Docker.
+Setup ist bewusst identisch zu Produktion (Apache + Cron, kein nginx, kein dauerhafter Worker).
 
 ### docker-compose.yml Services
 
 ```yaml
 services:
-  app:                            # Laravel (PHP-FPM 8.3)
+  app:                            # PHP 8.5 + Apache (wie Prod)
     build: .
+    ports:
+      - "8080:80"
     volumes:
       - .:/var/www/html           # Code-Mount fuer Live-Entwicklung
       - sqlite_data:/var/www/html/database  # SQLite Persistenz
     env_file: .env
-    depends_on: [nginx]
 
-  nginx:                          # Webserver
-    image: nginx:1.28-alpine       # Stable
-    ports:
-      - "8080:80"
-    volumes:
-      - .:/var/www/html
-      - .docker/nginx.conf:/etc/nginx/conf.d/default.conf
-
-  queue:                          # Laravel Queue Worker
+  cron:                           # Cron → schedule:run (wie Prod)
     build: .
-    command: php artisan queue:work --sleep=3 --tries=3
+    command: crond -f -l 2
     volumes:
       - .:/var/www/html
       - sqlite_data:/var/www/html/database
     env_file: .env
 
-  node:                           # Vite Dev Server (nur Build/Entwicklung)
+  node:                           # Vite Dev Server (nur Entwicklung)
     image: node:24-alpine
     working_dir: /var/www/html
     command: npm run dev -- --host 0.0.0.0
@@ -600,25 +596,35 @@ volumes:
   node_modules:
 ```
 
-### Dockerfile (Multi-stage)
+### Dockerfile
 
 ```dockerfile
-FROM php:8.5-fpm-alpine AS base
+FROM php:8.5-apache
 
-# PHP Extensions: pdo_sqlite, pcntl (fuer Queue Worker)
-RUN apk add --no-cache sqlite-dev \
-    && docker-php-ext-install pdo_sqlite pcntl
+# Apache mod_rewrite (fuer Laravel .htaccess)
+RUN a2enmod rewrite
+
+# PHP Extensions
+RUN apt-get update && apt-get install -y libsqlite3-dev cron \
+    && docker-php-ext-install pdo_sqlite pcntl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Composer
 COPY --from=composer:2.9 /usr/bin/composer /usr/bin/composer
 
+# Apache DocumentRoot auf public/ setzen
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+    /etc/apache2/sites-available/*.conf
+
+# Crontab fuer Laravel Scheduler
+RUN echo "* * * * * cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1" \
+    > /etc/cron.d/herold-scheduler \
+    && chmod 0644 /etc/cron.d/herold-scheduler
+
 WORKDIR /var/www/html
 COPY . .
 RUN composer install --no-dev --optimize-autoloader
-
-# --- Dev Target ---
-FROM base AS dev
-RUN composer install  # Mit dev-dependencies
 ```
 
 ### Entwicklungs-Workflow
@@ -640,8 +646,8 @@ docker compose up -d
 # Laravel-Befehle ausfuehren
 docker compose exec app php artisan <command>
 
-# Queue-Worker laeuft automatisch als eigener Service
-# Logs: docker compose logs -f queue
+# Queue-Jobs werden durch Cron-Service verarbeitet (jede Minute)
+# Logs: docker compose logs -f cron
 
 # Stoppen
 docker compose down
@@ -662,7 +668,7 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 
 ### Phase 1: Projektsetup + Docker
 1. Laravel 13 Projekt erstellen (via `composer create-project` im Container)
-2. Dockerfile + docker-compose.yml + nginx.conf erstellen
+2. Dockerfile (php:8.5-apache) + docker-compose.yml + Cron-Setup erstellen
 3. Inertia.js 3 + Vue 3.5 + TypeScript 6 einrichten
 4. Vuetify 4 installieren und konfigurieren
 5. SQLite konfigurieren (Volume fuer Persistenz)
@@ -691,7 +697,7 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 22. config/herold.php mit Typ-Definitionen + Prompts
 23. PreprocessingService
 24. TranscribeAudioJob + PreprocessTranscriptJob
-25. Queue: Docker-Worker (lokal) + Laravel Scheduler fuer Cron (Produktion)
+25. Queue: Cron-basiert via Laravel Scheduler (identisch in DEV und PROD)
 26. Notes/Show.vue mit Status-Polling
 
 ### Phase 5: Ticket-Erstellung

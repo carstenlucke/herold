@@ -93,19 +93,23 @@ docker compose exec node npm install
 ## Entwicklung
 
 ```bash
-# Alle Services starten (App + Nginx + Queue Worker + Vite Dev Server)
+# All services (App/Apache + Cron + Vite Dev Server)
 docker compose up -d
 
 # App:  http://localhost:8080
 # Vite: http://localhost:5173 (HMR)
 
-# Laravel-Befehle
+# Laravel commands
 docker compose exec app php artisan <command>
 
-# Queue-Worker Logs
-docker compose logs -f queue
+# Queue jobs are processed by cron (every minute)
+# For faster processing during dev:
+docker compose exec app php artisan queue:work
 
-# Stoppen
+# Cron logs
+docker compose logs -f cron
+
+# Stop
 docker compose down
 ```
 

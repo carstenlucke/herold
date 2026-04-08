@@ -56,12 +56,15 @@ Only FTP upload and cron jobs are available.
 
 ### CON-5b-02: Docker Compose (Local Development Only)
 
-Docker Compose is used exclusively for local development. All services
-(PHP-FPM, nginx, queue worker, Vite dev server) run in containers.
+Docker Compose is used exclusively for local development. Services:
+`app` (PHP 8.5 + Apache), `cron` (Laravel Scheduler), `node` (Vite dev server).
 No local PHP, Composer, or Node.js installation required.
 
-**Rationale:** Reproducible development environment. Shared hosting does
-not support Docker (see CON-5b-01).
+The Docker setup intentionally mirrors production (Apache, cron-based queue)
+to eliminate dev/prod parity issues. See [ADR-002](../adr/002-dev-prod-parity.md).
+
+**Rationale:** Reproducible development environment with zero dev/prod drift.
+Shared hosting does not support Docker (see CON-5b-01).
 
 ---
 
