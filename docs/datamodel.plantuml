@@ -1,0 +1,142 @@
+@startuml Herold Data Model
+!theme plain
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+title Herold -- Datenmodell (SQLite)
+
+enum NoteStatus {
+  recorded
+  transcribing
+  transcribed
+  processing
+  processed
+  sending
+  sent
+  error
+  ==
+  **UI-Gruppierung:**
+  ..
+  Aufgenommen = recorded
+  Verarbeitung = transcribing,
+    transcribed, processing, sending
+  Fertig = processed
+  Gesendet = sent
+  Fehler = error
+}
+
+enum MemoryScope {
+  global
+  project:{name}
+  ticket:{number}
+}
+
+enum MemoryCategory {
+  decision
+  learning
+  preference
+  context
+}
+
+class voice_notes <<table>> {
+  **id** : ULID <<PK>>
+  --
+  type : string
+  status : string <<NoteStatus>>
+  audio_path : string [nullable]
+  transcript : text [nullable]
+  processed_title : string [nullable]
+  processed_body : text (markdown) [nullable]
+  metadata : json [nullable]
+  github_issue_number : integer [nullable]
+  github_issue_url : string [nullable]
+  error_message : text [nullable]
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+class memories <<table>> {
+  **id** : ULID <<PK>>
+  --
+  scope : string <<MemoryScope>>
+  category : string <<MemoryCategory>>
+  content : text <<fulltext>>
+  source : string
+  created_at : timestamp
+  updated_at : timestamp
+  ..
+  <<index>> (scope, category)
+  <<fulltext>> (content)
+}
+
+class users <<table>> {
+  **id** : bigint <<PK>>
+  --
+  name : string
+  email : string <<unique>>
+  password : string
+  remember_token : string [nullable]
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+class personal_access_tokens <<table (Sanctum)>> {
+  **id** : bigint <<PK>>
+  --
+  tokenable_type : string
+  tokenable_id : bigint
+  name : string
+  token : string(64) <<unique>>
+  abilities : text [nullable]
+  last_used_at : timestamp [nullable]
+  expires_at : timestamp [nullable]
+  created_at : timestamp
+  updated_at : timestamp
+  ..
+  <<index>> (tokenable_type, tokenable_id)
+}
+
+class jobs <<table (Queue)>> {
+  **id** : bigint <<PK>>
+  --
+  queue : string <<index>>
+  payload : longtext
+  attempts : tinyint
+  reserved_at : integer [nullable]
+  available_at : integer
+  created_at : integer
+}
+
+' -- Relationships --
+
+users "1" -- "0..*" personal_access_tokens : tokenable\n(polymorphic)
+
+voice_notes ..> NoteStatus : status
+memories ..> MemoryScope : scope
+memories ..> MemoryCategory : category
+
+note right of voice_notes
+  **type**: general | youtube | diary
+  (erweiterbar via config/herold.php)
+
+  **metadata** (JSON):
+  - youtube: { youtube_url }
+  - andere Typen: typ-spezifisch
+end note
+
+note right of personal_access_tokens
+  **abilities** (Scopes):
+  - memory:read
+  - memory:write
+  - tickets:read
+  - tickets:status
+end note
+
+note bottom of jobs
+  Standard-Laravel Queue-Tabelle.
+  Jobs: TranscribeAudioJob,
+  PreprocessTranscriptJob,
+  CreateGitHubIssueJob
+end note
+
+@enduml

@@ -28,3 +28,7 @@ Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inerti
 - **Agent API:** JSON routes in `api.php` (Sanctum token auth)
 - Message types are config-driven (`config/herold.php`), not code-driven
 - Production: shared hosting (FTP + cron, no shell access)
+
+## Documentation
+
+- **Data model diagram:** `docs/datamodel.plantuml` — when changing database schema (migrations, models, enums), check if the PlantUML diagram needs updating. Regenerate PNG with `./scripts/generate-diagrams.sh`.

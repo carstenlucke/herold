@@ -141,7 +141,7 @@ Schema::create('voice_notes', function (Blueprint $table) {
     $table->string('audio_path')->nullable(); // Storage-Pfad
     $table->text('transcript')->nullable();
     $table->string('processed_title')->nullable();
-    $table->text('processed_body')->nullable();
+    $table->text('processed_body')->nullable();  // Markdown-formatiert
     $table->json('metadata')->nullable();    // Typ-spezifisch (youtube_url, etc.)
     $table->integer('github_issue_number')->nullable();
     $table->string('github_issue_url')->nullable();
@@ -184,6 +184,18 @@ enum NoteStatus: string {
     case ERROR = 'error';
 }
 ```
+
+**UI-Status-Mapping:** Die granularen Status dienen der Fehlerdiagnose (wo genau schlug ein Job fehl?). In der UI werden sie zu vier sichtbaren Zustaenden gruppiert:
+
+| UI-Label | NoteStatus-Werte |
+|----------|-----------------|
+| Aufgenommen | `recorded` |
+| Wird verarbeitet... | `transcribing`, `transcribed`, `processing`, `sending` |
+| Fertig | `processed` |
+| Gesendet | `sent` |
+| Fehler | `error` |
+
+Das Mapping wird als Methode auf dem NoteStatus-Enum implementiert (z.B. `uiGroup(): string`).
 
 ---
 
