@@ -2,7 +2,7 @@
 
 ## Project
 
-Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inertia.js + Vue 3 + Vuetify 4. See `spec/herold.md` for full specification and `docs/ARCHITECTURE_DECISIONS.md` for ADRs.
+Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inertia.js + Vue 3 + Vuetify 4. See `spec/herold-spec.prompt.md` for full specification and `docs/ARCHITECTURE_DECISIONS.md` for ADRs.
 
 ## Language
 
@@ -11,7 +11,7 @@ Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inerti
 - **Documentation (README, ADRs, docs/):** English
 - **UI text (labels, buttons, messages):** English
 - **Git commits:** conventional commit messages in English
-- **Exception:** `spec/herold.md` remains in German (project specification, written collaboratively in German)
+- **Exception:** `spec/herold-spec.prompt.md` remains in German (project specification, written collaboratively in German)
 
 ## Development
 

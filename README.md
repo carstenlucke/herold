@@ -14,7 +14,7 @@ This project serves as a **demonstration project** for two courses in the [B.Sc.
 The project illustrates real-world practices in:
 
 - **Requirements Engineering** -- Non-functional requirements and constraints documented using the [Volere template](https://www.volere.org/templates/volere-requirements-specification-template/) (see [`spec/non-functional-requirements.md`](spec/non-functional-requirements.md), [`spec/constraints.md`](spec/constraints.md))
-- **Software Requirements Specification** -- Structured specification with message type registry, ticket lifecycle, API design (see [`spec/herold.md`](spec/herold.md))
+- **Software Requirements Specification** -- Structured specification with message type registry, ticket lifecycle, API design (see [`spec/herold-spec.prompt.md`](spec/herold-spec.prompt.md))
 - **Software Architecture Documentation** -- Architecture decisions recorded as ADRs (see [`docs/ARCHITECTURE_DECISIONS.md`](docs/ARCHITECTURE_DECISIONS.md), [`adr/`](adr/)), architecture documentation conforming to [arc42](https://arc42.org)
 
 ## Konzept

@@ -69,7 +69,7 @@ herold/
       Middleware/
         VerifyApiKey.php            # API-Key Check (vor TOTP)
       Requests/
-        StoreVoiceNoteRequest.php   # Validierung Audio-Upload
+        StoreVoiceNoteRequest.php   # Validierung Audio-Upload (max 25 MB, MIME: audio/webm, audio/ogg, audio/mp4)
         ProcessNoteRequest.php      # Validierung Typ + Metadaten
     Models/
       VoiceNote.php                 # Eloquent Model
@@ -228,6 +228,7 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
 1. Nutzer nimmt Audio auf → POST /notes (Audio-Upload)
    → VoiceNote wird mit Status RECORDED gespeichert
    → Audio in storage/app/private/audio/{ulid}.webm
+   → Validierung: max 25 MB, MIME-Types: audio/webm|audio/ogg|audio/mp4, Rate Limit: max 10 Uploads/Stunde
 
 2. Nutzer startet Verarbeitung → POST /notes/{id}/process
    → TranscribeAudioJob dispatched
@@ -254,7 +255,7 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
 ```
 
 **Queue-Verarbeitung:**
-- **Lokal:** Queue-Worker als eigener Docker-Service (dauerhaft laufend)
+- **Lokal:** Cron-Service fuehrt jede Minute `schedule:run` aus (identisch zu Produktion, siehe DEV/PROD-Paritaet)
 - **Produktion:** Cron ruft jede Minute `schedule:run` auf, Laravel arbeitet Jobs ab
 
 **Polling fuer Status-Updates:** Inertia `router.reload()` alle 2s waehrend Processing laeuft, oder alternativ Laravel Echo + Pusher/Reverb fuer Echtzeit (kann spaeter ergaenzt werden).
@@ -281,11 +282,13 @@ Zwei getrennte Auth-Mechanismen fuer Mensch und Agenten:
 6. Alle weiteren Requests sind Session-basiert
 
 **Implementierung:**
-- **API-Key**: Einfacher String-Vergleich gegen `config('herold.api_key')`
+- **API-Key**: Timing-sicherer Vergleich (`hash_equals()`) gegen `config('herold.api_key')`
 - **TOTP**: Package `laragear/two-factor` 4.0 (Octane-kompatibel)
-- **Setup**: Beim ersten Start TOTP-Secret generieren, QR-Code anzeigen
+- **Setup**: Erster TOTP-Setup erfordert zunaechst gueltige API-Key-Eingabe (normaler Login-Flow). Wenn noch kein TOTP-Secret existiert, wird nach erfolgreicher Key-Validierung der QR-Code zur Einrichtung angezeigt statt der TOTP-Eingabe. Kein unauthentifizierter Zugang zum TOTP-Setup.
+- **Rate Limiting**: Login-Routen (`/login/key`, `/login/totp`) mit Throttle (max 5 Versuche pro Minute). Nach 10 Fehlversuchen: 15-Minuten-Sperre (IP-basiert).
 - **Session**: Standard Laravel Session-Auth
 - **Middleware**: `VerifyApiKey` auf Login-Route, danach Standard `auth` Middleware
+- **Security Headers (Basis)**: Auf alle Responses via Middleware: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(self)`. CSP folgt in Phase 9 (Vite-Nonce-Kompatibilitaet).
 
 ### Agent-Auth (Sanctum Tokens)
 
@@ -367,7 +370,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/tokens', [SettingsController::class, 'createToken']);
     Route::delete('/settings/tokens/{token}', [SettingsController::class, 'revokeToken']);
 
-    Route::get('/types', fn () => response()->json(config('herold.types')));
+    Route::get('/types', fn () => response()->json(
+        collect(config('herold.types'))->map(fn ($type) => Arr::only($type, ['label', 'icon', 'extra_fields', 'github_label']))
+    ));
 });
 ```
 
@@ -529,7 +534,7 @@ die Queue ab (database driver). Kein dauerhaft laufender Worker-Prozess noetig.
 **Deployment-Workflow:**
 1. Lokal `npm run build` (kompiliert Vue/TS → `public/build/`)
 2. FTP-Upload aller Dateien (inkl. `public/build/`, `vendor/`, Migrations)
-3. Einmalig: Migration via Web-Route oder Deployment-Script
+3. Einmalig (und bei Updates): Ausstehende Migrationen werden automatisch in `AppServiceProvider::boot()` ausgefuehrt (`Artisan::call('migrate', ['--force' => true])` wenn `app()->environment('production')` und pending Migrations existieren). Kein manueller Schritt noetig.
 
 **Produktions-.env:**
 ```bash
@@ -543,13 +548,21 @@ QUEUE_CONNECTION=database    # Jobs in SQLite, Cron arbeitet ab
 Da kein Shell-Zugang in Produktion vorhanden ist, nutzen wir einen datei-basierten
 Recovery-Mechanismus via FTP:
 
-1. Nutzer laedt Datei `.herold-recovery` per FTP in das Projekt-Root hoch
-2. Nutzer besucht `/recovery` im Browser
-3. App prueft ob `.herold-recovery` existiert → zeigt Reset-Formular
-4. Neuer API-Key wird generiert und angezeigt
-5. Neues TOTP-Secret wird generiert, QR-Code angezeigt
-6. Nutzer scannt QR-Code mit Authenticator-App
-7. Nutzer loescht `.herold-recovery` per FTP wieder
+1. Nutzer generiert einen zufaelligen Token (z.B. `openssl rand -hex 32`) und speichert ihn als Inhalt der Datei `.herold-recovery`
+2. Nutzer laedt `.herold-recovery` per FTP in das Projekt-Root hoch
+3. Nutzer besucht `/recovery` im Browser
+4. App prueft ob `.herold-recovery` existiert → zeigt Formular mit Token-Eingabefeld
+5. Nutzer gibt den Token aus Schritt 1 ein
+6. App vergleicht Eingabe mit Datei-Inhalt (`hash_equals`, getrimmt)
+7. Bei Uebereinstimmung: Neuer API-Key wird generiert und angezeigt, neues TOTP-Secret generiert, QR-Code angezeigt
+8. Nutzer scannt QR-Code mit Authenticator-App
+9. `.herold-recovery` wird serverseitig geloescht
+10. Nutzer bestaetigt TOTP-Einrichtung mit einem Code
+
+**Sicherheitsmassnahmen:**
+- `/recovery`-Route: Throttle max 5 Versuche/Stunde (IP-basiert)
+- Recovery-Datei wird nach erfolgreichem Reset serverseitig geloescht
+- Recovery-Events werden geloggt (Zeitpunkt, IP, Erfolg/Fehlschlag)
 
 Ohne die Datei im Dateisystem ist `/recovery` nicht erreichbar (404).
 
@@ -575,7 +588,7 @@ services:
 
   cron:                           # Cron → schedule:run (wie Prod)
     build: .
-    command: crond -f -l 2
+    command: cron -f
     volumes:
       - .:/var/www/html
       - sqlite_data:/var/www/html/database
@@ -618,7 +631,7 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
     /etc/apache2/sites-available/*.conf
 
 # Crontab fuer Laravel Scheduler
-RUN echo "* * * * * cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1" \
+RUN echo "* * * * * root cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1" \
     > /etc/cron.d/herold-scheduler \
     && chmod 0644 /etc/cron.d/herold-scheduler
 
@@ -718,13 +731,13 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 37. Dark/Light Theme
 
 ### Phase 8: Recovery + Deployment
-38. Recovery-Route + `.herold-recovery`-Datei-Pruefung
+38. Recovery-Route: `.herold-recovery`-Datei muss Random-Token enthalten, Reset-Formular fordert Token-Eingabe. Route mit Throttle (max 5 Versuche/Stunde). Recovery-Events loggen.
 39. Artisan-Command `herold:reset-auth` (fuer lokale Entwicklung)
 40. Produktions-Deployment dokumentieren (FTP-Workflow)
 
 ### Phase 9: Polish
 41. Error-Handling (fehlgeschlagene API-Calls, Retry-Logik in Jobs)
-42. Rate Limiting + Security Headers
+42. CSP-Header (Content Security Policy, Vite-kompatibel) + weitere Haertung
 43. .env.example mit allen Variablen dokumentieren
 44. Spec aktualisieren
 
@@ -734,7 +747,7 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 
 - **Docker**: `docker compose up -d` → alle Services laufen, App erreichbar unter localhost:8080
 - **Audio-Aufnahme**: Im Browser aufnehmen, pruefen ob Datei in storage landet
-- **Transkription**: Audio hochladen, Queue-Worker-Logs pruefen (`docker compose logs -f queue`), Transkript pruefen
+- **Transkription**: Audio hochladen, Cron-Logs pruefen (`docker compose logs -f cron`), Transkript pruefen
 - **Vorverarbeitung**: Transkript verarbeiten lassen, strukturiertes Ergebnis pruefen
 - **Ticket**: Issue in GitHub pruefen (Labels, Body-Format, Meta-Kommentar)
 - **Status-Lifecycle**: Labels manuell via `gh` aendern, pruefen ob App Status korrekt anzeigt

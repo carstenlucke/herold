@@ -67,7 +67,7 @@ built-in a11y support should be preserved (ARIA labels, keyboard navigation).*
 Audio transcription, LLM preprocessing, and GitHub issue creation must not
 block the UI. These operations run as queued jobs.
 
-- Local: Docker queue worker processes jobs immediately
+- Local: Docker cron service processes jobs within 1 minute (identical to production)
 - Production: Cron-based scheduler processes jobs within 1 minute
 
 **Fit Criterion:** After clicking "Process", the UI returns to an interactive
@@ -206,6 +206,29 @@ Tokens are created, listed, and revoked via the Settings UI.
 **Fit Criterion:** An agent token with only `memory:read` scope cannot
 write memories or access tickets.
 
+**NFR-15a-03: Login Rate Limiting and Lockout**
+
+Login routes (`/login/key`, `/login/totp`) must enforce rate limiting.
+Recovery route (`/recovery`) must enforce rate limiting.
+
+- Login: max 5 attempts per minute per IP
+- Login lockout: 15-minute block after 10 failed attempts per IP
+- Recovery: max 5 attempts per hour per IP
+
+**Fit Criterion:** After 5 failed login attempts within 1 minute, the next
+attempt returns HTTP 429. After 10 failed attempts, all login attempts from
+that IP are blocked for 15 minutes.
+
+**NFR-15a-04: Audio Upload Validation**
+
+Audio uploads must be validated server-side:
+- Maximum file size: 25 MB
+- Allowed MIME types: `audio/webm`, `audio/ogg`, `audio/mp4`
+- Rate limit: max 10 uploads per hour
+
+**Fit Criterion:** An upload exceeding 25 MB or with a disallowed MIME type
+is rejected with HTTP 422. The 11th upload within one hour returns HTTP 429.
+
 ### 15b. Integrity Requirements
 
 **NFR-15b-01: No API Keys in Frontend**
@@ -215,6 +238,25 @@ The frontend never receives or transmits these keys.
 
 **Fit Criterion:** Browser DevTools network tab shows no external API keys
 in any request or response.
+
+**NFR-15b-02: No Preprocessing Prompts in API Responses**
+
+The `/types` endpoint must not include `preprocessing_prompt` values in its
+response. Only frontend-relevant fields (`label`, `icon`, `extra_fields`,
+`github_label`) are returned.
+
+**Fit Criterion:** The JSON response of `GET /types` contains no key named
+`preprocessing_prompt`.
+
+**NFR-15b-03: Secret Redaction in Logs**
+
+Sensitive values must not appear in application logs. Laravel's built-in
+`hidden` configuration must redact: `APP_KEY`, `HEROLD_API_KEY`, `GITHUB_TOKEN`,
+`OPENAI_API_KEY`. Transcript contents must not be logged — only job status
+transitions (e.g., "TranscribeAudioJob completed for {id}").
+
+**Fit Criterion:** A search through `storage/logs/` reveals no API keys,
+tokens, or transcript text.
 
 ### 15c. Privacy Requirements
 
@@ -238,10 +280,10 @@ audio for transcription). No GDPR implications as it is a personal tool.*
 - Code, comments, variable names: English
 - Documentation (README, ADRs, docs/): English
 - Git commits: English (conventional commits)
-- Exception: `spec/herold.md` remains in German
+- Exception: `spec/herold-spec.prompt.md` remains in German
 
 **Fit Criterion:** No German text appears in the UI, codebase, or
-documentation (except `spec/herold.md`).
+documentation (except `spec/herold-spec.prompt.md`).
 
 ---
 
