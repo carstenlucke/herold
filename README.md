@@ -11,41 +11,36 @@ This project serves as a **demonstration project** for two courses in the [B.Sc.
 - **WK_1208 Softwaretechnik** -- Software Engineering
 - **WK_1106 Wirtschaftsinformatik-Projekt I (Softwaretechnik)** -- Applied Software Engineering Project
 
-The project illustrates real-world practices in:
 
-- **Requirements Engineering** -- Non-functional requirements and constraints documented using the [Volere template](https://www.volere.org/templates/volere-requirements-specification-template/) (see [`spec/non-functional-requirements.md`](spec/non-functional-requirements.md), [`spec/constraints.md`](spec/constraints.md))
-- **Software Requirements Specification** -- Structured specification with message type registry, ticket lifecycle, API design (see [`spec/herold-spec.prompt.md`](spec/herold-spec.prompt.md))
-- **Software Architecture Documentation** -- Architecture decisions recorded as ADRs (see [`docs/ARCHITECTURE_DECISIONS.md`](docs/ARCHITECTURE_DECISIONS.md), [`adr/`](adr/)), architecture documentation conforming to [arc42](https://arc42.org)
-
-## Konzept
+## Concept
 
 ```
-Sprache  -->  Transkription  -->  LLM-Aufbereitung  -->  GitHub Issue  -->  Lokaler Agent
-(Browser)     (OpenAI Whisper)    (Titel, Struktur)      (typisiert)       (via gh + Cron)
+Voice    -->  Transcription   -->  LLM Processing   -->  GitHub Issue  -->  Local Agent
+(Browser)     (OpenAI Whisper)     (Title, Structure)     (typed)           (via gh + Cron)
 ```
 
-Herold ist die Schnittstelle zwischen Mensch und KI-Agent-Schwarm: Du sprichst, Herold uebersetzt in strukturierte Auftraege, deine Agenten arbeiten sie ab.
+Herold is the interface between human and AI agent swarm: you speak, Herold translates into structured tasks, your agents execute them.
 
 ## Features
 
-- **Sprachaufnahme** im Browser (MediaRecorder API)
-- **Automatische Transkription** via OpenAI Whisper
-- **LLM-Vorverarbeitung** -- generiert Titel, strukturiert Inhalt, bereinigt Sprach-Artefakte
-- **Typisierte Tickets** -- verschiedene Nachrichtentypen mit unterschiedlicher Verarbeitung
-- **GitHub Issues** als Ticket-System (privates Repo, Labels fuer Typ + Status)
-- **Agent Memory API** -- geteiltes Gedaechtnis fuer lokale Agenten (SQLite-basiert)
-- **Dual-Auth** -- Browser (API-Key + TOTP) und Agenten (Sanctum Bearer Tokens)
-- **Queue-basierte Verarbeitung** -- UI blockiert nicht bei API-Calls
+- **Voice Recording** in the browser (MediaRecorder API)
+- **Automatic Transcription** via OpenAI Whisper
+- **LLM Preprocessing** -- generates titles, structures content, cleans up speech artifacts
+- **Typed Tickets** -- different message types with distinct processing pipelines
+- **GitHub Issues** as ticket system (private repo, labels for type + status)
+- **Agent Memory API** -- shared memory for local agents (SQLite-based)
+- **Dual Auth** -- browser (API key + TOTP) and agents (Sanctum bearer tokens)
+- **Queue-based Processing** -- UI is not blocked during API calls
 
-## Nachrichtentypen
+## Message Types
 
-| Typ | Input | Beschreibung |
-|-----|-------|-------------|
-| **General** | Sprachnachricht | Allgemeine Aufgaben -- Transkript wird in strukturiertes Ticket aufbereitet |
-| **YouTube** | Sprache + URL | Anweisungen per Sprache, Video-URL im Ticket -- Agent verarbeitet spaeter |
-| **Diary** | Sprachnachricht | Tagebucheintrag -- formatiert mit Datum, Stimmung, Reflexion |
+| Type | Input | Description |
+|------|-------|-------------|
+| **General** | Voice message | General tasks -- transcript is structured into a ticket |
+| **YouTube** | Voice + URL | Instructions via voice, video URL in ticket -- agent processes later |
+| **Diary** | Voice message | Diary entry -- formatted with date, mood, reflection |
 
-Neue Typen koennen durch einen Config-Eintrag in `config/herold.php` hinzugefuegt werden -- kein Code noetig.
+New types can be added via a config entry in `config/herold.php` -- no code changes required.
 
 ## Ticket-Lifecycle
 
@@ -54,56 +49,56 @@ status:open  -->  status:in_progress  -->  status:done  -->  status:verified
 (App)             (Agent)                  (Agent)           (Mensch)
 ```
 
-## Tech-Stack
+## Tech Stack
 
-| Komponente | Technologie | Version |
-|-----------|-------------|---------|
+| Component | Technology | Version |
+|-----------|------------|---------|
 | Backend | Laravel | 13.4 |
-| Sprache | PHP | 8.5 |
+| Language | PHP | 8.5 |
 | Frontend | Vue 3 + Inertia.js 3 | 3.5 / 3.0 |
 | UI | Vuetify | 4.0 |
 | Build | Vite (Rolldown) | 8.0 |
 | AI | Laravel AI SDK (`laravel/ai`) | 0.4 |
-| Transkription | OpenAI Whisper API | |
+| Transcription | OpenAI Whisper API | |
 | Tickets | GitHub Issues API | |
-| Auth (Browser) | API-Key + TOTP | laragear/two-factor 4.0 |
-| Auth (Agenten) | Laravel Sanctum | |
-| Datenbank | SQLite | 3.51 |
-| Infrastruktur | Docker Compose | 5.1 |
+| Auth (Browser) | API Key + TOTP | laragear/two-factor 4.0 |
+| Auth (Agents) | Laravel Sanctum | |
+| Database | SQLite | 3.51 |
+| Infrastructure | Docker Compose | 5.1 |
 
-## Voraussetzungen
+## Prerequisites
 
 - Docker Engine >= 29.x
 - Docker Compose >= 5.x
 - OpenAI API Key
-- GitHub Fine-grained PAT (Issues: Read & Write, auf ein privates Repo beschraenkt)
+- GitHub Fine-grained PAT (Issues: Read & Write, scoped to a single private repo)
 
-Kein lokales PHP, Composer oder Node.js erforderlich -- alles laeuft in Docker.
+No local PHP, Composer, or Node.js required -- everything runs in Docker.
 
 ## Setup
 
 ```bash
-# Repository klonen
+# Clone repository
 git clone git@github.com:<user>/herold.git
 cd herold
 
-# Environment konfigurieren
+# Configure environment
 cp .env.example .env
-# .env editieren: OPENAI_API_KEY, GITHUB_PAT, HEROLD_API_KEY, etc.
+# Edit .env: OPENAI_API_KEY, GITHUB_PAT, HEROLD_API_KEY, etc.
 
-# Container starten
+# Start containers
 docker compose up -d
 
-# Laravel initialisieren
+# Initialize Laravel
 docker compose exec app composer install
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate
 
-# Frontend-Dependencies
+# Frontend dependencies
 docker compose exec node npm install
 ```
 
-## Entwicklung
+## Development
 
 ```bash
 # All services (App/Apache + Cron + Vite Dev Server)
@@ -128,7 +123,7 @@ docker compose down
 
 ## Agent-API
 
-Lokale Agenten authentifizieren sich mit Sanctum Bearer Tokens (erstellbar in der Settings-Seite).
+Local agents authenticate with Sanctum bearer tokens (created via the Settings page).
 
 ```bash
 # Memories lesen
@@ -152,16 +147,16 @@ curl -X PATCH -H "Authorization: Bearer herold_..." \
      http://localhost:8080/api/tickets/42/status
 ```
 
-### Token-Scopes
+### Token Scopes
 
-| Scope | Beschreibung |
+| Scope | Description |
 |-------|-------------|
-| `memory:read` | Memories lesen und suchen |
-| `memory:write` | Memories erstellen und loeschen |
-| `tickets:read` | Tickets auflisten |
-| `tickets:status` | Ticket-Status aendern |
+| `memory:read` | Read and search memories |
+| `memory:write` | Create and delete memories |
+| `tickets:read` | List tickets |
+| `tickets:status` | Update ticket status |
 
-## Projektstruktur
+## Project Structure
 
 ```
 herold/
@@ -169,21 +164,21 @@ herold/
   adr/                      # Architecture Decision Records
   docs/                     # Architecture decisions index
   app/
-    Http/Controllers/       # Web + API Controller
+    Http/Controllers/       # Web + API controllers
     Models/                 # VoiceNote, Memory, User
     Services/               # AIService, GitHubService, MemoryService, PreprocessingService
     Jobs/                   # TranscribeAudio, PreprocessTranscript, CreateGitHubIssue
     Enums/                  # NoteStatus, MessageType, MemoryScope, MemoryCategory
-  config/herold.php         # Nachrichtentyp-Registry + App-Config
+  config/herold.php         # Message type registry + app config
   resources/js/
-    Pages/                  # Inertia/Vue Seiten
-    Components/             # Wiederverwendbare Vue-Komponenten
-    Composables/            # Vue Composition Functions
+    Pages/                  # Inertia/Vue pages
+    Components/             # Reusable Vue components
+    Composables/            # Vue composition functions
   routes/
-    web.php                 # Browser-Routen (Session-Auth)
-    api.php                 # Agent-API-Routen (Sanctum Token-Auth)
+    web.php                 # Browser routes (session auth)
+    api.php                 # Agent API routes (Sanctum token auth)
 ```
 
-## Lizenz
+## License
 
-Privates Projekt.
+Private project.
