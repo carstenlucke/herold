@@ -75,7 +75,7 @@ class users <<table>> {
   name : string
   email : string <<unique>>
   password : string
-  remember_token : string [nullable]
+  remember_token : string [nullable] ' Laravel default, unused
   created_at : timestamp
   updated_at : timestamp
 }
@@ -125,6 +125,11 @@ note right of voice_notes
 end note
 
 note right of personal_access_tokens
+  Laravel Sanctum table -- stores
+  hashed Bearer tokens for agent
+  API authentication (CLI/curl).
+  Managed via Settings UI.
+  ..
   **abilities** (Scopes):
   - memory:read
   - memory:write
