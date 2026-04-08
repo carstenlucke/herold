@@ -121,7 +121,8 @@ The application must run on standard shared hosting with:
 - Cron job support (minimum: 1-minute interval)
 - FTP access for deployment
 - HTTPS (provided by hosting)
-- No shell/SSH access
+- Limited SSH access (PHP 8.5 available, `crontab` not available)
+- HTTP-based cron (hosting panel, HTTPS only, supports Basic Auth)
 - No Docker support
 
 **Fit Criterion:** Application deploys and runs correctly on the target
@@ -158,14 +159,14 @@ new external API integration.
 **Fit Criterion:** A new type with label, icon, GitHub label, extra fields,
 and preprocessing prompt can be added by editing one config file.
 
-**NFR-14a-02: Auth Recovery Without Shell Access**
+**NFR-14a-02: Auth Recovery via FTP**
 
-Authentication (API key + TOTP) must be resettable without shell access.
+Authentication (API key + TOTP) must be resettable without CLI commands.
 Recovery mechanism: upload `.herold-recovery` file via FTP, then visit
 `/recovery` route in browser.
 
 **Fit Criterion:** A locked-out user can regain access using only FTP and
-a browser, without any CLI commands.
+a browser.
 
 ### 14b. Supportability Requirements
 
@@ -218,6 +219,16 @@ Recovery route (`/recovery`) must enforce rate limiting.
 **Fit Criterion:** After 5 failed login attempts within 1 minute, the next
 attempt returns HTTP 429. After 10 failed attempts, all login attempts from
 that IP are blocked for 15 minutes.
+
+**NFR-15a-05: Recovery Token Expiry**
+
+The `.herold-recovery` file must have a time-to-live of 60 minutes based on
+file modification time (`filemtime`). Expired tokens must be rejected with
+HTTP 403 and logged.
+
+**Fit Criterion:** A `.herold-recovery` file older than 60 minutes does not
+grant access to the recovery form. The rejection is logged with timestamp
+and IP.
 
 **NFR-15a-04: Audio Upload Validation**
 
