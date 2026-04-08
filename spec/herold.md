@@ -5,14 +5,40 @@
 Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einzelner Nutzer nimmt Sprachnachrichten auf, die App transkribiert und verarbeitet diese per OpenAI API und erstellt typisierte GitHub Issues in einem privaten Repo. Lokale Agenten (Claude Code, OpenCode) lesen diese Tickets via `gh` CLI + Cron und arbeiten sie ab.
 
 **Entschiedener Stack:**
-- Laravel 11+ (PHP 8.3+) als Monolith
-- Inertia.js + Vue 3 (Composition API, TypeScript) + Vuetify 3
-- Auth: API-Key + TOTP (Single-User)
-- OpenAI Whisper API (Transkription) + Chat API (Vorverarbeitung)
+- Laravel 13 (PHP 8.5) als Monolith
+- Inertia.js 3 + Vue 3.5 (Composition API, TypeScript 6) + Vuetify 4
+- Auth: API-Key + TOTP (Browser/Mensch), Laravel Sanctum Tokens (Agenten)
+- Laravel AI SDK (`laravel/ai`) fuer OpenAI Whisper + Chat API
 - GitHub Issues API (Fine-grained PAT)
 - Keine PWA, kein Service Worker
 - SQLite als lokale DB
-- **Docker Compose fuer lokale Entwicklung und Betrieb**
+- Docker Compose fuer lokale Entwicklung und Betrieb
+- Vite 8 (Rolldown-Bundler) fuer Frontend-Build
+- Node.js 24 LTS nur fuer Build-Prozess (kein Runtime-Bestandteil)
+
+**Versionen (Stand April 2026):**
+
+| Komponente | Version | Hinweise |
+|-----------|---------|----------|
+| Laravel | 13.4.0 | First-party AI SDK |
+| PHP | 8.5.4 | Support bis 2027, Security bis 2029 |
+| Composer | 2.9.5 | |
+| Inertia.js (Laravel) | 3.0.3 | |
+| Inertia.js (Vue 3) | 3.0.3 | |
+| Vue.js | 3.5.32 | |
+| TypeScript | 6.0.2 | |
+| Vuetify | 4.0.5 | MD3, CSS Cascade Layers |
+| Vite | 8.0.7 | Rolldown-Bundler (Rust) |
+| Node.js LTS | 24.14.1 | Nur fuer Build |
+| npm | 11.12.1 | |
+| laragear/two-factor | 4.0.0 | TOTP, Octane-kompatibel |
+| Laravel Sanctum | (mit Laravel 13) | Agent-Token-Auth |
+| laravel/ai | 0.4.5 | OpenAI, Anthropic, Gemini |
+| Docker Engine | 29.4.0 | |
+| Docker Compose | 5.1.1 | |
+| nginx | 1.28.3-alpine | Stable |
+| PHP Docker Image | 8.5-fpm-alpine | |
+| SQLite | 3.51.3 | 3.52.0 zurueckgezogen |
 
 **Spec-Dokument:** `/Users/carsten/Development/projects/herold/spec/SPEC.md`
 
@@ -35,6 +61,10 @@ herold/
         DashboardController.php     # Home/Uebersicht
         VoiceNoteController.php     # CRUD, Upload, Processing
         TicketController.php        # GitHub Issue Erstellung & Status
+        Api/
+          MemoryController.php      # Agent Memory CRUD (Sanctum-Auth)
+          AgentTicketController.php  # Agent Ticket-Zugriff (Sanctum-Auth)
+        SettingsController.php      # Einstellungen + Token-Verwaltung
       Middleware/
         VerifyApiKey.php            # API-Key Check (vor TOTP)
       Requests/
@@ -42,8 +72,10 @@ herold/
         ProcessNoteRequest.php      # Validierung Typ + Metadaten
     Models/
       VoiceNote.php                 # Eloquent Model
+      Memory.php                    # Agent-Gedaechtnis Model
+      User.php                      # Single-User + Sanctum HasApiTokens
     Services/
-      OpenAIService.php             # Whisper + Chat Completion
+      AIService.php                  # Laravel AI SDK (Whisper + Chat)
       GitHubService.php             # Issues erstellen, Labels verwalten
       MessageTypeRegistry.php       # Typ-Definitionen laden
       PreprocessingService.php      # Orchestriert Transkription + LLM
@@ -54,11 +86,15 @@ herold/
     Enums/
       NoteStatus.php                # recorded, transcribing, transcribed, ...
       MessageType.php               # general, youtube, diary
+      MemoryScope.php               # global, project:{name}, ticket:{number}
+      MemoryCategory.php            # decision, learning, preference, context
   config/
     herold.php                      # App-Konfiguration (Typen, Prompts, etc.)
   database/
     migrations/
       create_voice_notes_table.php
+      create_memories_table.php
+      create_personal_access_tokens_table.php  # Sanctum
   resources/
     js/
       app.ts                        # Inertia + Vue + Vuetify Setup
@@ -83,7 +119,8 @@ herold/
     views/
       app.blade.php                 # Inertia Root-Template
   routes/
-    web.php                         # Alle Routen (Inertia)
+    web.php                         # Browser-Routen (Inertia, Session-Auth)
+    api.php                         # Agent-API-Routen (Sanctum Token-Auth)
 ```
 
 ---
@@ -108,6 +145,26 @@ Schema::create('voice_notes', function (Blueprint $table) {
     $table->timestamps();
 });
 ```
+
+### Migration: `memories`
+
+```php
+Schema::create('memories', function (Blueprint $table) {
+    $table->ulid('id')->primary();
+    $table->string('scope');                 // global, project:{name}, ticket:{number}
+    $table->string('category');              // decision, learning, preference, context
+    $table->text('content');                 // Das eigentliche Wissen
+    $table->string('source');                // claude-code, opencode, user, herold
+    $table->timestamps();
+
+    $table->index(['scope', 'category']);
+    $table->fullText('content');             // Volltextsuche
+});
+```
+
+### Migration: `personal_access_tokens` (Sanctum)
+
+Wird automatisch durch `php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"` erstellt.
 
 ### Enum: NoteStatus
 
@@ -176,13 +233,13 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
    → Status: TRANSCRIBING
 
 3. TranscribeAudioJob
-   → OpenAIService::transcribe(audioPath)
+   → AIService::transcribe(audioPath)
    → Speichert Transkript, Status: TRANSCRIBED
    → Dispatched PreprocessTranscriptJob
 
 4. PreprocessTranscriptJob
    → Laedt Typ-Config + Preprocessing-Prompt
-   → OpenAIService::chat(prompt, transcript, metadata)
+   → AIService::chat(prompt, transcript, metadata)
    → Speichert Title + Body, Status: PROCESSED
 
 5. Nutzer prueft/editiert → Klickt "Ticket erstellen"
@@ -201,26 +258,81 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
 
 ## Authentifizierung
 
-### Flow
+Zwei getrennte Auth-Mechanismen fuer Mensch und Agenten:
 
+| Wer | Methode | Guard | Routen |
+|-----|---------|-------|--------|
+| **Mensch (Browser)** | API-Key + TOTP → Session | `auth` (Session) | `web.php` |
+| **Agent (CLI/curl)** | Sanctum Bearer Token | `auth:sanctum` | `api.php` |
+
+### Browser-Auth (Mensch)
+
+**Flow:**
 1. Nutzer oeffnet App → Login-Seite
 2. Gibt API-Key ein (gespeichert in `.env` als `HEROLD_API_KEY`)
 3. Server validiert Key → zeigt TOTP-Feld
 4. Nutzer gibt TOTP-Code ein (Authenticator-App)
 5. Server validiert TOTP → erstellt Laravel-Session
-6. Alle weiteren Requests sind Session-basiert (Standard-Laravel)
+6. Alle weiteren Requests sind Session-basiert
 
-### Implementierung
-
+**Implementierung:**
 - **API-Key**: Einfacher String-Vergleich gegen `config('herold.api_key')`
-- **TOTP**: Package `pragmarx/google2fa-laravel` oder `laragear/two-factor`
+- **TOTP**: Package `laragear/two-factor` 4.0 (Octane-kompatibel)
 - **Setup**: Beim ersten Start TOTP-Secret generieren, QR-Code anzeigen
-- **Session**: Standard Laravel Session-Auth, kein Sanctum noetig (kein SPA-API, Inertia nutzt Cookies)
+- **Session**: Standard Laravel Session-Auth
 - **Middleware**: `VerifyApiKey` auf Login-Route, danach Standard `auth` Middleware
+
+### Agent-Auth (Sanctum Tokens)
+
+**Flow:**
+1. Nutzer erstellt Token in Settings-Seite (Name + Scopes)
+2. Token wird einmalig angezeigt (danach nur noch Hash in DB)
+3. Agent nutzt Token in jedem Request: `Authorization: Bearer herold_...`
+4. Sanctum validiert Token + prueft Scopes
+
+**Token-Scopes:**
+- `memory:read` – Memories lesen/suchen
+- `memory:write` – Memories erstellen/loeschen
+- `tickets:read` – Tickets auflisten
+- `tickets:status` – Ticket-Status aendern
+
+**Token-Verwaltung (Settings-Seite):**
+- Token erstellen (Name + Scopes waehlen)
+- Aktive Tokens auflisten (Name, letzter Zugriff, Scopes)
+- Token widerrufen
+
+**Agent-Nutzung:**
+```bash
+# Memories lesen
+curl -H "Authorization: Bearer herold_abc123..." \
+     http://localhost:8080/api/memories?scope=global&category=learning
+
+# Memory speichern
+curl -X POST -H "Authorization: Bearer herold_abc123..." \
+     -H "Content-Type: application/json" \
+     -d '{"scope":"global","category":"learning","content":"...","source":"claude-code"}' \
+     http://localhost:8080/api/memories
+
+# Memory loeschen
+curl -X DELETE -H "Authorization: Bearer herold_abc123..." \
+     http://localhost:8080/api/memories/{id}
+
+# Tickets lesen
+curl -H "Authorization: Bearer herold_abc123..." \
+     http://localhost:8080/api/tickets?status=open
+
+# Ticket-Status aendern
+curl -X PATCH -H "Authorization: Bearer herold_abc123..." \
+     -H "Content-Type: application/json" \
+     -d '{"status":"in_progress"}' \
+     http://localhost:8080/api/tickets/42/status
+```
 
 ---
 
 ## Routen
+
+### web.php (Browser, Session-Auth)
 
 ```php
 // Auth
@@ -229,7 +341,7 @@ Route::post('/login/key', [AuthController::class, 'verifyKey']);
 Route::post('/login/totp', [AuthController::class, 'verifyTotp']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
-// Geschuetzt (auth middleware)
+// Geschuetzt (Session-Auth)
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -243,11 +355,35 @@ Route::middleware('auth')->group(function () {
     Route::post('/notes/{note}/process', [VoiceNoteController::class, 'process']);
     Route::post('/notes/{note}/send', [TicketController::class, 'send']);
 
-    Route::get('/tickets', [TicketController::class, 'index']);          // GitHub Issues auflisten
-    Route::patch('/tickets/{number}', [TicketController::class, 'updateStatus']); // Status-Label aendern
+    Route::get('/tickets', [TicketController::class, 'index']);
+    Route::patch('/tickets/{number}', [TicketController::class, 'updateStatus']);
 
     Route::get('/settings', [SettingsController::class, 'index']);
-    Route::get('/types', fn () => response()->json(config('herold.types'))); // Typ-Registry
+    Route::post('/settings/tokens', [SettingsController::class, 'createToken']);
+    Route::delete('/settings/tokens/{token}', [SettingsController::class, 'revokeToken']);
+
+    Route::get('/types', fn () => response()->json(config('herold.types')));
+});
+```
+
+### api.php (Agenten, Sanctum Token-Auth)
+
+```php
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Memory API
+    Route::get('/memories', [Api\MemoryController::class, 'index'])       // Suchen/Auflisten
+        ->middleware('ability:memory:read');
+    Route::post('/memories', [Api\MemoryController::class, 'store'])      // Erstellen
+        ->middleware('ability:memory:write');
+    Route::delete('/memories/{memory}', [Api\MemoryController::class, 'destroy']) // Loeschen
+        ->middleware('ability:memory:write');
+
+    // Ticket API (Proxy zu GitHub Issues)
+    Route::get('/tickets', [Api\AgentTicketController::class, 'index'])   // Auflisten
+        ->middleware('ability:tickets:read');
+    Route::patch('/tickets/{number}/status', [Api\AgentTicketController::class, 'updateStatus'])
+        ->middleware('ability:tickets:status');
 });
 ```
 
@@ -255,16 +391,17 @@ Route::middleware('auth')->group(function () {
 
 ## Services
 
-### OpenAIService
+### AIService (via laravel/ai)
 
 ```php
-class OpenAIService
+class AIService
 {
     public function transcribe(string $audioPath): string
-    // → OpenAI Whisper API, gibt Text zurueck
+    // → Laravel AI SDK → OpenAI Whisper, gibt Text zurueck
 
     public function chat(string $systemPrompt, string $userMessage, float $temperature = 0.3): array
-    // → OpenAI Chat Completion, gibt {title, body} zurueck
+    // → Laravel AI SDK → OpenAI Chat Completion, gibt {title, body} zurueck
+    // Provider spaeter austauschbar (Anthropic, Gemini, etc.)
 }
 ```
 
@@ -292,9 +429,25 @@ class PreprocessingService
     public function process(VoiceNote $note): void
     // 1. Typ-Config laden
     // 2. Prompt zusammenbauen (System-Prompt + Transkript + Metadaten)
-    // 3. OpenAIService::chat() aufrufen
+    // 3. AIService::chat() aufrufen
     // 4. Ergebnis parsen (Title + Body)
     // 5. VoiceNote aktualisieren
+}
+```
+
+### MemoryService
+
+```php
+class MemoryService
+{
+    public function search(?string $scope, ?string $category, ?string $query): Collection
+    // → Volltextsuche + Filter nach Scope/Category
+
+    public function store(string $scope, string $category, string $content, string $source): Memory
+    // → Neuen Memory-Eintrag erstellen
+
+    public function destroy(Memory $memory): void
+    // → Memory loeschen
 }
 ```
 
@@ -322,9 +475,18 @@ class PreprocessingService
 - NoteCard-Komponenten mit Status, Typ-Icon, Titel, Datum
 
 ### Dashboard.vue
-- Zahlen: Offene Notizen, gesendete Tickets
+- Zahlen: Offene Notizen, gesendete Tickets, Agent-Memories
 - Quick-Action: "Neue Aufnahme"
 - Letzte 5 Notizen
+
+### Settings/Index.vue
+- Dark/Light Theme Toggle
+- **Agent-Tokens Sektion:**
+  - Token erstellen: Name + Scopes (Checkboxen) → Token wird einmalig angezeigt
+  - Aktive Tokens: Name, Scopes, letzter Zugriff, erstellt am
+  - Token widerrufen (mit Bestaetigung)
+- GitHub-Repo Info (Anzeige)
+- TOTP-Status
 
 ---
 
@@ -345,7 +507,7 @@ services:
     depends_on: [nginx]
 
   nginx:                          # Webserver
-    image: nginx:alpine
+    image: nginx:1.28-alpine       # Stable
     ports:
       - "8080:80"
     volumes:
@@ -360,8 +522,8 @@ services:
       - sqlite_data:/var/www/html/database
     env_file: .env
 
-  node:                           # Vite Dev Server (nur Entwicklung)
-    image: node:20-alpine
+  node:                           # Vite Dev Server (nur Build/Entwicklung)
+    image: node:24-alpine
     working_dir: /var/www/html
     command: npm run dev -- --host 0.0.0.0
     ports:
@@ -378,14 +540,14 @@ volumes:
 ### Dockerfile (Multi-stage)
 
 ```dockerfile
-FROM php:8.3-fpm-alpine AS base
+FROM php:8.5-fpm-alpine AS base
 
 # PHP Extensions: pdo_sqlite, pcntl (fuer Queue Worker)
 RUN apk add --no-cache sqlite-dev \
     && docker-php-ext-install pdo_sqlite pcntl
 
 # Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.9 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 COPY . .
@@ -436,53 +598,61 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 ## Implementierungsreihenfolge
 
 ### Phase 1: Projektsetup + Docker
-1. Laravel 11 Projekt erstellen (via `composer create-project` im Container)
+1. Laravel 13 Projekt erstellen (via `composer create-project` im Container)
 2. Dockerfile + docker-compose.yml + nginx.conf erstellen
-3. Inertia.js + Vue 3 + TypeScript einrichten
-4. Vuetify 3 installieren und konfigurieren
+3. Inertia.js 3 + Vue 3.5 + TypeScript 6 einrichten
+4. Vuetify 4 installieren und konfigurieren
 5. SQLite konfigurieren (Volume fuer Persistenz)
 6. Basis-Layout (App-Shell, Navigation)
 7. `docker compose up` → App laeuft
 
 ### Phase 2: Datenmodell + Auth
-8. Migration `voice_notes` erstellen
+8. Migration `voice_notes` + `memories` erstellen
 9. VoiceNote Model + NoteStatus Enum
-10. Auth: API-Key Middleware
-11. Auth: TOTP Setup + Verifizierung
-12. Login-Seite (Vue)
+10. Memory Model + MemoryScope/MemoryCategory Enums
+11. User Model mit Sanctum HasApiTokens
+12. Browser-Auth: API-Key Middleware + TOTP Setup
+13. Agent-Auth: Sanctum installieren + konfigurieren
+14. Login-Seite (Vue)
+15. Settings-Seite: Token-Verwaltung (erstellen, auflisten, widerrufen)
 
 ### Phase 3: Audio-Aufnahme
-13. `useAudioRecorder` Composable (MediaRecorder API)
-14. AudioRecorder Vue-Komponente (UI + Waveform)
-15. TypeSelector Komponente
-16. Recording/Create.vue Seite
-17. VoiceNoteController::store (Audio-Upload)
+16. `useAudioRecorder` Composable (MediaRecorder API)
+17. AudioRecorder Vue-Komponente (UI + Waveform)
+18. TypeSelector Komponente
+19. Recording/Create.vue Seite
+20. VoiceNoteController::store (Audio-Upload)
 
 ### Phase 4: Verarbeitung
-18. OpenAIService (Whisper + Chat)
-19. config/herold.php mit Typ-Definitionen + Prompts
-20. PreprocessingService
-21. TranscribeAudioJob + PreprocessTranscriptJob
-22. Queue-Worker laeuft als eigener Docker-Service (database driver)
-23. Notes/Show.vue mit Status-Polling
+21. AIService via laravel/ai (Whisper + Chat)
+22. config/herold.php mit Typ-Definitionen + Prompts
+23. PreprocessingService
+24. TranscribeAudioJob + PreprocessTranscriptJob
+25. Queue-Worker laeuft als eigener Docker-Service (database driver)
+26. Notes/Show.vue mit Status-Polling
 
 ### Phase 5: Ticket-Erstellung
-24. GitHubService
-25. CreateGitHubIssueJob
-26. Ticket-Body Templates (mit herold:meta Kommentar)
-27. TicketController (erstellen + Status aendern)
+27. GitHubService
+28. CreateGitHubIssueJob
+29. Ticket-Body Templates (mit herold:meta Kommentar)
+30. TicketController (erstellen + Status aendern)
 
-### Phase 6: UI vervollstaendigen
-28. Notes/Index.vue (History)
-29. Dashboard.vue
-30. Settings-Seite
-31. Dark/Light Theme
+### Phase 6: Agent-API (Memory + Tickets)
+31. MemoryService + MemoryController (CRUD + Suche)
+32. AgentTicketController (Tickets lesen, Status aendern)
+33. Sanctum Ability-Middleware auf API-Routen
+34. Testen mit curl-Aufrufen
 
-### Phase 7: Polish
-32. Error-Handling (fehlgeschlagene API-Calls, Retry-Logik in Jobs)
-33. Rate Limiting + Security Headers
-34. .env.example mit allen Variablen dokumentieren
-35. Spec aktualisieren
+### Phase 7: UI vervollstaendigen
+35. Notes/Index.vue (History)
+36. Dashboard.vue (inkl. Memory-Statistiken)
+37. Dark/Light Theme
+
+### Phase 8: Polish
+38. Error-Handling (fehlgeschlagene API-Calls, Retry-Logik in Jobs)
+39. Rate Limiting + Security Headers
+40. .env.example mit allen Variablen dokumentieren
+41. Spec aktualisieren
 
 ---
 
@@ -494,6 +664,9 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 - **Vorverarbeitung**: Transkript verarbeiten lassen, strukturiertes Ergebnis pruefen
 - **Ticket**: Issue in GitHub pruefen (Labels, Body-Format, Meta-Kommentar)
 - **Status-Lifecycle**: Labels manuell via `gh` aendern, pruefen ob App Status korrekt anzeigt
-- **Auth**: Ohne Key → abgewiesen; mit Key ohne TOTP → abgewiesen; mit beidem → Zugang
+- **Browser-Auth**: Ohne Key → abgewiesen; mit Key ohne TOTP → abgewiesen; mit beidem → Zugang
+- **Agent-Auth**: Ohne Token → 401; mit Token ohne Scope → 403; mit korrektem Scope → Zugang
+- **Memory-API**: curl-Aufrufe zum Erstellen, Suchen und Loeschen von Memories
+- **Token-Verwaltung**: Token erstellen in Settings, widerrufen, pruefen ob Agent abgewiesen wird
 - **Typ-Erweiterung**: Neuen Typ in config/herold.php eintragen, pruefen ob UI + Processing funktioniert
-- **Persistenz**: `docker compose down && docker compose up -d` → SQLite-Daten bleiben erhalten
+- **Persistenz**: `docker compose down && docker compose up -d` → SQLite-Daten + Memories bleiben erhalten
