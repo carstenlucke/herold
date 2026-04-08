@@ -1,8 +1,21 @@
 # Herold
 
-Voice-basierter Task-Dispatcher fuer lokale KI-Agenten.
+Voice-based task dispatcher for local AI agents.
 
-Sprachnachrichten aufnehmen, transkribieren, per LLM aufbereiten und als typisierte Tickets in GitHub Issues ablegen -- zur automatischen Verarbeitung durch lokale Coding-Agenten (Claude Code, OpenCode).
+Record voice messages, transcribe them, structure them via LLM, and file them as typed tickets in GitHub Issues -- for automatic processing by local coding agents (Claude Code, OpenCode).
+
+## Teaching Context
+
+This project serves as a **demonstration project** for two courses in the [B.Sc. Wirtschaftsinformatik](https://www.thm.de/site/studium/unsere-studienangebote/wirtschaftsinformatik-bachelor-bsc-mnd-friedberg.html) program at Technische Hochschule Mittelhessen (THM):
+
+- **WK_1208 Softwaretechnik** -- Software Engineering
+- **WK_1106 Wirtschaftsinformatik-Projekt I (Softwaretechnik)** -- Applied Software Engineering Project
+
+The project illustrates real-world practices in:
+
+- **Requirements Engineering** -- Non-functional requirements and constraints documented using the [Volere template](https://www.volere.org/templates/volere-requirements-specification-template/) (see [`spec/non-functional-requirements.md`](spec/non-functional-requirements.md), [`spec/constraints.md`](spec/constraints.md))
+- **Software Requirements Specification** -- Structured specification with message type registry, ticket lifecycle, API design (see [`spec/herold.md`](spec/herold.md))
+- **Software Architecture Documentation** -- Architecture decisions recorded as ADRs (see [`docs/ARCHITECTURE_DECISIONS.md`](docs/ARCHITECTURE_DECISIONS.md), [`adr/`](adr/)), architecture documentation conforming to [arc42](https://arc42.org)
 
 ## Konzept
 
@@ -152,8 +165,9 @@ curl -X PATCH -H "Authorization: Bearer herold_..." \
 
 ```
 herold/
-  spec/                     # Spezifikation und Implementierungsplan
-  .docker/                  # Docker-Konfiguration (nginx.conf)
+  spec/                     # Specification, NFRs, constraints
+  adr/                      # Architecture Decision Records
+  docs/                     # Architecture decisions index
   app/
     Http/Controllers/       # Web + API Controller
     Models/                 # VoiceNote, Memory, User

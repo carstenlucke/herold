@@ -114,9 +114,9 @@ with full access to the codebase.
 
 ---
 
-## 5e. Anticipated Workplace Environment
+## 3e. Anticipated Workplace Environment
 
-### CON-5e-01: Mobile Primary, Desktop Secondary
+### CON-3e-01: Mobile Primary, Desktop Secondary
 
 The primary usage context is a smartphone (voice recording on the go).
 The user records voice notes while mobile and reviews/edits them later,
@@ -127,22 +127,22 @@ editing benefit from a larger screen.
 
 ---
 
-## 5f. Schedule Constraints
+## 3f. Schedule Constraints
 
 No deadline. Personal project, developed incrementally.
 
 ---
 
-## 5g. Budget Constraints
+## 3g. Budget Constraints
 
-### CON-5g-01: Existing Hosting
+### CON-3g-01: Existing Hosting
 
 No budget for dedicated servers or managed cloud infrastructure.
 Production runs on existing shared hosting.
 
 **Rationale:** See CON-3b-01.
 
-### CON-5g-02: API Costs
+### CON-3g-02: API Costs
 
 OpenAI API usage (Whisper + Chat) incurs per-request costs.
 No cost optimization measures planned — volume is low (single user).

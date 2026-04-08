@@ -3,7 +3,7 @@
 Based on the [Volere Requirements Specification Template](https://www.volere.org/templates/volere-requirements-specification-template/), Sections 10-17 (Robertson & Robertson).
 Only sections relevant to Herold are included. Empty Volere sections are omitted.
 
-For project constraints (Volere Section 5), see [`constraints.md`](./constraints.md).
+For project constraints (Volere Section 3 — Mandated Constraints), see [`constraints.md`](./constraints.md).
 
 ---
 
