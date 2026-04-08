@@ -4,6 +4,12 @@
 
 Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einzelner Nutzer nimmt Sprachnachrichten auf, die App transkribiert und verarbeitet diese per OpenAI API und erstellt typisierte GitHub Issues in einem privaten Repo. Lokale Agenten (Claude Code, OpenCode) lesen diese Tickets via `gh` CLI + Cron und arbeiten sie ab.
 
+**Designprinzipien:**
+- **Mobile First / Responsive** -- primaerer Nutzungskontext ist das Smartphone (Sprachaufnahme unterwegs), Desktop als Zweitbildschirm
+- Vuetify 4 Breakpoints (xs/sm/md/lg/xl) konsequent nutzen
+- Touch-optimierte UI: grosse Tap-Targets, Swipe-Gesten wo sinnvoll
+- Bottom Navigation auf Mobile, Side Navigation auf Desktop
+
 **Entschiedener Stack:**
 - Laravel 13 (PHP 8.5) als Monolith
 - Inertia.js 3 + Vue 3.5 (Composition API, TypeScript 6) + Vuetify 4
@@ -39,8 +45,6 @@ Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einze
 | nginx | 1.28.3-alpine | Stable |
 | PHP Docker Image | 8.5-fpm-alpine | |
 | SQLite | 3.51.3 | 3.52.0 zurueckgezogen |
-
-**Spec-Dokument:** `/Users/carsten/Development/projects/herold/spec/SPEC.md`
 
 ---
 
