@@ -256,6 +256,10 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
    → Speichert Issue-Nummer + URL, Status: SENT
 ```
 
+**Queue-Verarbeitung:**
+- **Lokal:** Queue-Worker als eigener Docker-Service (dauerhaft laufend)
+- **Produktion:** Cron ruft jede Minute `schedule:run` auf, Laravel arbeitet Jobs ab
+
 **Polling fuer Status-Updates:** Inertia `router.reload()` alle 2s waehrend Processing laeuft, oder alternativ Laravel Echo + Pusher/Reverb fuer Echtzeit (kann spaeter ergaenzt werden).
 
 ---
@@ -494,7 +498,62 @@ class MemoryService
 
 ---
 
-## Docker Setup (Entwicklung & Betrieb)
+## Deployment
+
+### Umgebungen
+
+| Umgebung | Infrastruktur | Queue | Zugang |
+|----------|--------------|-------|--------|
+| **Lokal (Entwicklung)** | Docker Compose | Queue-Worker als Docker-Service | Shell, Browser |
+| **Produktion** | Shared Hosting (PHP nativ) | Cron-basiert (`schedule:run` jede Minute) | FTP, Browser |
+
+### Produktion (Shared Hosting)
+
+- PHP laeuft nativ auf dem Server (kein Docker)
+- Deployment via FTP-Upload
+- Kein Shell-Zugang
+- Cron-Job verfuegbar
+- HTTPS via Hosting-Provider (noetig fuer MediaRecorder API)
+
+**Queue in Produktion:**
+Cron-Job ruft jede Minute `php artisan schedule:run` auf. Laravel Scheduler arbeitet
+die Queue ab (database driver). Kein dauerhaft laufender Worker-Prozess noetig.
+
+```
+# Cron-Eintrag auf dem Server
+* * * * * cd /path/to/herold && php artisan schedule:run >> /dev/null 2>&1
+```
+
+**Deployment-Workflow:**
+1. Lokal `npm run build` (kompiliert Vue/TS → `public/build/`)
+2. FTP-Upload aller Dateien (inkl. `public/build/`, `vendor/`, Migrations)
+3. Einmalig: Migration via Web-Route oder Deployment-Script
+
+**Produktions-.env:**
+```bash
+APP_ENV=production
+APP_DEBUG=false
+QUEUE_CONNECTION=database    # Jobs in SQLite, Cron arbeitet ab
+```
+
+### Auth-Recovery (bei Verlust von API-Key oder TOTP)
+
+Da kein Shell-Zugang in Produktion vorhanden ist, nutzen wir einen datei-basierten
+Recovery-Mechanismus via FTP:
+
+1. Nutzer laedt Datei `.herold-recovery` per FTP in das Projekt-Root hoch
+2. Nutzer besucht `/recovery` im Browser
+3. App prueft ob `.herold-recovery` existiert → zeigt Reset-Formular
+4. Neuer API-Key wird generiert und angezeigt
+5. Neues TOTP-Secret wird generiert, QR-Code angezeigt
+6. Nutzer scannt QR-Code mit Authenticator-App
+7. Nutzer loescht `.herold-recovery` per FTP wieder
+
+Ohne die Datei im Dateisystem ist `/recovery` nicht erreichbar (404).
+
+---
+
+## Docker Setup (nur lokale Entwicklung)
 
 Kein lokales PHP/Composer/Node noetig. Alles laeuft in Docker.
 
@@ -632,7 +691,7 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 22. config/herold.php mit Typ-Definitionen + Prompts
 23. PreprocessingService
 24. TranscribeAudioJob + PreprocessTranscriptJob
-25. Queue-Worker laeuft als eigener Docker-Service (database driver)
+25. Queue: Docker-Worker (lokal) + Laravel Scheduler fuer Cron (Produktion)
 26. Notes/Show.vue mit Status-Polling
 
 ### Phase 5: Ticket-Erstellung
@@ -652,11 +711,16 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 36. Dashboard.vue (inkl. Memory-Statistiken)
 37. Dark/Light Theme
 
-### Phase 8: Polish
-38. Error-Handling (fehlgeschlagene API-Calls, Retry-Logik in Jobs)
-39. Rate Limiting + Security Headers
-40. .env.example mit allen Variablen dokumentieren
-41. Spec aktualisieren
+### Phase 8: Recovery + Deployment
+38. Recovery-Route + `.herold-recovery`-Datei-Pruefung
+39. Artisan-Command `herold:reset-auth` (fuer lokale Entwicklung)
+40. Produktions-Deployment dokumentieren (FTP-Workflow)
+
+### Phase 9: Polish
+41. Error-Handling (fehlgeschlagene API-Calls, Retry-Logik in Jobs)
+42. Rate Limiting + Security Headers
+43. .env.example mit allen Variablen dokumentieren
+44. Spec aktualisieren
 
 ---
 
@@ -674,3 +738,5 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 - **Token-Verwaltung**: Token erstellen in Settings, widerrufen, pruefen ob Agent abgewiesen wird
 - **Typ-Erweiterung**: Neuen Typ in config/herold.php eintragen, pruefen ob UI + Processing funktioniert
 - **Persistenz**: `docker compose down && docker compose up -d` → SQLite-Daten + Memories bleiben erhalten
+- **Recovery**: `.herold-recovery` per FTP hochladen → /recovery erreichbar → Auth zuruecksetzen → Datei loeschen → /recovery wieder 404
+- **Cron-Queue**: `php artisan schedule:run` verarbeitet ausstehende Jobs korrekt
