@@ -250,10 +250,11 @@ response. Only frontend-relevant fields (`label`, `icon`, `extra_fields`,
 
 **NFR-15b-03: Secret Redaction in Logs**
 
-Sensitive values must not appear in application logs. Laravel's built-in
-`hidden` configuration must redact: `APP_KEY`, `HEROLD_API_KEY`, `GITHUB_TOKEN`,
-`OPENAI_API_KEY`. Transcript contents must not be logged — only job status
-transitions (e.g., "TranscribeAudioJob completed for {id}").
+Sensitive values must not appear in application logs. A dedicated redaction
+mechanism (e.g., custom Monolog processor) must mask known secret keys:
+`APP_KEY`, `HEROLD_API_KEY`, `GITHUB_TOKEN`, `OPENAI_API_KEY`, and Bearer
+tokens. Transcript contents must not be logged — only job status transitions
+(e.g., "TranscribeAudioJob completed for {id}").
 
 **Fit Criterion:** A search through `storage/logs/` reveals no API keys,
 tokens, or transcript text.

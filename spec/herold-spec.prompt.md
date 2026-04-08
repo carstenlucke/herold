@@ -51,7 +51,7 @@ Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einze
 
 ```
 herold/
-  spec/SPEC.md
+  spec/herold-spec.prompt.md
   docker-compose.yml              # Orchestrierung aller Services
   Dockerfile                      # PHP 8.5 + Apache (wie Prod)
   .env.example                    # Vorlage fuer Umgebungsvariablen
@@ -66,8 +66,10 @@ herold/
           MemoryController.php      # Agent Memory CRUD (Sanctum-Auth)
           AgentTicketController.php  # Agent Ticket-Zugriff (Sanctum-Auth)
         SettingsController.php      # Einstellungen + Token-Verwaltung
+        CronController.php          # HTTP-Cron: Queue-Worker
       Middleware/
         VerifyApiKey.php            # API-Key Check (vor TOTP)
+        VerifyCronAuth.php          # Basic Auth fuer Cron-Endpoint
       Requests/
         StoreVoiceNoteRequest.php   # Validierung Audio-Upload (max 25 MB, MIME: audio/webm, audio/ogg, audio/mp4)
         ProcessNoteRequest.php      # Validierung Typ + Metadaten
@@ -86,7 +88,6 @@ herold/
       CreateGitHubIssueJob.php      # Queue: Ticket → GitHub Issue
     Enums/
       NoteStatus.php                # recorded, transcribing, transcribed, ...
-      MessageType.php               # general, youtube, diary
       MemoryScope.php               # global, project:{name}, ticket:{number}
       MemoryCategory.php            # decision, learning, preference, context
   config/
@@ -255,8 +256,8 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
 ```
 
 **Queue-Verarbeitung:**
-- **Lokal:** Cron-Service fuehrt jede Minute `schedule:run` aus (identisch zu Produktion, siehe DEV/PROD-Paritaet)
-- **Produktion:** Cron ruft jede Minute `schedule:run` auf, Laravel arbeitet Jobs ab
+- **Lokal:** Cron-Service fuehrt jede Minute `schedule:run` aus (startet kurzlebigen Queue-Worker)
+- **Produktion:** HTTP-Cron ruft minuetlich `/cron/work` auf (Basic Auth), Endpoint arbeitet Queue ab
 
 **Polling fuer Status-Updates:** Inertia `router.reload()` alle 2s waehrend Processing laeuft, oder alternativ Laravel Echo + Pusher/Reverb fuer Echtzeit (kann spaeter ergaenzt werden).
 
@@ -374,6 +375,10 @@ Route::middleware('auth')->group(function () {
         collect(config('herold.types'))->map(fn ($type) => Arr::only($type, ['label', 'icon', 'extra_fields', 'github_label']))
     ));
 });
+
+// Cron (Basic Auth via Middleware)
+Route::get('/cron/work', [CronController::class, 'work'])
+    ->middleware('cron.auth');
 ```
 
 ### api.php (Agenten, Sanctum Token-Auth)
@@ -510,7 +515,7 @@ DEV und PROD sind absichtlich identisch aufgebaut (siehe [ADR-002](../adr/002-de
 |--------|-------------|----------------------|
 | PHP | 8.5 (php:8.5-apache) | 8.5 (nativ) |
 | Webserver | Apache (im Container) | Apache (Hosting) |
-| Queue | Cron → `schedule:run` | Cron → `schedule:run` |
+| Queue | Cron → `schedule:run` | HTTP-Cron → `/cron/work` |
 | SQLite | Docker Volume | Datei auf Server |
 | `.htaccess` | Identisch | Identisch |
 
@@ -518,40 +523,48 @@ DEV und PROD sind absichtlich identisch aufgebaut (siehe [ADR-002](../adr/002-de
 
 - PHP laeuft nativ auf dem Server (kein Docker)
 - Deployment via FTP-Upload
-- Kein Shell-Zugang
-- Cron-Job verfuegbar
+- Eingeschraenkter SSH-Zugang (PHP 8.5 verfuegbar, `crontab` gesperrt)
+- HTTP-Cron verfuegbar (Hosting-Panel, nur HTTPS-Aufrufe, Basic Auth moeglich)
 - HTTPS via Hosting-Provider (noetig fuer MediaRecorder API)
 
 **Queue in Produktion:**
-Cron-Job ruft jede Minute `php artisan schedule:run` auf. Laravel Scheduler arbeitet
-die Queue ab (database driver). Kein dauerhaft laufender Worker-Prozess noetig.
+HTTP-Cron-Endpoint `GET /cron/work` wird minuetlich vom Hosting-Provider aufgerufen.
+Der Endpoint ist via Basic Auth geschuetzt (Credentials im Hosting Cron-Panel hinterlegt).
+Intern fuehrt er `queue:work --stop-when-empty --tries=3 --max-time=50` aus.
+Kein dauerhaft laufender Worker-Prozess noetig.
 
 ```
-# Cron-Eintrag auf dem Server
-* * * * * cd /path/to/herold && php artisan schedule:run >> /dev/null 2>&1
+# Hosting Cron-Panel Konfiguration:
+# Protokoll: https://
+# Pfad:      herold.example.com/cron/work
+# Intervall: minuetlich
+# HTTP Benutzer / Passwort: aus .env (CRON_USER / CRON_PASSWORD)
 ```
 
 **Deployment-Workflow:**
 1. Lokal `npm run build` (kompiliert Vue/TS → `public/build/`)
 2. FTP-Upload aller Dateien (inkl. `public/build/`, `vendor/`, Migrations)
-3. Einmalig (und bei Updates): Ausstehende Migrationen werden automatisch in `AppServiceProvider::boot()` ausgefuehrt (`Artisan::call('migrate', ['--force' => true])` wenn `app()->environment('production')` und pending Migrations existieren). Kein manueller Schritt noetig.
+3. Migration per SSH: `php85 artisan migrate --force`
+4. Fallback (falls SSH nicht genutzt wird): Auto-Migration in `AppServiceProvider::boot()` — abgesichert mit File-Lock (`flock`), Pending-Check und Logging. Nur bei `app()->environment('production')` und ausstehenden Migrations.
 
 **Produktions-.env:**
 ```bash
 APP_ENV=production
 APP_DEBUG=false
-QUEUE_CONNECTION=database    # Jobs in SQLite, Cron arbeitet ab
+QUEUE_CONNECTION=database    # Jobs in SQLite, HTTP-Cron arbeitet ab
+CRON_USER=herold-cron        # Basic Auth fuer /cron/work
+CRON_PASSWORD=<secret>       # Basic Auth fuer /cron/work
 ```
 
 ### Auth-Recovery (bei Verlust von API-Key oder TOTP)
 
-Da kein Shell-Zugang in Produktion vorhanden ist, nutzen wir einen datei-basierten
+Fuer den Fall, dass SSH nicht verfuegbar ist, nutzen wir einen datei-basierten
 Recovery-Mechanismus via FTP:
 
 1. Nutzer generiert einen zufaelligen Token (z.B. `openssl rand -hex 32`) und speichert ihn als Inhalt der Datei `.herold-recovery`
 2. Nutzer laedt `.herold-recovery` per FTP in das Projekt-Root hoch
 3. Nutzer besucht `/recovery` im Browser
-4. App prueft ob `.herold-recovery` existiert → zeigt Formular mit Token-Eingabefeld
+4. App prueft ob `.herold-recovery` existiert und nicht aelter als 60 Minuten ist (`filemtime`) → zeigt Formular mit Token-Eingabefeld. Abgelaufene Tokens → 403 + Logging.
 5. Nutzer gibt den Token aus Schritt 1 ein
 6. App vergleicht Eingabe mit Datei-Inhalt (`hash_equals`, getrimmt)
 7. Bei Uebereinstimmung: Neuer API-Key wird generiert und angezeigt, neues TOTP-Secret generiert, QR-Code angezeigt
@@ -561,6 +574,7 @@ Recovery-Mechanismus via FTP:
 
 **Sicherheitsmassnahmen:**
 - `/recovery`-Route: Throttle max 5 Versuche/Stunde (IP-basiert)
+- Recovery-Token TTL: 60 Minuten ab Upload (basierend auf `filemtime`). Abgelaufene Tokens werden abgelehnt und geloggt.
 - Recovery-Datei wird nach erfolgreichem Reset serverseitig geloescht
 - Recovery-Events werden geloggt (Zeitpunkt, IP, Erfolg/Fehlschlag)
 
@@ -586,7 +600,7 @@ services:
       - sqlite_data:/var/www/html/database  # SQLite Persistenz
     env_file: .env
 
-  cron:                           # Cron → schedule:run (wie Prod)
+  cron:                           # Cron → schedule:run (lokale Entwicklung)
     build: .
     command: cron -f
     volumes:
@@ -758,4 +772,4 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 - **Typ-Erweiterung**: Neuen Typ in config/herold.php eintragen, pruefen ob UI + Processing funktioniert
 - **Persistenz**: `docker compose down && docker compose up -d` → SQLite-Daten + Memories bleiben erhalten
 - **Recovery**: `.herold-recovery` per FTP hochladen → /recovery erreichbar → Auth zuruecksetzen → Datei loeschen → /recovery wieder 404
-- **Cron-Queue**: `php artisan schedule:run` verarbeitet ausstehende Jobs korrekt
+- **Cron-Queue**: HTTP-Aufruf auf `/cron/work` mit Basic Auth verarbeitet ausstehende Jobs
