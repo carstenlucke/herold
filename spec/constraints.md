@@ -1,13 +1,13 @@
 # Project Constraints
 
-Based on the Volere Requirements Specification Template, Section 5 (Robertson & Robertson).
+Based on the [Volere Requirements Specification Template](https://www.volere.org/templates/volere-requirements-specification-template/), Section 3 — Mandated Constraints (Robertson & Robertson).
 Only sections relevant to Herold are included.
 
 ---
 
-## 5a. Solution Constraints (Technology Decisions)
+## 3a. Solution Constraints (Technology Decisions)
 
-### CON-5a-01: Laravel 13 Monolith
+### CON-3a-01: Laravel 13 Monolith
 
 The application is built as a Laravel 13 monolith (PHP 8.5). No microservices,
 no separate frontend deployment.
@@ -15,21 +15,21 @@ no separate frontend deployment.
 **Rationale:** Single codebase, single deployment, minimal operational complexity
 for a personal tool.
 
-### CON-5a-02: Inertia.js + Vue 3 Frontend
+### CON-3a-02: Inertia.js + Vue 3 Frontend
 
 The frontend uses Inertia.js 3 with Vue 3.5, TypeScript 6, and Vuetify 4.
 No separate SPA, no vue-router, no dedicated API layer for the browser UI.
 
 **Rationale:** See [ADR-001](../adr/001-inertia-frontend-bridge.md).
 
-### CON-5a-03: SQLite Database
+### CON-3a-03: SQLite Database
 
 SQLite is the sole database. No MySQL, PostgreSQL, or other database server.
 
 **Rationale:** No extra service to manage. Single-user write load is well
 within SQLite's capabilities. Portable — the entire database is one file.
 
-### CON-5a-04: Vite 8 Build Toolchain
+### CON-3a-04: Vite 8 Build Toolchain
 
 Frontend assets are built with Vite 8 (Rolldown bundler). Node.js 24 LTS
 is required only for the build process, not at runtime.
@@ -39,9 +39,9 @@ significantly faster builds.
 
 ---
 
-## 5b. Implementation Environment
+## 3b. Implementation Environment
 
-### CON-5b-01: Shared Hosting (Production)
+### CON-3b-01: Shared Hosting (Production)
 
 The production environment is shared hosting with no shell access.
 Only FTP upload and cron jobs are available.
@@ -54,7 +54,7 @@ Only FTP upload and cron jobs are available.
 
 **Rationale:** Existing hosting infrastructure, no budget/need for dedicated server.
 
-### CON-5b-02: Docker Compose (Local Development Only)
+### CON-3b-02: Docker Compose (Local Development Only)
 
 Docker Compose is used exclusively for local development. Services:
 `app` (PHP 8.5 + Apache), `cron` (Laravel Scheduler), `node` (Vite dev server).
@@ -64,13 +64,13 @@ The Docker setup intentionally mirrors production (Apache, cron-based queue)
 to eliminate dev/prod parity issues. See [ADR-002](../adr/002-dev-prod-parity.md).
 
 **Rationale:** Reproducible development environment with zero dev/prod drift.
-Shared hosting does not support Docker (see CON-5b-01).
+Shared hosting does not support Docker (see CON-3b-01).
 
 ---
 
-## 5c. Partner and Collaborative Applications
+## 3c. Partner and Collaborative Applications
 
-### CON-5c-01: OpenAI API (via Laravel AI SDK)
+### CON-3c-01: OpenAI API (via Laravel AI SDK)
 
 Audio transcription uses OpenAI Whisper API. Text preprocessing uses
 OpenAI Chat Completion API. Both are accessed through the Laravel AI SDK
@@ -79,7 +79,7 @@ OpenAI Chat Completion API. Both are accessed through the Laravel AI SDK
 **Rationale:** Whisper provides high-quality German transcription.
 Laravel AI SDK enables future provider changes without code modifications.
 
-### CON-5c-02: GitHub Issues API
+### CON-3c-02: GitHub Issues API
 
 Tickets are stored as GitHub Issues in a private repository. Access uses
 a fine-grained Personal Access Token (PAT) scoped to `Issues: Read & Write`
@@ -88,7 +88,7 @@ on a single repository.
 **Rationale:** GitHub Issues provides a structured, API-accessible ticket
 system that local agents can consume via the `gh` CLI.
 
-### CON-5c-03: Local AI Agents (Claude Code, OpenCode)
+### CON-3c-03: Local AI Agents (Claude Code, OpenCode)
 
 Local coding agents consume tickets via `gh` CLI and interact with the
 Herold Agent API via `curl`. The application does not control or orchestrate
@@ -99,9 +99,9 @@ with full access to the codebase.
 
 ---
 
-## 5d. Off-the-Shelf Software
+## 3d. Off-the-Shelf Software
 
-### CON-5d-01: Key Dependencies
+### CON-3d-01: Key Dependencies
 
 | Package | Purpose | Constraint |
 |---------|---------|------------|
@@ -140,7 +140,7 @@ No deadline. Personal project, developed incrementally.
 No budget for dedicated servers or managed cloud infrastructure.
 Production runs on existing shared hosting.
 
-**Rationale:** See CON-5b-01.
+**Rationale:** See CON-3b-01.
 
 ### CON-5g-02: API Costs
 
