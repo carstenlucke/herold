@@ -121,9 +121,9 @@ other agents, or automation tools. Herold is one input channel among many.
    conventions.
 
 6. **Less code, fewer failure modes.** Removing ticket management and memory
-   eliminates: `TicketController`, `AgentTicketController`, `MemoryController`,
-   `MemoryService`, `Memory` model, `memories` migration, `MemoryScope`/`MemoryCategory`
-   enums, and all corresponding API routes, tests, and UI components.
+   eliminates an entire layer: no ticket controllers, no memory controllers,
+   no memory model or migration, no agent API routes, and no token-based
+   agent authentication. Significantly reduced codebase and attack surface.
 
 **Rejected alternatives:**
 - **Option 1 (all local):** Too much scope for a single-user voice dispatcher.
@@ -135,11 +135,11 @@ other agents, or automation tools. Herold is one input channel among many.
   without clear benefit.
 
 **Consequences:**
-- Herold stores `voice_notes` in SQLite (audio path, transcript, processed result, GitHub reference)
-- No `memories` table, no `Memory` model, no memory-related API routes
-- No `TicketController` or `AgentTicketController` -- no local ticket management
-- No agent API (`api.php` routes removed entirely, Sanctum token auth removed)
-- `GitHubService` creates issues (one-way push) -- no read-back, no sync
-- `VoiceNote` keeps `github_issue_number` and `github_issue_url` as reference after push
+- Herold stores voice notes in SQLite (audio path, transcript, processed result, GitHub reference)
+- No memory table, no memory-related API routes
+- No ticket management controllers -- no local ticket CRUD
+- No agent API -- agents interact exclusively with GitHub
+- GitHub issue creation is a one-way push -- no read-back, no sync
+- Voice notes keep GitHub issue number and URL as reference after push
 - Settings page simplified: no token management section
 - Agent communication happens in GitHub issue comments, not in Herold
