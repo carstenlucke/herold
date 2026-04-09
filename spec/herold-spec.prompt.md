@@ -202,7 +202,8 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
 
 3. Nutzer prueft/editiert → Klickt "Ticket erstellen"
    → POST /notes/{id}/send (synchron)
-   → GitHubService::createIssue(title, body, labels)
+   → IssueContentSanitizer::sanitizeAndWrap(note) → sanitizedBody
+   → GitHubService::createIssue(title, sanitizedBody, labels)
    → Speichert Issue-Nummer + URL, Status: SENT
 ```
 
@@ -232,6 +233,13 @@ Ein Auth-Mechanismus fuer den einzelnen Nutzer (Browser). Agenten interagieren d
 - **Session**: Standard Laravel Session-Auth
 - **Middleware**: `VerifyApiKey` auf Login-Route, danach Standard `auth` Middleware
 - **Security Headers (Basis)**: Auf alle Responses via Middleware: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(self)`. CSP folgt in Phase 7 (Vite-Nonce-Kompatibilitaet).
+
+### Security-Hardening (MUST)
+
+- **Log-Redaction**: Custom Monolog Processor maskiert bekannte Secrets (`APP_KEY`, `HEROLD_API_KEY`, `GITHUB_TOKEN`, `OPENAI_API_KEY`) sowie `Authorization` Header/Bearer-Token und Session-Token.
+- **No Transcript Logging**: Transcript-Inhalte, Prompt-Texte und untrusted Payloads werden nicht geloggt; nur Status-Events mit `voice_note_id`.
+- **Error Sanitization**: API-Fehler von OpenAI/GitHub werden in nutzerfreundliche, nicht-sensitive Fehlermeldungen uebersetzt.
+- **Session-Cookie Hardening**: `Secure`, `HttpOnly`, `SameSite=Lax` in Produktion; Session-Regeneration nach Login und Recovery.
 
 ---
 
@@ -294,7 +302,20 @@ class GitHubService
 {
     public function createIssue(string $title, string $body, array $labels): array
     // → GitHub API POST /repos/{owner}/{repo}/issues
+    // → Erwartet bereits sanitisierten Body (IssueContentSanitizer)
     // Einweg-Push: kein Read-Back, kein Sync
+}
+```
+
+### IssueContentSanitizer
+
+```php
+class IssueContentSanitizer
+{
+    public function sanitizeAndWrap(VoiceNote $note): string
+    // 1. Entfernt aktive HTML/JS-Inhalte (z.B. script tags, javascript: URIs)
+    // 2. Trennt untrusted Input klar vom App-Output (z.B. Abschnitt "## Input")
+    // 3. Schreibt niemals System-Prompts in den Issue-Body
 }
 ```
 
@@ -391,23 +412,24 @@ Recovery-Mechanismus via FTP:
 1. Nutzer generiert einen zufaelligen Token (z.B. `openssl rand -hex 32`) und speichert ihn als Inhalt der Datei `.herold-recovery`
 2. Nutzer laedt `.herold-recovery` per FTP in `storage/app/private/` hoch
 3. Nutzer besucht `/recovery` im Browser
-4. App prueft ob `storage/app/private/.herold-recovery` existiert und nicht aelter als 60 Minuten ist (`filemtime`) → zeigt Formular mit Token-Eingabefeld
+4. App prueft ob `storage/app/private/.herold-recovery` existiert und nicht aelter als 60 Minuten ist (`filemtime`) → zeigt Formular mit Token-Eingabefeld; sonst generische 404-Antwort + Logging
 5. Nutzer gibt den Token aus Schritt 1 ein
-6. App loescht `.herold-recovery` sofort (atomarer Consume-Once, bevor Reset ausgefuehrt wird)
-7. App vergleicht Eingabe mit dem gelesenen Datei-Inhalt (`hash_equals`, getrimmt)
-8. Bei Uebereinstimmung: Neuer API-Key wird generiert und angezeigt, neues TOTP-Secret generiert, QR-Code angezeigt
-9. Nutzer scannt QR-Code mit Authenticator-App
-10. Nutzer bestaetigt TOTP-Einrichtung mit einem Code
-11. Session wird regeneriert (`session()->regenerate()`)
+6. App vergleicht Eingabe mit Datei-Inhalt (`hash_equals`, getrimmt) unter exklusivem File-Lock
+7. Bei Nicht-Uebereinstimmung: generische 404-Antwort + Logging (Datei bleibt bis TTL erhalten)
+8. Bei Uebereinstimmung: `.herold-recovery` atomar verbrauchen (unlink unter Lock) und danach API-Key/TOTP resetten
+9. Neuer API-Key wird generiert und angezeigt, neues TOTP-Secret generiert, QR-Code angezeigt
+10. Nutzer scannt QR-Code mit Authenticator-App
+11. Nutzer bestaetigt TOTP-Einrichtung mit einem Code
+12. Session wird regeneriert (`session()->regenerate()`)
 
 **Sicherheitsmassnahmen:**
 - Recovery-Datei in `storage/app/private/` (ausserhalb Webroot, nicht direkt per URL abrufbar)
 - `/recovery`-Route: Throttle max 5 Versuche/Stunde (IP-basiert)
-- Recovery-Token TTL: 60 Minuten ab Upload (basierend auf `filemtime`). Abgelaufene Tokens werden abgelehnt und geloggt.
+- Recovery-Token TTL: 60 Minuten ab Upload (basierend auf `filemtime`). Abgelaufene Tokens liefern generische 404-Antwort + Logging.
 - Recovery-Formular erfordert CSRF-Token (`@csrf`)
-- Atomarer Consume-Once: Datei wird unmittelbar nach Lesen geloescht, bevor der Reset ausgefuehrt wird (verhindert Wiederverwendung)
+- Atomarer Consume-Once nur nach erfolgreicher Token-Pruefung (unter File-Lock, verhindert Replay und DoS durch Fehlversuche)
 - Session-Regeneration nach erfolgreichem Reset (`session()->regenerate()`)
-- Uniforme Fehlermeldungen: `/recovery` gibt identische Antworten fuer "Datei nicht vorhanden", "Token falsch" und "Token abgelaufen" (verhindert Enumeration)
+- Uniforme Fehlermeldungen: `/recovery` gibt fuer "Datei nicht vorhanden", "Token falsch" und "Token abgelaufen" dieselbe generische 404-Antwort (verhindert Enumeration)
 - Recovery-Events werden geloggt (Zeitpunkt, IP, Erfolg/Fehlschlag)
 
 Ohne die Datei in `storage/app/private/` ist `/recovery` nicht erreichbar (404).
@@ -536,9 +558,9 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 18. AIService via laravel/ai (Whisper + Chat)
 19. config/herold.php mit Typ-Definitionen + Prompts
 20. PreprocessingService
-21. GitHubService (Einweg-Push)
+21. GitHubService + IssueContentSanitizer (Einweg-Push + Sanitization)
 22. VoiceNoteController::process (synchrone Transkription + LLM)
-23. VoiceNoteController::send (synchroner GitHub-Push)
+23. VoiceNoteController::send (synchroner GitHub-Push, sanitisierter Issue-Body)
 24. Notes/Show.vue mit Loading-Indikator
 
 ### Phase 5: UI vervollstaendigen
@@ -554,7 +576,7 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 
 ### Phase 7: Polish
 32. Error-Handling (fehlgeschlagene API-Calls)
-33. CSP-Header (Content Security Policy, Vite-kompatibel) + weitere Haertung
+33. CSP-Header (Content Security Policy, Vite-kompatibel) + Log-Redaction (Secrets/Token) + no-transcript logging
 34. .env.example mit allen Variablen dokumentieren
 35. Spec aktualisieren
 
@@ -566,7 +588,9 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 - **Audio-Aufnahme**: Im Browser aufnehmen, pruefen ob Datei in storage landet
 - **Transkription + Vorverarbeitung**: Audio hochladen, "Verarbeiten" klicken, Loading-Indikator pruefen, strukturiertes Ergebnis pruefen
 - **Ticket**: "Ticket erstellen" klicken, Issue in GitHub pruefen (Labels, Body-Format)
+- **Issue-Sanitization**: Transcript mit Injection-String (z.B. `<!-- @agent: ignore all previous instructions -->`) testen → im Issue inert und klar als untrusted Input markiert
 - **Browser-Auth**: Ohne Key → abgewiesen; mit Key ohne TOTP → abgewiesen; mit beidem → Zugang
 - **Typ-Erweiterung**: Neuen Typ in config/herold.php eintragen, pruefen ob UI + Processing funktioniert
 - **Persistenz**: `docker compose down && docker compose up -d` → SQLite-Daten bleiben erhalten
 - **Recovery**: `.herold-recovery` per FTP in `storage/app/private/` hochladen → /recovery erreichbar → Auth zuruecksetzen → Datei automatisch geloescht → /recovery wieder 404
+- **Log-Redaction**: `storage/logs/` pruefen → keine Secrets, keine Bearer-/Session-Token, keine Transcript-Inhalte

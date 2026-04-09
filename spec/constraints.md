@@ -43,13 +43,15 @@ significantly faster builds.
 
 ### CON-3b-01: Shared Hosting (Production)
 
-The production environment is shared hosting with no shell access.
-Only FTP upload is available for deployment. Processing is synchronous
-(no cron jobs, no queue). See [ADR-002](../adr/002-dev-prod-parity.md).
+The production environment is shared hosting with limited shell access.
+Deployment is done via FTP upload. Optional SSH is available for one-off
+maintenance commands (for example `php artisan migrate --force`).
+Processing is synchronous (no cron jobs, no queue). See
+[ADR-002](../adr/002-dev-prod-parity.md).
 
 - No Docker in production
-- No Artisan commands via CLI in production
 - No long-running processes, no queue worker, no cron jobs
+- No `crontab` access on the host
 - PHP runs natively on the server
 - HTTPS provided by hosting provider
 

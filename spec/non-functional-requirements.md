@@ -131,7 +131,8 @@ The application must run on standard shared hosting with:
 - No Docker support
 
 **Fit Criterion:** Application deploys and runs correctly on the target
-shared hosting environment via FTP upload.
+shared hosting environment via FTP upload plus optional one-off SSH
+maintenance commands (for example `php artisan migrate --force`).
 
 ### 13c. Partner or Collaborative Applications
 
@@ -229,12 +230,14 @@ is rejected with HTTP 422. The 11th upload within one hour returns HTTP 429.
 **NFR-15a-04: Recovery Token Expiry**
 
 The `.herold-recovery` file must have a time-to-live of 60 minutes based on
-file modification time (`filemtime`). Expired tokens must be rejected with
-HTTP 403 and logged.
+file modification time (`filemtime`). Expired tokens must not grant recovery
+access. Missing file, wrong token, and expired token must return the same
+generic HTTP 404 response; the internal rejection reason is logged.
 
 **Fit Criterion:** A `.herold-recovery` file older than 60 minutes does not
-grant access to the recovery form. The rejection is logged with timestamp
-and IP.
+grant access to the recovery form and returns the same generic 404 response
+as other invalid recovery states. The rejection reason is logged with
+timestamp and IP.
 
 ### 15b. Integrity Requirements
 
@@ -260,8 +263,9 @@ response. Only frontend-relevant fields (`label`, `icon`, `extra_fields`,
 Sensitive values must not appear in application logs. A dedicated redaction
 mechanism (e.g., custom Monolog processor) must mask known secret keys:
 `APP_KEY`, `HEROLD_API_KEY`, `GITHUB_TOKEN`, `OPENAI_API_KEY`, and session
-tokens. Transcript contents must not be logged — only processing events
-(e.g., "Transcription completed for voice note {id}").
+tokens (including Bearer/Authorization tokens). Transcript contents must not
+be logged — only processing events (e.g., "Transcription completed for voice
+note {id}").
 
 **Fit Criterion:** A search through `storage/logs/` reveals no API keys,
 tokens, or transcript text.
