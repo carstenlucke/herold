@@ -35,7 +35,10 @@ class users <<table>> {
   name : string
   email : string <<unique>>
   password : string
-  remember_token : string [nullable] ' Laravel default, unused
+  api_key_hash : string [nullable]
+  totp_secret : text (encrypted) [nullable]
+  totp_confirmed_at : timestamp [nullable]
+  remember_token : string [nullable]
   created_at : timestamp
   updated_at : timestamp
 }
