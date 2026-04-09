@@ -26,6 +26,9 @@ yarn-error.log
 # SQLite
 database/database.sqlite
 
+# PHPUnit
+.phpunit.result.cache
+
 # IDE
 .idea
 .vscode
