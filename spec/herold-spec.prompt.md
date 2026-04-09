@@ -155,14 +155,14 @@ Konfigurationsbasiert in `config/herold.php`:
 ```php
 'types' => [
     'general' => [
-        'label' => 'Allgemein',
+        'label' => 'General',
         'icon' => 'mdi-message-text',
         'github_label' => 'type:general',
         'extra_fields' => [],
         'preprocessing_prompt' => '...', // oder Referenz auf Prompt-Datei
     ],
     'youtube' => [
-        'label' => 'YouTube-Transkription',
+        'label' => 'YouTube Transcription',
         'icon' => 'mdi-youtube',
         'github_label' => 'type:youtube',
         'extra_fields' => [
@@ -171,7 +171,7 @@ Konfigurationsbasiert in `config/herold.php`:
         'preprocessing_prompt' => '...',
     ],
     'diary' => [
-        'label' => 'Tagebuch',
+        'label' => 'Diary',
         'icon' => 'mdi-book-open-variant',
         'github_label' => 'type:diary',
         'extra_fields' => [],
@@ -231,7 +231,7 @@ Ein Auth-Mechanismus fuer den einzelnen Nutzer (Browser). Agenten interagieren d
 - **Rate Limiting**: Login-Routen (`/login/key`, `/login/totp`) mit Throttle (max 5 Versuche pro Minute). Nach 10 Fehlversuchen: 15-Minuten-Sperre (IP-basiert).
 - **Session**: Standard Laravel Session-Auth
 - **Middleware**: `VerifyApiKey` auf Login-Route, danach Standard `auth` Middleware
-- **Security Headers (Basis)**: Auf alle Responses via Middleware: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(self)`. CSP folgt in Phase 9 (Vite-Nonce-Kompatibilitaet).
+- **Security Headers (Basis)**: Auf alle Responses via Middleware: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(self)`. CSP folgt in Phase 7 (Vite-Nonce-Kompatibilitaet).
 
 ---
 
@@ -389,23 +389,28 @@ Fuer den Fall, dass SSH nicht verfuegbar ist, nutzen wir einen datei-basierten
 Recovery-Mechanismus via FTP:
 
 1. Nutzer generiert einen zufaelligen Token (z.B. `openssl rand -hex 32`) und speichert ihn als Inhalt der Datei `.herold-recovery`
-2. Nutzer laedt `.herold-recovery` per FTP in das Projekt-Root hoch
+2. Nutzer laedt `.herold-recovery` per FTP in `storage/app/private/` hoch
 3. Nutzer besucht `/recovery` im Browser
-4. App prueft ob `.herold-recovery` existiert und nicht aelter als 60 Minuten ist (`filemtime`) → zeigt Formular mit Token-Eingabefeld. Abgelaufene Tokens → 403 + Logging.
+4. App prueft ob `storage/app/private/.herold-recovery` existiert und nicht aelter als 60 Minuten ist (`filemtime`) → zeigt Formular mit Token-Eingabefeld
 5. Nutzer gibt den Token aus Schritt 1 ein
-6. App vergleicht Eingabe mit Datei-Inhalt (`hash_equals`, getrimmt)
-7. Bei Uebereinstimmung: Neuer API-Key wird generiert und angezeigt, neues TOTP-Secret generiert, QR-Code angezeigt
-8. Nutzer scannt QR-Code mit Authenticator-App
-9. `.herold-recovery` wird serverseitig geloescht
+6. App loescht `.herold-recovery` sofort (atomarer Consume-Once, bevor Reset ausgefuehrt wird)
+7. App vergleicht Eingabe mit dem gelesenen Datei-Inhalt (`hash_equals`, getrimmt)
+8. Bei Uebereinstimmung: Neuer API-Key wird generiert und angezeigt, neues TOTP-Secret generiert, QR-Code angezeigt
+9. Nutzer scannt QR-Code mit Authenticator-App
 10. Nutzer bestaetigt TOTP-Einrichtung mit einem Code
+11. Session wird regeneriert (`session()->regenerate()`)
 
 **Sicherheitsmassnahmen:**
+- Recovery-Datei in `storage/app/private/` (ausserhalb Webroot, nicht direkt per URL abrufbar)
 - `/recovery`-Route: Throttle max 5 Versuche/Stunde (IP-basiert)
 - Recovery-Token TTL: 60 Minuten ab Upload (basierend auf `filemtime`). Abgelaufene Tokens werden abgelehnt und geloggt.
-- Recovery-Datei wird nach erfolgreichem Reset serverseitig geloescht
+- Recovery-Formular erfordert CSRF-Token (`@csrf`)
+- Atomarer Consume-Once: Datei wird unmittelbar nach Lesen geloescht, bevor der Reset ausgefuehrt wird (verhindert Wiederverwendung)
+- Session-Regeneration nach erfolgreichem Reset (`session()->regenerate()`)
+- Uniforme Fehlermeldungen: `/recovery` gibt identische Antworten fuer "Datei nicht vorhanden", "Token falsch" und "Token abgelaufen" (verhindert Enumeration)
 - Recovery-Events werden geloggt (Zeitpunkt, IP, Erfolg/Fehlschlag)
 
-Ohne die Datei im Dateisystem ist `/recovery` nicht erreichbar (404).
+Ohne die Datei in `storage/app/private/` ist `/recovery` nicht erreichbar (404).
 
 ---
 
@@ -543,7 +548,7 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 28. Dark/Light Theme
 
 ### Phase 6: Recovery + Deployment
-29. Recovery-Route: `.herold-recovery`-Datei muss Random-Token enthalten, Reset-Formular fordert Token-Eingabe. Route mit Throttle (max 5 Versuche/Stunde). Recovery-Events loggen.
+29. Recovery-Route: `.herold-recovery` in `storage/app/private/`, Random-Token, CSRF, Consume-Once, Session-Regeneration, Throttle (max 5/Stunde). Recovery-Events loggen.
 30. Artisan-Command `herold:reset-auth` (fuer lokale Entwicklung)
 31. Produktions-Deployment dokumentieren (FTP-Workflow)
 
@@ -564,4 +569,4 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 - **Browser-Auth**: Ohne Key → abgewiesen; mit Key ohne TOTP → abgewiesen; mit beidem → Zugang
 - **Typ-Erweiterung**: Neuen Typ in config/herold.php eintragen, pruefen ob UI + Processing funktioniert
 - **Persistenz**: `docker compose down && docker compose up -d` → SQLite-Daten bleiben erhalten
-- **Recovery**: `.herold-recovery` per FTP hochladen → /recovery erreichbar → Auth zuruecksetzen → Datei loeschen → /recovery wieder 404
+- **Recovery**: `.herold-recovery` per FTP in `storage/app/private/` hochladen → /recovery erreichbar → Auth zuruecksetzen → Datei automatisch geloescht → /recovery wieder 404

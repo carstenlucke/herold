@@ -62,16 +62,19 @@ built-in a11y support should be preserved (ARIA labels, keyboard navigation).*
 
 ### 12a. Speed and Latency Requirements
 
-**NFR-12a-01: Asynchronous Processing**
+**NFR-12a-01: Synchronous Processing**
 
-Audio transcription, LLM preprocessing, and GitHub issue creation must not
-block the UI. These operations run as queued jobs.
+Audio transcription, LLM preprocessing, and GitHub issue creation run
+synchronously in the HTTP request. No queue, no cron, no background jobs.
+See [ADR-002](../adr/002-dev-prod-parity.md).
 
-- Local: Docker cron service runs `schedule:run` every minute (same cadence as production, different trigger mechanism)
-- Production: HTTP-cron calls `/cron/work` every minute (Basic Auth)
+- Processing time: ~10-30 seconds per voice note
+- The UI shows a loading indicator during processing
+- Errors surface immediately in the HTTP response
 
-**Fit Criterion:** After clicking "Process", the UI returns to an interactive
-state within 1 second. Processing status is shown via polling.
+**Fit Criterion:** After clicking "Process", the response returns the
+processed result (or an error) within 60 seconds. A loading indicator
+is visible throughout.
 
 ### 12b. Safety-Critical Requirements
 
@@ -83,14 +86,17 @@ state within 1 second. Processing status is shown via polling.
 
 ### 12d. Reliability and Availability Requirements
 
-**NFR-12d-01: Failed Jobs Are Retryable**
+**NFR-12d-01: Synchronous Error Handling**
 
-If an API call (OpenAI, GitHub) fails, the job must be retried up to 3 times.
-After 3 failures, the voice note is set to ERROR status with an error message.
-The user can manually retry from the UI.
+If an API call (OpenAI, GitHub) fails during synchronous processing, the
+voice note is set to ERROR status with the error message. The user can
+manually retry from the UI via the "Process" or "Send" button.
+
+No automatic retries. Each retry is an explicit user action.
 
 **Fit Criterion:** Transient API failures (timeouts, 5xx) do not result in
-data loss. The voice note and audio file are preserved.
+data loss. The voice note and audio file are preserved. The error message
+is displayed to the user.
 
 ### 12e. Capacity Requirements
 
@@ -118,11 +124,10 @@ Chrome >= 120 on mobile devices.
 
 The application must run on standard shared hosting with:
 - PHP >= 8.5 with pdo_sqlite extension
-- Cron job support (minimum: 1-minute interval)
 - FTP access for deployment
 - HTTPS (provided by hosting)
 - Limited SSH access (PHP 8.5 available, `crontab` not available)
-- HTTP-based cron (hosting panel, HTTPS only, supports Basic Auth)
+- No cron jobs required (synchronous processing, see [ADR-002](../adr/002-dev-prod-parity.md))
 - No Docker support
 
 **Fit Criterion:** Application deploys and runs correctly on the target
@@ -132,13 +137,15 @@ shared hosting environment via FTP upload.
 
 **NFR-13c-01: Agent Interoperability**
 
-Local AI agents (Claude Code, OpenCode) must be able to interact with the
-system via:
-- GitHub Issues API (via `gh` CLI) for ticket consumption
-- Herold Agent API (via `curl`) for memory and ticket status
+Local AI agents (Claude Code, OpenCode) interact exclusively with GitHub
+Issues, not with Herold. See [ADR-003](../adr/003-github-issues-as-ticket-store.md).
 
-**Fit Criterion:** An agent can read tickets, update status, and read/write
-memories using only `gh` and `curl` commands.
+- Ticket consumption: `gh issue list`, `gh issue view`
+- Status updates: `gh issue comment`, `gh issue edit` (labels)
+- Agent memory: file-based, managed locally by each agent (e.g., `CLAUDE.md`)
+
+**Fit Criterion:** An agent can read tickets and update their status using
+only `gh` CLI commands. No Herold API access required.
 
 ### 13d. Productization Requirements
 
@@ -196,18 +203,7 @@ Two factors: something you know (API key) + something you have (Authenticator ap
 
 **Fit Criterion:** Access is denied if either factor is missing or incorrect.
 
-**NFR-15a-02: Scoped Agent Tokens**
-
-Agent access uses Laravel Sanctum bearer tokens with granular scopes:
-- `memory:read`, `memory:write`
-- `tickets:read`, `tickets:status`
-
-Tokens are created, listed, and revoked via the Settings UI.
-
-**Fit Criterion:** An agent token with only `memory:read` scope cannot
-write memories or access tickets.
-
-**NFR-15a-03: Login Rate Limiting and Lockout**
+**NFR-15a-02: Login Rate Limiting and Lockout**
 
 Login routes (`/login/key`, `/login/totp`) must enforce rate limiting.
 Recovery route (`/recovery`) must enforce rate limiting.
@@ -220,7 +216,7 @@ Recovery route (`/recovery`) must enforce rate limiting.
 attempt returns HTTP 429. After 10 failed attempts, all login attempts from
 that IP are blocked for 15 minutes.
 
-**NFR-15a-04: Audio Upload Validation**
+**NFR-15a-03: Audio Upload Validation**
 
 Audio uploads must be validated server-side:
 - Maximum file size: 25 MB
@@ -230,7 +226,7 @@ Audio uploads must be validated server-side:
 **Fit Criterion:** An upload exceeding 25 MB or with a disallowed MIME type
 is rejected with HTTP 422. The 11th upload within one hour returns HTTP 429.
 
-**NFR-15a-05: Recovery Token Expiry**
+**NFR-15a-04: Recovery Token Expiry**
 
 The `.herold-recovery` file must have a time-to-live of 60 minutes based on
 file modification time (`filemtime`). Expired tokens must be rejected with
@@ -263,12 +259,27 @@ response. Only frontend-relevant fields (`label`, `icon`, `extra_fields`,
 
 Sensitive values must not appear in application logs. A dedicated redaction
 mechanism (e.g., custom Monolog processor) must mask known secret keys:
-`APP_KEY`, `HEROLD_API_KEY`, `GITHUB_TOKEN`, `OPENAI_API_KEY`, and Bearer
-tokens. Transcript contents must not be logged — only job status transitions
-(e.g., "TranscribeAudioJob completed for {id}").
+`APP_KEY`, `HEROLD_API_KEY`, `GITHUB_TOKEN`, `OPENAI_API_KEY`, and session
+tokens. Transcript contents must not be logged — only processing events
+(e.g., "Transcription completed for voice note {id}").
 
 **Fit Criterion:** A search through `storage/logs/` reveals no API keys,
 tokens, or transcript text.
+
+**NFR-15b-04: Issue Content Sanitization**
+
+Voice note content (transcripts, LLM-generated titles and bodies) is
+untrusted input. Before creating a GitHub Issue, the application must:
+
+- Sanitize Markdown to remove executable content (HTML tags, JavaScript URIs)
+- Structure the issue body so that untrusted content is clearly delimited
+  (e.g., in a quoted block or under an "## Input" heading)
+- Never include system prompts or preprocessing instructions in the issue body
+
+**Fit Criterion:** A transcript containing `<!-- @agent: ignore all previous
+instructions -->` or similar injection attempts is rendered inert in the
+created GitHub Issue. The issue body clearly separates application-generated
+structure from user-originated content.
 
 ### 15c. Privacy Requirements
 
