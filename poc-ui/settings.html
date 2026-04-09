@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Herold — Settings</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Side Navigation (desktop) -->
+    <nav class="side-nav">
+      <a href="dashboard.html" class="side-nav-brand">
+        <span class="mdi mdi-lightning-bolt"></span>
+        Herold
+      </a>
+      <a href="dashboard.html" class="nav-item">
+        <span class="mdi mdi-view-dashboard-outline"></span>
+        Dashboard
+      </a>
+      <a href="recording.html" class="nav-item nav-record">
+        <span class="mdi mdi-microphone"></span>
+        Record
+      </a>
+      <a href="notes.html" class="nav-item">
+        <span class="mdi mdi-text-box-multiple-outline"></span>
+        Notes
+      </a>
+      <a href="settings.html" class="nav-item active">
+        <span class="mdi mdi-cog-outline"></span>
+        Settings
+      </a>
+      <div class="side-nav-footer">
+        <a href="login.html" class="nav-item">
+          <span class="mdi mdi-logout"></span>
+          Logout
+        </a>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+
+      <div class="page-header">
+        <h1>Settings</h1>
+        <p>Configuration and system information</p>
+      </div>
+
+      <!-- Appearance -->
+      <div class="section">
+        <div class="section-title">Appearance</div>
+        <div class="card">
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">
+                <span class="mdi mdi-weather-night" style="margin-right: var(--sp-2);"></span>
+                Dark Theme
+              </div>
+              <div class="text-dim" style="font-size: 0.75rem; margin-top: 2px;">Neon Tokyo — the default experience</div>
+            </div>
+            <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GitHub -->
+      <div class="section">
+        <div class="section-title">GitHub Connection</div>
+        <div class="card">
+          <div class="info-row">
+            <span class="info-key">Repository</span>
+            <span class="info-value">
+              <span class="mdi mdi-github" style="margin-right: 4px;"></span>
+              carsten/herold-tasks
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">PAT Status</span>
+            <span class="info-value">
+              <span class="text-secondary" style="font-size: 0.75rem;">
+                <span class="mdi mdi-check-circle"></span> Configured
+              </span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">PAT Token</span>
+            <span class="info-value masked">ghp_••••••••••••••••</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">PAT Scope</span>
+            <span class="info-value">Issues: Read & Write</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Authentication -->
+      <div class="section">
+        <div class="section-title">Authentication</div>
+        <div class="card">
+          <div class="info-row">
+            <span class="info-key">TOTP Status</span>
+            <span class="info-value">
+              <span class="text-secondary" style="font-size: 0.75rem;">
+                <span class="mdi mdi-shield-check"></span> Enabled
+              </span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">API Key</span>
+            <span class="info-value masked">••••••••••••••••</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Session</span>
+            <span class="info-value">Active (expires in 2h)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="section">
+        <div class="section-title">About</div>
+        <div class="card">
+          <div class="info-row">
+            <span class="info-key">Version</span>
+            <span class="info-value mono">0.1.0-dev</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Stack</span>
+            <span class="info-value mono" style="font-size: 0.75rem;">Laravel 13 · Vue 3.5 · Vuetify 4</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">Processing</span>
+            <span class="info-value">Synchronous</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div class="mt-8">
+        <a href="login.html" class="btn btn-danger btn-block">
+          <span class="mdi mdi-logout"></span>
+          Logout
+        </a>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation (mobile) -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="mdi mdi-view-dashboard-outline"></span>
+        Dashboard
+      </a>
+      <a href="recording.html" class="nav-item nav-record">
+        <span class="mdi mdi-microphone"></span>
+        Record
+      </a>
+      <a href="notes.html" class="nav-item">
+        <span class="mdi mdi-text-box-multiple-outline"></span>
+        Notes
+      </a>
+      <a href="settings.html" class="nav-item active">
+        <span class="mdi mdi-cog-outline"></span>
+        Settings
+      </a>
+    </nav>
+
+  </div>
+</body>
+</html>

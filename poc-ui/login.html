@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Herold — Login</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .login-container {
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: var(--sp-10);
+    }
+
+    .login-brand h1 {
+      font-size: 2rem;
+      letter-spacing: 0.02em;
+    }
+
+    .login-brand .subtitle {
+      font-family: var(--font-label);
+      font-size: 0.75rem;
+      color: var(--c-text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: var(--sp-2);
+    }
+
+    .login-card {
+      background: var(--c-surface-1);
+      border: 1px solid rgba(var(--c-primary-rgb), 0.1);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-8);
+    }
+
+    .login-step {
+      display: none;
+    }
+
+    .login-step.active {
+      display: block;
+    }
+
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-6);
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--c-surface-3);
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+
+    .step-dot.active {
+      background: var(--c-primary);
+      box-shadow: 0 0 8px rgba(var(--c-primary-rgb), 0.5);
+    }
+
+    .step-dot.completed {
+      background: var(--c-secondary);
+    }
+
+    .step-line {
+      width: 32px;
+      height: 1px;
+      background: var(--c-border);
+    }
+
+    .totp-input {
+      font-size: 1.75rem;
+      text-align: center;
+      letter-spacing: 0.3em;
+      font-family: var(--font-label);
+      font-weight: 600;
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: var(--sp-6);
+      font-size: 0.75rem;
+      color: var(--c-text-dim);
+    }
+  </style>
+</head>
+<body>
+  <div class="layout-fullscreen">
+    <div class="login-container">
+
+      <!-- Brand -->
+      <div class="login-brand">
+        <h1 class="text-glow-primary">Herold</h1>
+        <div class="subtitle">Voice Task Dispatcher</div>
+      </div>
+
+      <!-- Login Card -->
+      <div class="login-card">
+        <!-- Step indicator -->
+        <div class="step-indicator">
+          <div class="step-dot active" id="dot1"></div>
+          <div class="step-line"></div>
+          <div class="step-dot" id="dot2"></div>
+        </div>
+
+        <!-- Step 1: API Key -->
+        <div class="login-step active" id="step1">
+          <div class="form-group">
+            <label for="apikey">API Key</label>
+            <input type="password" id="apikey" placeholder="Enter your API key" autocomplete="off">
+          </div>
+          <button class="btn btn-primary btn-block btn-lg" onclick="showStep2()">
+            <span class="mdi mdi-arrow-right"></span>
+            Continue
+          </button>
+        </div>
+
+        <!-- Step 2: TOTP -->
+        <div class="login-step" id="step2">
+          <div class="form-group">
+            <label for="totp">Authenticator Code</label>
+            <input type="text" id="totp" class="totp-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+          </div>
+          <button class="btn btn-primary btn-block btn-lg">
+            <span class="mdi mdi-login"></span>
+            Login
+          </button>
+          <div class="mt-4">
+            <button class="btn btn-ghost btn-block" onclick="showStep1()">
+              <span class="mdi mdi-arrow-left"></span>
+              Back
+            </button>
+          </div>
+        </div>
+
+        <!-- Error message (hidden by default, toggle for demo) -->
+        <div class="alert alert-error mt-4" id="loginError" style="display: none;">
+          <span class="mdi mdi-alert-circle"></span>
+          <span>Invalid API key. Please try again.</span>
+        </div>
+      </div>
+
+      <div class="login-footer">
+        Secured with API Key + TOTP two-factor authentication
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function showStep2() {
+      document.getElementById('step1').classList.remove('active');
+      document.getElementById('step2').classList.add('active');
+      document.getElementById('dot1').classList.remove('active');
+      document.getElementById('dot1').classList.add('completed');
+      document.getElementById('dot2').classList.add('active');
+      document.getElementById('totp').focus();
+    }
+
+    function showStep1() {
+      document.getElementById('step2').classList.remove('active');
+      document.getElementById('step1').classList.add('active');
+      document.getElementById('dot2').classList.remove('active');
+      document.getElementById('dot1').classList.remove('completed');
+      document.getElementById('dot1').classList.add('active');
+      document.getElementById('apikey').focus();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Herold — Note Detail</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .note-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--sp-4);
+      margin-bottom: var(--sp-6);
+    }
+
+    .note-header-info {
+      flex: 1;
+    }
+
+    .note-type-label {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-1);
+      font-family: var(--font-label);
+      font-size: 0.6875rem;
+      color: var(--c-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: var(--sp-2);
+    }
+
+    .note-timestamp {
+      font-family: var(--font-label);
+      font-size: 0.75rem;
+      color: var(--c-text-dim);
+      margin-top: var(--sp-2);
+    }
+
+    .section-label {
+      font-family: var(--font-label);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--c-text-dim);
+      margin-bottom: var(--sp-2);
+    }
+
+    .processed-body {
+      background: var(--c-surface-2);
+      border-radius: var(--radius-md);
+      padding: var(--sp-4);
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: var(--c-text);
+      min-height: 160px;
+    }
+
+    .processed-body p { margin-bottom: var(--sp-3); }
+    .processed-body ul { padding-left: var(--sp-5); margin-bottom: var(--sp-3); }
+    .processed-body li { margin-bottom: var(--sp-1); list-style: disc; }
+    .processed-body li::marker { color: var(--c-text-dim); }
+
+    .action-bar {
+      display: flex;
+      gap: var(--sp-3);
+      margin-top: var(--sp-6);
+    }
+
+    .action-bar .btn { flex: 1; }
+
+    .loading-demo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-4);
+      padding: var(--sp-10);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Side Navigation (desktop) -->
+    <nav class="side-nav">
+      <a href="dashboard.html" class="side-nav-brand">
+        <span class="mdi mdi-lightning-bolt"></span>
+        Herold
+      </a>
+      <a href="dashboard.html" class="nav-item">
+        <span class="mdi mdi-view-dashboard-outline"></span>
+        Dashboard
+      </a>
+      <a href="recording.html" class="nav-item nav-record">
+        <span class="mdi mdi-microphone"></span>
+        Record
+      </a>
+      <a href="notes.html" class="nav-item active">
+        <span class="mdi mdi-text-box-multiple-outline"></span>
+        Notes
+      </a>
+      <a href="settings.html" class="nav-item">
+        <span class="mdi mdi-cog-outline"></span>
+        Settings
+      </a>
+      <div class="side-nav-footer">
+        <a href="login.html" class="nav-item">
+          <span class="mdi mdi-logout"></span>
+          Logout
+        </a>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+
+      <!-- Back link -->
+      <a href="notes.html" class="btn btn-ghost mb-4" style="align-self: flex-start;">
+        <span class="mdi mdi-arrow-left"></span>
+        Back to Notes
+      </a>
+
+      <!-- Tabs for different status variants -->
+      <div class="tabs">
+        <div class="tab active" onclick="showPanel('recorded')">Recorded</div>
+        <div class="tab" onclick="showPanel('processing')">Processing</div>
+        <div class="tab" onclick="showPanel('processed')">Processed</div>
+        <div class="tab" onclick="showPanel('sent')">Sent</div>
+        <div class="tab" onclick="showPanel('error')">Error</div>
+      </div>
+
+      <!-- ==================== RECORDED ==================== -->
+      <div class="tab-panel active" id="panel-recorded">
+        <div class="note-header">
+          <div class="note-header-info">
+            <div class="note-type-label">
+              <span class="mdi mdi-message-text"></span> General
+            </div>
+            <h2>Voice memo — quick idea</h2>
+            <div class="note-timestamp">Recorded Apr 9, 2026 at 14:32</div>
+          </div>
+          <span class="badge badge-recorded">
+            <span class="mdi mdi-microphone"></span> Recorded
+          </span>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Raw Transcript</div>
+          <textarea class="input-mono" rows="8" placeholder="Transcript will appear here...">So I've been thinking about the recovery mechanism and I think we should move the recovery file to storage app private instead of the project root because otherwise it would be web accessible and that's a security risk. Also we should add CSRF protection to the recovery form and make sure the token is consumed atomically so it can't be reused.</textarea>
+        </div>
+
+        <div class="action-bar">
+          <button class="btn btn-primary btn-lg">
+            <span class="mdi mdi-cog-outline"></span>
+            Process
+          </button>
+          <button class="btn btn-danger btn-icon" title="Delete">
+            <span class="mdi mdi-delete-outline"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== PROCESSING ==================== -->
+      <div class="tab-panel" id="panel-processing">
+        <div class="note-header">
+          <div class="note-header-info">
+            <div class="note-type-label">
+              <span class="mdi mdi-message-text"></span> General
+            </div>
+            <h2>Voice memo — quick idea</h2>
+            <div class="note-timestamp">Recorded Apr 9, 2026 at 14:32</div>
+          </div>
+          <span class="badge badge-recorded">
+            <span class="mdi mdi-microphone"></span> Recorded
+          </span>
+        </div>
+
+        <div class="card">
+          <div class="loading-demo">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Transcribing and processing...</div>
+            <p class="text-dim" style="font-size: 0.75rem;">This may take 10-30 seconds</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== PROCESSED ==================== -->
+      <div class="tab-panel" id="panel-processed">
+        <div class="note-header">
+          <div class="note-header-info">
+            <div class="note-type-label">
+              <span class="mdi mdi-message-text"></span> General
+            </div>
+            <h2>Harden recovery mechanism</h2>
+            <div class="note-timestamp">Processed Apr 9, 2026 at 14:33</div>
+          </div>
+          <span class="badge badge-processed">
+            <span class="mdi mdi-check-circle"></span> Processed
+          </span>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Title</div>
+          <div class="form-group">
+            <input type="text" value="Harden recovery mechanism — move file, add CSRF, atomic consume">
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Issue Body</div>
+          <div class="processed-body" contenteditable="true">
+            <p><strong>Problem:</strong> The <code>.herold-recovery</code> file is currently placed in the project root, making it web-accessible. This is a security risk.</p>
+            <p><strong>Changes needed:</strong></p>
+            <ul>
+              <li>Move recovery file to <code>storage/app/private/</code> (outside webroot)</li>
+              <li>Add CSRF token protection to the recovery form</li>
+              <li>Implement atomic consume-once: delete file before executing reset</li>
+              <li>Add session regeneration after successful recovery</li>
+              <li>Use uniform error messages to prevent enumeration</li>
+            </ul>
+            <p><strong>See:</strong> ADR-003, NFR-15a-04</p>
+          </div>
+        </div>
+
+        <div class="action-bar">
+          <button class="btn btn-primary btn-lg">
+            <span class="mdi mdi-github"></span>
+            Create Ticket
+          </button>
+          <button class="btn btn-danger btn-icon" title="Delete">
+            <span class="mdi mdi-delete-outline"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== SENT ==================== -->
+      <div class="tab-panel" id="panel-sent">
+        <div class="note-header">
+          <div class="note-header-info">
+            <div class="note-type-label">
+              <span class="mdi mdi-message-text"></span> General
+            </div>
+            <h2>Harden recovery mechanism</h2>
+            <div class="note-timestamp">Sent Apr 9, 2026 at 14:34</div>
+          </div>
+          <span class="badge badge-sent">
+            <span class="mdi mdi-github"></span> Sent
+          </span>
+        </div>
+
+        <div class="alert alert-success mb-6">
+          <span class="mdi mdi-check-circle"></span>
+          <div>
+            <strong>Ticket created successfully.</strong>
+            <br>
+            <a href="#" class="github-link mt-2" style="display: inline-flex;">
+              <span class="mdi mdi-github"></span>
+              herold-tasks#42 — Harden recovery mechanism
+            </a>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Title</div>
+          <p style="font-size: 0.9375rem;">Harden recovery mechanism — move file, add CSRF, atomic consume</p>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Issue Body</div>
+          <div class="processed-body" style="opacity: 0.7;">
+            <p><strong>Problem:</strong> The <code>.herold-recovery</code> file is currently placed in the project root, making it web-accessible. This is a security risk.</p>
+            <p><strong>Changes needed:</strong></p>
+            <ul>
+              <li>Move recovery file to <code>storage/app/private/</code> (outside webroot)</li>
+              <li>Add CSRF token protection to the recovery form</li>
+              <li>Implement atomic consume-once: delete file before executing reset</li>
+              <li>Add session regeneration after successful recovery</li>
+              <li>Use uniform error messages to prevent enumeration</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ERROR ==================== -->
+      <div class="tab-panel" id="panel-error">
+        <div class="note-header">
+          <div class="note-header-info">
+            <div class="note-type-label">
+              <span class="mdi mdi-message-text"></span> General
+            </div>
+            <h2>Fix deployment pipeline</h2>
+            <div class="note-timestamp">Error Apr 8, 2026 at 09:15</div>
+          </div>
+          <span class="badge badge-error">
+            <span class="mdi mdi-alert-circle"></span> Error
+          </span>
+        </div>
+
+        <div class="alert alert-error mb-6">
+          <span class="mdi mdi-alert-circle"></span>
+          <div>
+            <strong>GitHub API request failed.</strong>
+            <br>
+            <span style="opacity: 0.8;">Could not create issue. The GitHub API returned an error. Please check your connection and try again.</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Title</div>
+          <div class="form-group">
+            <input type="text" value="Fix FTP deployment — include public/build directory">
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-label">Issue Body</div>
+          <div class="processed-body" contenteditable="true">
+            <p>The FTP upload script is missing the <code>public/build</code> directory. Frontend assets are not being deployed.</p>
+            <ul>
+              <li>Add <code>public/build/</code> to the FTP sync list</li>
+              <li>Verify <code>npm run build</code> runs before upload</li>
+              <li>Document the deployment steps in the README</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="action-bar">
+          <button class="btn btn-primary btn-lg">
+            <span class="mdi mdi-refresh"></span>
+            Retry
+          </button>
+          <button class="btn btn-danger btn-icon" title="Delete">
+            <span class="mdi mdi-delete-outline"></span>
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation (mobile) -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="mdi mdi-view-dashboard-outline"></span>
+        Dashboard
+      </a>
+      <a href="recording.html" class="nav-item nav-record">
+        <span class="mdi mdi-microphone"></span>
+        Record
+      </a>
+      <a href="notes.html" class="nav-item active">
+        <span class="mdi mdi-text-box-multiple-outline"></span>
+        Notes
+      </a>
+      <a href="settings.html" class="nav-item">
+        <span class="mdi mdi-cog-outline"></span>
+        Settings
+      </a>
+    </nav>
+
+  </div>
+
+  <script>
+    function showPanel(name) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('panel-' + name).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

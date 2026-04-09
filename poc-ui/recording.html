@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Herold — New Recording</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .type-section {
+      margin-bottom: var(--sp-6);
+    }
+
+    .extra-fields {
+      display: none;
+      margin-top: var(--sp-4);
+    }
+
+    .extra-fields.visible {
+      display: block;
+    }
+
+    .recorder-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--sp-8) 0;
+    }
+
+    .recorder-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-6);
+    }
+
+    .recorder-secondary-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--c-surface-2);
+      border: 1px solid var(--c-border);
+      color: var(--c-text-muted);
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+
+    .recorder-secondary-btn:hover {
+      border-color: rgba(var(--c-primary-rgb), 0.3);
+      color: var(--c-text);
+    }
+
+    .save-spacer {
+      height: calc(var(--nav-height) + 80px);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Side Navigation (desktop) -->
+    <nav class="side-nav">
+      <a href="dashboard.html" class="side-nav-brand">
+        <span class="mdi mdi-lightning-bolt"></span>
+        Herold
+      </a>
+      <a href="dashboard.html" class="nav-item">
+        <span class="mdi mdi-view-dashboard-outline"></span>
+        Dashboard
+      </a>
+      <a href="recording.html" class="nav-item nav-record active">
+        <span class="mdi mdi-microphone"></span>
+        Record
+      </a>
+      <a href="notes.html" class="nav-item">
+        <span class="mdi mdi-text-box-multiple-outline"></span>
+        Notes
+      </a>
+      <a href="settings.html" class="nav-item">
+        <span class="mdi mdi-cog-outline"></span>
+        Settings
+      </a>
+      <div class="side-nav-footer">
+        <a href="login.html" class="nav-item">
+          <span class="mdi mdi-logout"></span>
+          Logout
+        </a>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+
+      <div class="page-header">
+        <h1>New Recording</h1>
+        <p>Select a type, then record your voice note</p>
+      </div>
+
+      <!-- Type Selector -->
+      <div class="type-section">
+        <label>Message Type</label>
+        <div class="chip-group mt-2">
+          <button class="chip active" onclick="selectType(this, 'general')">
+            <span class="mdi mdi-message-text"></span>
+            General
+          </button>
+          <button class="chip" onclick="selectType(this, 'youtube')">
+            <span class="mdi mdi-youtube"></span>
+            YouTube Transcription
+          </button>
+          <button class="chip" onclick="selectType(this, 'diary')">
+            <span class="mdi mdi-book-open-variant"></span>
+            Diary
+          </button>
+        </div>
+      </div>
+
+      <!-- Extra Fields (YouTube) -->
+      <div class="extra-fields" id="youtubeFields">
+        <div class="form-group">
+          <label for="youtubeUrl">YouTube URL</label>
+          <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+        </div>
+      </div>
+
+      <!-- Audio Recorder -->
+      <div class="card">
+        <div class="recorder-wrapper">
+          <!-- Waveform -->
+          <div class="waveform mb-6" id="waveform">
+            <div class="waveform-bar" style="height: 12px;"></div>
+            <div class="waveform-bar" style="height: 8px;"></div>
+            <div class="waveform-bar" style="height: 20px;"></div>
+            <div class="waveform-bar" style="height: 14px;"></div>
+            <div class="waveform-bar" style="height: 28px;"></div>
+            <div class="waveform-bar" style="height: 18px;"></div>
+            <div class="waveform-bar" style="height: 32px;"></div>
+            <div class="waveform-bar" style="height: 24px;"></div>
+            <div class="waveform-bar" style="height: 16px;"></div>
+            <div class="waveform-bar" style="height: 36px;"></div>
+            <div class="waveform-bar" style="height: 20px;"></div>
+            <div class="waveform-bar" style="height: 28px;"></div>
+            <div class="waveform-bar" style="height: 12px;"></div>
+            <div class="waveform-bar" style="height: 24px;"></div>
+            <div class="waveform-bar" style="height: 8px;"></div>
+            <div class="waveform-bar" style="height: 18px;"></div>
+            <div class="waveform-bar" style="height: 30px;"></div>
+            <div class="waveform-bar" style="height: 14px;"></div>
+            <div class="waveform-bar" style="height: 22px;"></div>
+            <div class="waveform-bar" style="height: 10px;"></div>
+            <div class="waveform-bar" style="height: 26px;"></div>
+            <div class="waveform-bar" style="height: 16px;"></div>
+            <div class="waveform-bar" style="height: 20px;"></div>
+            <div class="waveform-bar" style="height: 12px;"></div>
+          </div>
+
+          <!-- Timer -->
+          <div class="recorder-timer mb-6" id="timer">00:00</div>
+
+          <!-- Controls -->
+          <div class="recorder-controls">
+            <button class="recorder-secondary-btn" title="Pause" id="pauseBtn" style="visibility: hidden;">
+              <span class="mdi mdi-pause"></span>
+            </button>
+            <button class="recorder-btn" id="recordBtn" onclick="toggleRecording()">
+              <span class="mdi mdi-microphone"></span>
+            </button>
+            <div style="width: 44px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="save-spacer"></div>
+
+    </main>
+
+    <!-- Sticky Save Button -->
+    <div class="sticky-footer" id="saveFooter" style="display: none;">
+      <button class="btn btn-primary btn-block btn-lg">
+        <span class="mdi mdi-content-save"></span>
+        Save Recording
+      </button>
+    </div>
+
+    <!-- Bottom Navigation (mobile) -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="mdi mdi-view-dashboard-outline"></span>
+        Dashboard
+      </a>
+      <a href="recording.html" class="nav-item nav-record active">
+        <span class="mdi mdi-microphone"></span>
+        Record
+      </a>
+      <a href="notes.html" class="nav-item">
+        <span class="mdi mdi-text-box-multiple-outline"></span>
+        Notes
+      </a>
+      <a href="settings.html" class="nav-item">
+        <span class="mdi mdi-cog-outline"></span>
+        Settings
+      </a>
+    </nav>
+
+  </div>
+
+  <script>
+    let isRecording = false;
+    let seconds = 0;
+    let timerInterval;
+
+    function selectType(el, type) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('youtubeFields').classList.toggle('visible', type === 'youtube');
+    }
+
+    function toggleRecording() {
+      const btn = document.getElementById('recordBtn');
+      const waveform = document.getElementById('waveform');
+      const pauseBtn = document.getElementById('pauseBtn');
+      const saveFooter = document.getElementById('saveFooter');
+
+      if (!isRecording) {
+        isRecording = true;
+        btn.classList.add('recording');
+        btn.querySelector('.mdi').className = 'mdi mdi-stop';
+        waveform.classList.add('active');
+        pauseBtn.style.visibility = 'visible';
+        timerInterval = setInterval(() => {
+          seconds++;
+          const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+          const s = String(seconds % 60).padStart(2, '0');
+          document.getElementById('timer').textContent = `${m}:${s}`;
+        }, 1000);
+      } else {
+        isRecording = false;
+        btn.classList.remove('recording');
+        btn.querySelector('.mdi').className = 'mdi mdi-microphone';
+        waveform.classList.remove('active');
+        pauseBtn.style.visibility = 'hidden';
+        clearInterval(timerInterval);
+        saveFooter.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
