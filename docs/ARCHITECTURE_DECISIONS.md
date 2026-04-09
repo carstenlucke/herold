@@ -22,29 +22,28 @@ For detailed variant comparisons see [`adr/*.md`](../adr/).
 
 **Decision:** Option C -- Inertia.js.
 
-**Rationale:** A monolith does not need a separate API layer for the browser UI. Inertia eliminates duplicate routing, frontend auth, and manual error handling. The complex audio UI (MediaRecorder, waveform) requires Vue -- Blade would not suffice. Agents get a separate API (`api.php` + Sanctum), the browser UI runs via Inertia (`web.php` + session). Clean separation, minimal overhead. Detailed variant comparison: [`adr/001-inertia-frontend-bridge.md`](../adr/001-inertia-frontend-bridge.md).
+**Rationale:** A monolith does not need a separate API layer for the browser UI. Inertia eliminates duplicate routing, frontend auth, and manual error handling. The complex audio UI (MediaRecorder, waveform) requires Vue -- Blade would not suffice. The browser UI runs via Inertia (`web.php` + session). Agents interact directly with GitHub, not with Herold (see ADR-003). Detailed variant comparison: [`adr/001-inertia-frontend-bridge.md`](../adr/001-inertia-frontend-bridge.md).
 
 ---
 
-## ADR-002: Dev/Prod Parity -- Apache + Cron in Docker
+## ADR-002: Dev/Prod Parity -- Apache + Synchronous Processing
 
 **Status:** Accepted
 
-**Context:** Production runs on shared hosting (Apache, cron, FTP, no shell). The Docker dev setup must minimize dev/prod drift to prevent "works on my machine" bugs that only surface after FTP deployment.
+**Context:** Production runs on shared hosting (Apache, FTP, limited SSH). The Docker dev setup must minimize dev/prod drift. Additionally, the processing pipeline (Whisper + LLM + GitHub push, ~10-30s) needs a processing strategy -- async queue or synchronous. These decisions are coupled: async would require cron infrastructure in both environments.
 
 **Options:**
 
 | Option | Description | Pros | Cons |
 |--------|------------|------|------|
-| **A -- nginx + PHP-FPM + worker** | Standard Docker pattern. Persistent queue worker. | Common pattern, instant job processing | Two dev/prod differences (webserver + queue). `.htaccess` untested in dev. |
-| **B -- Apache + cron** | `php:8.5-apache` image. Cron-based queue like prod. | Zero dev/prod drift, fewer containers, `.htaccess` tested | Up to 1-min queue delay, larger image |
-| **C -- Native (no Docker)** | Local PHP + Composer + Node. | Closest to prod | Requires local installation, not reproducible |
+| **A -- nginx + PHP-FPM + worker** | Standard Docker pattern. Persistent queue worker. | Common pattern, instant job processing | Two dev/prod differences (webserver + queue). `.htaccess` untested. 4 containers. |
+| **B -- Apache + cron queue** | `php:8.5-apache` image. Cron-based queue. HTTP-cron endpoint for prod. | Full dev/prod parity | Cron service, HTTP-cron endpoint, job classes, polling, 8-state enum. 3 containers. |
+| **C -- Apache + synchronous** | `php:8.5-apache` image. All processing in the HTTP request. No queue. | Apache parity, no queue infrastructure, 2 containers, minimal code | Blocking request (~10-30s), no auto-retry |
+| **D -- Native (no Docker)** | Local PHP + Composer + Node. | Closest to prod | Requires local installation, not reproducible |
 
-**Decision:** Option B -- Apache + cron in Docker.
+**Decision:** Option C -- Apache + synchronous processing.
 
-**Rationale:** Every component that matters (Apache, cron queue, `.htaccess`) is identical in dev and prod. This eliminates the most common deployment bugs for shared hosting. Simpler setup (3 services instead of 4, no nginx.conf). The 1-minute queue delay is acceptable for a single-user app. Detailed variant comparison: [`adr/002-dev-prod-parity.md`](../adr/002-dev-prod-parity.md).
-
-**Note:** Partially superseded by ADR-004. The cron-based queue has been removed in favor of synchronous processing. The Apache parity argument remains valid.
+**Rationale:** Apache parity ensures `.htaccess` is tested in dev. Synchronous processing eliminates disproportionate queue infrastructure (cron service, HTTP-cron endpoint, job classes, polling) for a single-user demo project. The ~10-30s wait is acceptable with a loading indicator. 2 Docker services (`app` + `node`), no cron config on shared hosting. Detailed variant comparison: [`adr/002-dev-prod-parity.md`](../adr/002-dev-prod-parity.md).
 
 ---
 
@@ -65,23 +64,3 @@ For detailed variant comparisons see [`adr/*.md`](../adr/).
 **Decision:** Option C -- GitHub Issues as sole ticket store, agent memory deferred.
 
 **Rationale:** Herold does one thing well: capture voice input and dispatch it as a GitHub Issue. Agents use GitHub natively (`gh` CLI). GitHub provides audit trail and agent communication (comments) for free. Agent memory was speculative -- it can be added later if a real need emerges. Detailed variant comparison: [`adr/003-github-issues-as-ticket-store.md`](../adr/003-github-issues-as-ticket-store.md).
-
----
-
-## ADR-004: Synchronous Processing (no queue, no cron)
-
-**Status:** Accepted (partially supersedes ADR-002)
-
-**Context:** The original design used Laravel's queue system with cron-based workers for async processing (transcription, LLM, GitHub push). This required a cron Docker service, an HTTP-cron endpoint with Basic Auth for production, job classes, and frontend status polling.
-
-**Options:**
-
-| Option | Description | Pros | Cons |
-|--------|------------|------|------|
-| **A -- Async queue + cron** | Jobs dispatched to queue, cron worker processes them | Non-blocking UI, retry logic | Cron service, HTTP-cron endpoint, job classes, polling, 8-state enum |
-| **B -- Synchronous** | All steps run in a single HTTP request | No queue, no cron, drastically simpler | Blocking request (~10-30s), no auto-retry |
-| **C -- Sync + deferred GitHub push** | Transcription + LLM sync, GitHub push separate | Fast feedback, review step | Two-step UX (already exists in design) |
-
-**Decision:** Option B -- Synchronous processing.
-
-**Rationale:** Herold is a single-user demo project. The ~10-30s wait is acceptable with a loading indicator. Removing the queue eliminates: cron Docker service, `CronController`, HTTP-cron endpoint, three job classes, frontend polling, and intermediate `NoteStatus` states. Docker Compose reduced from 3 to 2 services. Shared hosting deployment simplified (no cron config needed). Detailed variant comparison: [`adr/004-synchronous-processing.md`](../adr/004-synchronous-processing.md).

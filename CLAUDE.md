@@ -19,7 +19,7 @@ Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inerti
 - No local PHP/Node required
 - Docker setup mirrors production: Apache (see ADR-002), 2 services: `app` + `node`
 - Laravel commands: `docker compose exec app php artisan <command>`
-- Processing is synchronous (no queue, no cron — see ADR-004)
+- Processing is synchronous (no queue, no cron — see ADR-002)
 - SQLite database, persisted via Docker volume
 
 ## Architecture

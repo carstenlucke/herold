@@ -56,8 +56,8 @@ with a dedicated API.
 
 **Cons:**
 - Two systems for agents: Herold API (memory) + GitHub (tickets)
-- Agent memory is a speculative feature -- unclear if agents will actually use it
-- Memory system adds development effort for uncertain value
+- Duplicates memory mechanisms that agents already handle locally (file-based memory, system prompts)
+- Adds development effort for a centralized service when decentralized solutions exist
 - Architectural inconsistency: some data local, some external
 
 **Effort:** Medium -- GitHub integration for tickets, plus memory system.
@@ -86,8 +86,7 @@ other agents, or automation tools. Herold is one input channel among many.
 - External dependency on GitHub API (rate limits: 5,000/h for authenticated requests)
 - No offline ticket creation (voice notes are stored locally, but GitHub push requires connectivity)
 - Labels as status system is limited (no state machine validation)
-- No structured agent memory -- agents must manage their own context
-- If agent memory is needed later, it must be designed and built then
+- Agents manage their own memory locally (file-based, system prompts) -- no centralized view
 
 **Effort:** Low -- voice processing pipeline + one-way GitHub push.
 
@@ -114,10 +113,12 @@ other agents, or automation tools. Herold is one input channel among many.
    from Herold (voice), the GitHub web UI (manual), `gh` CLI (terminal), or any
    other tool. Herold does not need to be the single point of entry.
 
-5. **YAGNI for agent memory.** Agent memory was a speculative feature. The actual
-   need and access patterns are unclear. Building it now would add complexity for
-   uncertain value. If a real need emerges, it can be added as a focused feature
-   with concrete requirements.
+5. **Agent memory is not Herold's responsibility.** Agent memory is valuable, but
+   local agents already have their own memory mechanisms (e.g., Claude Code maintains
+   `CLAUDE.md` and a `memory/` directory, other agents can be prompted to maintain
+   similar file-based memory). Building a centralized memory service in Herold would
+   duplicate what agents already handle locally via system prompts and file-based
+   conventions.
 
 6. **Less code, fewer failure modes.** Removing ticket management and memory
    eliminates: `TicketController`, `AgentTicketController`, `MemoryController`,
@@ -128,9 +129,10 @@ other agents, or automation tools. Herold is one input channel among many.
 - **Option 1 (all local):** Too much scope for a single-user voice dispatcher.
   Rebuilds functionality that GitHub already provides, and isolates Herold as the
   only way to create tickets.
-- **Option 2 (hybrid):** Reduces scope compared to Option 1, but retains the
-  speculative memory system. Two systems for agents (Herold API + GitHub) adds
-  integration complexity without clear benefit.
+- **Option 2 (hybrid):** Reduces scope compared to Option 1, but builds a
+  centralized memory service that duplicates what agents handle locally.
+  Two systems for agents (Herold API + GitHub) adds integration complexity
+  without clear benefit.
 
 **Consequences:**
 - Herold stores `voice_notes` in SQLite (audio path, transcript, processed result, GitHub reference)

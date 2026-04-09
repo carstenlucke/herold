@@ -2,7 +2,7 @@
 
 ## Kontext
 
-Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einzelner Nutzer nimmt Sprachnachrichten auf, die App transkribiert und verarbeitet diese synchron per OpenAI API und erstellt typisierte GitHub Issues in einem privaten Repo. Lokale Agenten (Claude Code, OpenCode) lesen diese Tickets via `gh` CLI und arbeiten sie ab. GitHub Issues ist der alleinige Ticket-Speicher -- Herold ist ein Eingangskanal neben GitHub Web UI, `gh` CLI und anderen Tools (siehe [ADR-003](../adr/003-github-issues-as-ticket-store.md)). Die Verarbeitung erfolgt synchron im Request (siehe [ADR-004](../adr/004-synchronous-processing.md)).
+Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einzelner Nutzer nimmt Sprachnachrichten auf, die App transkribiert und verarbeitet diese synchron per OpenAI API und erstellt typisierte GitHub Issues in einem privaten Repo. Lokale Agenten (Claude Code, OpenCode) lesen diese Tickets via `gh` CLI und arbeiten sie ab. GitHub Issues ist der alleinige Ticket-Speicher -- Herold ist ein Eingangskanal neben GitHub Web UI, `gh` CLI und anderen Tools (siehe [ADR-003](../adr/003-github-issues-as-ticket-store.md)). Die Verarbeitung erfolgt synchron im Request (siehe [ADR-002](../adr/002-dev-prod-parity.md)).
 
 **Designprinzipien:**
 - **Mobile First / Responsive** -- primaerer Nutzungskontext ist das Smartphone (Sprachaufnahme unterwegs), Desktop als Zweitbildschirm
@@ -144,7 +144,7 @@ enum NoteStatus: string {
 }
 ```
 
-Da die Verarbeitung synchron erfolgt (siehe [ADR-004](../adr/004-synchronous-processing.md)), genuegen vier Status. Zwischen-Status (`transcribing`, `processing`, `sending`) entfallen -- der Nutzer sieht waehrend der Verarbeitung einen Loading-Indikator.
+Da die Verarbeitung synchron erfolgt (siehe [ADR-002](../adr/002-dev-prod-parity.md)), genuegen vier Status. Zwischen-Status (`transcribing`, `processing`, `sending`) entfallen -- der Nutzer sieht waehrend der Verarbeitung einen Loading-Indikator.
 
 ---
 
@@ -186,7 +186,7 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
 
 ## Verarbeitungs-Pipeline
 
-**Synchron** im HTTP-Request (siehe [ADR-004](../adr/004-synchronous-processing.md)):
+**Synchron** im HTTP-Request (siehe [ADR-002](../adr/002-dev-prod-parity.md)):
 
 ```
 1. Nutzer nimmt Audio auf → POST /notes (Audio-Upload)
@@ -367,7 +367,7 @@ DEV und PROD sind absichtlich identisch aufgebaut (siehe [ADR-002](../adr/002-de
 - Deployment via FTP-Upload
 - Eingeschraenkter SSH-Zugang (PHP 8.5 verfuegbar, `crontab` gesperrt)
 - HTTPS via Hosting-Provider (noetig fuer MediaRecorder API)
-- Keine Cron-Konfiguration noetig (synchrone Verarbeitung, siehe [ADR-004](../adr/004-synchronous-processing.md))
+- Keine Cron-Konfiguration noetig (synchrone Verarbeitung, siehe [ADR-002](../adr/002-dev-prod-parity.md))
 
 **Deployment-Workflow:**
 1. Lokal `npm run build` (kompiliert Vue/TS → `public/build/`)
