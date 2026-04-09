@@ -368,8 +368,9 @@ label {
 
   .side-nav-brand {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--sp-3);
+    gap: var(--sp-2);
     padding: 0 var(--sp-6) var(--sp-8);
     font-family: var(--font-headline);
     font-size: 1.25rem;
@@ -378,10 +379,10 @@ label {
     text-decoration: none;
   }
 
-  .side-nav-brand .mdi {
-    font-size: 1.5rem;
-    color: var(--c-primary);
-    text-shadow: 0 0 8px rgba(var(--c-primary-rgb), 0.5);
+  .side-nav-brand img {
+    height: 36px;
+    width: auto;
+    filter: drop-shadow(0 0 6px rgba(var(--c-primary-rgb), 0.4));
   }
 
   .side-nav .nav-item {
