@@ -7,7 +7,7 @@ LLM preprocessing (structured ticket from transcript), and GitHub Issue creation
 The original design used Laravel's queue system with cron-based workers to process
 these steps asynchronously in background jobs.
 
-This introduced significant complexity:
+This introduced currently unwanted complexity:
 - A dedicated cron Docker service for local development
 - An HTTP-cron endpoint (`/cron/work`) with Basic Auth for production (shared hosting
   has no shell access for `crontab`)

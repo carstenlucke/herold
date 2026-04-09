@@ -7,7 +7,7 @@
 
 ## Context
 
-Herold runs on shared hosting in production (native PHP, Apache, cron, FTP deployment).
+Herold runs on shared hosting in production (native PHP, Apache, eventually cron, FTP deployment).
 Local development uses Docker Compose. The question: how closely should the Docker
 setup mirror production?
 
