@@ -2,7 +2,7 @@
 
 ## Kontext
 
-Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einzelner Nutzer nimmt Sprachnachrichten auf, die App transkribiert und verarbeitet diese per OpenAI API und erstellt typisierte GitHub Issues in einem privaten Repo. Lokale Agenten (Claude Code, OpenCode) lesen diese Tickets via `gh` CLI + Cron und arbeiten sie ab.
+Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einzelner Nutzer nimmt Sprachnachrichten auf, die App transkribiert und verarbeitet diese synchron per OpenAI API und erstellt typisierte GitHub Issues in einem privaten Repo. Lokale Agenten (Claude Code, OpenCode) lesen diese Tickets via `gh` CLI und arbeiten sie ab. GitHub Issues ist der alleinige Ticket-Speicher -- Herold ist ein Eingangskanal neben GitHub Web UI, `gh` CLI und anderen Tools (siehe [ADR-003](../adr/003-github-issues-as-ticket-store.md)). Die Verarbeitung erfolgt synchron im Request (siehe [ADR-004](../adr/004-synchronous-processing.md)).
 
 **Designprinzipien:**
 - **Mobile First / Responsive** -- primaerer Nutzungskontext ist das Smartphone (Sprachaufnahme unterwegs), Desktop als Zweitbildschirm
@@ -13,9 +13,10 @@ Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einze
 **Entschiedener Stack:**
 - Laravel 13 (PHP 8.5) als Monolith
 - Inertia.js 3 + Vue 3.5 (Composition API, TypeScript 6) + Vuetify 4
-- Auth: API-Key + TOTP (Browser/Mensch), Laravel Sanctum Tokens (Agenten)
+- Auth: API-Key + TOTP (Browser/Mensch)
 - Laravel AI SDK (`laravel/ai`) fuer OpenAI Whisper + Chat API
 - GitHub Issues API (Fine-grained PAT)
+- Synchrone Verarbeitung (kein Queue, kein Cron)
 - Keine PWA, kein Service Worker
 - SQLite als lokale DB
 - Docker Compose fuer lokale Entwicklung und Betrieb
@@ -38,7 +39,6 @@ Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einze
 | Node.js LTS | 24.14.1 | Nur fuer Build |
 | npm | 11.12.1 | |
 | laragear/two-factor | 4.0.0 | TOTP, Octane-kompatibel |
-| Laravel Sanctum | (mit Laravel 13) | Agent-Token-Auth |
 | laravel/ai | 0.4.5 | OpenAI, Anthropic, Gemini |
 | Docker Engine | 29.4.0 | |
 | Docker Compose | 5.1.1 | |
@@ -61,43 +61,28 @@ herold/
       Controllers/
         AuthController.php          # Login, TOTP-Verifizierung
         DashboardController.php     # Home/Uebersicht
-        VoiceNoteController.php     # CRUD, Upload, Processing
-        TicketController.php        # GitHub Issue Erstellung & Status
-        Api/
-          MemoryController.php      # Agent Memory CRUD (Sanctum-Auth)
-          AgentTicketController.php  # Agent Ticket-Zugriff (Sanctum-Auth)
-        SettingsController.php      # Einstellungen + Token-Verwaltung
-        CronController.php          # HTTP-Cron: Queue-Worker
+        VoiceNoteController.php     # CRUD, Upload, Processing, GitHub-Push
+        SettingsController.php      # Einstellungen
       Middleware/
         VerifyApiKey.php            # API-Key Check (vor TOTP)
-        VerifyCronAuth.php          # Basic Auth fuer Cron-Endpoint
       Requests/
         StoreVoiceNoteRequest.php   # Validierung Audio-Upload (max 25 MB, MIME: audio/webm, audio/ogg, audio/mp4)
         ProcessNoteRequest.php      # Validierung Typ + Metadaten
     Models/
       VoiceNote.php                 # Eloquent Model
-      Memory.php                    # Agent-Gedaechtnis Model
-      User.php                      # Single-User + Sanctum HasApiTokens
+      User.php                      # Single-User
     Services/
       AIService.php                  # Laravel AI SDK (Whisper + Chat)
-      GitHubService.php             # Issues erstellen, Labels verwalten
+      GitHubService.php             # Issues erstellen (Einweg-Push)
       MessageTypeRegistry.php       # Typ-Definitionen laden
       PreprocessingService.php      # Orchestriert Transkription + LLM
-    Jobs/
-      TranscribeAudioJob.php        # Queue: Audio → Text
-      PreprocessTranscriptJob.php   # Queue: Text → Strukturiertes Ticket
-      CreateGitHubIssueJob.php      # Queue: Ticket → GitHub Issue
     Enums/
-      NoteStatus.php                # recorded, transcribing, transcribed, ...
-      MemoryScope.php               # global, project:{name}, ticket:{number}
-      MemoryCategory.php            # decision, learning, preference, context
+      NoteStatus.php                # recorded, processed, sent, error
   config/
     herold.php                      # App-Konfiguration (Typen, Prompts, etc.)
   database/
     migrations/
       create_voice_notes_table.php
-      create_memories_table.php
-      create_personal_access_tokens_table.php  # Sanctum
   resources/
     js/
       app.ts                        # Inertia + Vue + Vuetify Setup
@@ -107,7 +92,7 @@ herold/
         Recording/Create.vue        # Aufnahme + Typ-Wahl
         Notes/Show.vue              # Vorschau, Bearbeitung, Absenden
         Notes/Index.vue             # History / Liste
-        Settings/Index.vue          # Einstellungen
+        Settings/Index.vue          # Einstellungen (Theme)
       Components/
         AudioRecorder.vue           # MediaRecorder, Timer, Waveform
         TypeSelector.vue            # Nachrichtentyp-Auswahl
@@ -123,8 +108,6 @@ herold/
       app.blade.php                 # Inertia Root-Template
   routes/
     web.php                         # Browser-Routen (Inertia, Session-Auth)
-    api.php                         # Agent-API-Routen (Sanctum Token-Auth)
-    console.php                     # Scheduler (Queue-Worker, lokale Entwicklung)
 ```
 
 ---
@@ -150,52 +133,18 @@ Schema::create('voice_notes', function (Blueprint $table) {
 });
 ```
 
-### Migration: `memories`
-
-```php
-Schema::create('memories', function (Blueprint $table) {
-    $table->ulid('id')->primary();
-    $table->string('scope');                 // global, project:{name}, ticket:{number}
-    $table->string('category');              // decision, learning, preference, context
-    $table->text('content');                 // Das eigentliche Wissen
-    $table->string('source');                // claude-code, opencode, user, herold
-    $table->timestamps();
-
-    $table->index(['scope', 'category']);
-    $table->fullText('content');             // Volltextsuche
-});
-```
-
-### Migration: `personal_access_tokens` (Sanctum)
-
-Wird automatisch durch `php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"` erstellt.
-
 ### Enum: NoteStatus
 
 ```php
 enum NoteStatus: string {
     case RECORDED = 'recorded';
-    case TRANSCRIBING = 'transcribing';
-    case TRANSCRIBED = 'transcribed';
-    case PROCESSING = 'processing';
     case PROCESSED = 'processed';
-    case SENDING = 'sending';
     case SENT = 'sent';
     case ERROR = 'error';
 }
 ```
 
-**UI-Status-Mapping:** Die granularen Status dienen der Fehlerdiagnose (wo genau schlug ein Job fehl?). In der UI werden sie zu vier sichtbaren Zustaenden gruppiert:
-
-| UI-Label | NoteStatus-Werte |
-|----------|-----------------|
-| Aufgenommen | `recorded` |
-| Wird verarbeitet... | `transcribing`, `transcribed`, `processing`, `sending` |
-| Fertig | `processed` |
-| Gesendet | `sent` |
-| Fehler | `error` |
-
-Das Mapping wird als Methode auf dem NoteStatus-Enum implementiert (z.B. `uiGroup(): string`).
+Da die Verarbeitung synchron erfolgt (siehe [ADR-004](../adr/004-synchronous-processing.md)), genuegen vier Status. Zwischen-Status (`transcribing`, `processing`, `sending`) entfallen -- der Nutzer sieht waehrend der Verarbeitung einen Loading-Indikator.
 
 ---
 
@@ -237,7 +186,7 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
 
 ## Verarbeitungs-Pipeline
 
-**Queue-basiert** (Laravel Jobs), damit die UI nicht blockiert:
+**Synchron** im HTTP-Request (siehe [ADR-004](../adr/004-synchronous-processing.md)):
 
 ```
 1. Nutzer nimmt Audio auf → POST /notes (Audio-Upload)
@@ -245,53 +194,27 @@ Neuer Typ = neuer Eintrag in der Config + ggf. Prompt-Datei. Kein neuer Code noe
    → Audio in storage/app/private/audio/{ulid}.webm
    → Validierung: max 25 MB, MIME-Types: audio/webm|audio/ogg|audio/mp4, Rate Limit: max 10 Uploads/Stunde
 
-2. Nutzer startet Verarbeitung → POST /notes/{id}/process
-   → TranscribeAudioJob dispatched
-   → Status: TRANSCRIBING
+2. Nutzer startet Verarbeitung → POST /notes/{id}/process (synchron, ~10-30s)
+   → AIService::transcribe(audioPath) → Transkript gespeichert
+   → PreprocessingService::process(note) → Title + Body gespeichert
+   → Status: PROCESSED
+   → Response mit verarbeitetem Ergebnis
 
-3. TranscribeAudioJob
-   → AIService::transcribe(audioPath)
-   → Speichert Transkript, Status: TRANSCRIBED
-   → Dispatched PreprocessTranscriptJob
-
-4. PreprocessTranscriptJob
-   → Laedt Typ-Config + Preprocessing-Prompt
-   → AIService::chat(prompt, transcript, metadata)
-   → Speichert Title + Body, Status: PROCESSED
-
-5. Nutzer prueft/editiert → Klickt "Ticket erstellen"
-   → POST /notes/{id}/send
-   → CreateGitHubIssueJob dispatched
-   → Status: SENDING
-
-6. CreateGitHubIssueJob
+3. Nutzer prueft/editiert → Klickt "Ticket erstellen"
+   → POST /notes/{id}/send (synchron)
    → GitHubService::createIssue(title, body, labels)
    → Speichert Issue-Nummer + URL, Status: SENT
 ```
 
-**Queue-Verarbeitung:**
-- **Lokal:** Cron-Service fuehrt jede Minute `schedule:run` aus. Der Laravel Scheduler startet einen kurzlebigen Worker via `routes/console.php`:
-  ```php
-  Schedule::command('queue:work database --stop-when-empty --tries=3 --max-time=50')
-      ->everyMinute()
-      ->withoutOverlapping();
-  ```
-- **Produktion:** HTTP-Cron ruft minuetlich `/cron/work` auf (Basic Auth), Endpoint fuehrt denselben `queue:work`-Befehl aus
-
-**Polling fuer Status-Updates:** Inertia `router.reload()` alle 2s waehrend Processing laeuft, oder alternativ Laravel Echo + Pusher/Reverb fuer Echtzeit (kann spaeter ergaenzt werden).
+Die UI zeigt waehrend Schritt 2 einen Loading-Indikator. Bei Fehlern wird Status ERROR gesetzt und die Fehlermeldung angezeigt -- der Nutzer kann erneut versuchen.
 
 ---
 
 ## Authentifizierung
 
-Zwei getrennte Auth-Mechanismen fuer Mensch und Agenten:
+Ein Auth-Mechanismus fuer den einzelnen Nutzer (Browser). Agenten interagieren direkt mit GitHub, nicht mit Herold (siehe [ADR-003](../adr/003-github-issues-as-ticket-store.md)).
 
-| Wer | Methode | Guard | Routen |
-|-----|---------|-------|--------|
-| **Mensch (Browser)** | API-Key + TOTP → Session | `auth` (Session) | `web.php` |
-| **Agent (CLI/curl)** | Sanctum Bearer Token | `auth:sanctum` | `api.php` |
-
-### Browser-Auth (Mensch)
+### Browser-Auth
 
 **Flow:**
 1. Nutzer oeffnet App → Login-Seite
@@ -309,52 +232,6 @@ Zwei getrennte Auth-Mechanismen fuer Mensch und Agenten:
 - **Session**: Standard Laravel Session-Auth
 - **Middleware**: `VerifyApiKey` auf Login-Route, danach Standard `auth` Middleware
 - **Security Headers (Basis)**: Auf alle Responses via Middleware: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(self)`. CSP folgt in Phase 9 (Vite-Nonce-Kompatibilitaet).
-
-### Agent-Auth (Sanctum Tokens)
-
-**Flow:**
-1. Nutzer erstellt Token in Settings-Seite (Name + Scopes)
-2. Token wird einmalig angezeigt (danach nur noch Hash in DB)
-3. Agent nutzt Token in jedem Request: `Authorization: Bearer herold_...`
-4. Sanctum validiert Token + prueft Scopes
-
-**Token-Scopes:**
-- `memory:read` – Memories lesen/suchen
-- `memory:write` – Memories erstellen/loeschen
-- `tickets:read` – Tickets auflisten
-- `tickets:status` – Ticket-Status aendern
-
-**Token-Verwaltung (Settings-Seite):**
-- Token erstellen (Name + Scopes waehlen)
-- Aktive Tokens auflisten (Name, letzter Zugriff, Scopes)
-- Token widerrufen
-
-**Agent-Nutzung:**
-```bash
-# Memories lesen
-curl -H "Authorization: Bearer herold_abc123..." \
-     http://localhost:8080/api/memories?scope=global&category=learning
-
-# Memory speichern
-curl -X POST -H "Authorization: Bearer herold_abc123..." \
-     -H "Content-Type: application/json" \
-     -d '{"scope":"global","category":"learning","content":"...","source":"claude-code"}' \
-     http://localhost:8080/api/memories
-
-# Memory loeschen
-curl -X DELETE -H "Authorization: Bearer herold_abc123..." \
-     http://localhost:8080/api/memories/{id}
-
-# Tickets lesen
-curl -H "Authorization: Bearer herold_abc123..." \
-     http://localhost:8080/api/tickets?status=open
-
-# Ticket-Status aendern
-curl -X PATCH -H "Authorization: Bearer herold_abc123..." \
-     -H "Content-Type: application/json" \
-     -d '{"status":"in_progress"}' \
-     http://localhost:8080/api/tickets/42/status
-```
 
 ---
 
@@ -381,44 +258,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/notes/{note}', [VoiceNoteController::class, 'destroy'])->name('notes.destroy');
 
     Route::post('/notes/{note}/process', [VoiceNoteController::class, 'process']);
-    Route::post('/notes/{note}/send', [TicketController::class, 'send']);
-
-    Route::get('/tickets', [TicketController::class, 'index']);
-    Route::patch('/tickets/{number}', [TicketController::class, 'updateStatus']);
+    Route::post('/notes/{note}/send', [VoiceNoteController::class, 'send']);
 
     Route::get('/settings', [SettingsController::class, 'index']);
-    Route::post('/settings/tokens', [SettingsController::class, 'createToken']);
-    Route::delete('/settings/tokens/{token}', [SettingsController::class, 'revokeToken']);
 
     Route::get('/types', fn () => response()->json(
         collect(config('herold.types'))->map(fn ($type) => Arr::only($type, ['label', 'icon', 'extra_fields', 'github_label']))
     ));
 });
 
-// Cron (Basic Auth via Middleware)
-Route::get('/cron/work', [CronController::class, 'work'])
-    ->middleware('cron.auth');
-```
-
-### api.php (Agenten, Sanctum Token-Auth)
-
-```php
-Route::middleware('auth:sanctum')->group(function () {
-
-    // Memory API
-    Route::get('/memories', [Api\MemoryController::class, 'index'])       // Suchen/Auflisten
-        ->middleware('ability:memory:read');
-    Route::post('/memories', [Api\MemoryController::class, 'store'])      // Erstellen
-        ->middleware('ability:memory:write');
-    Route::delete('/memories/{memory}', [Api\MemoryController::class, 'destroy']) // Loeschen
-        ->middleware('ability:memory:write');
-
-    // Ticket API (Proxy zu GitHub Issues)
-    Route::get('/tickets', [Api\AgentTicketController::class, 'index'])   // Auflisten
-        ->middleware('ability:tickets:read');
-    Route::patch('/tickets/{number}/status', [Api\AgentTicketController::class, 'updateStatus'])
-        ->middleware('ability:tickets:status');
-});
 ```
 
 ---
@@ -446,12 +294,7 @@ class GitHubService
 {
     public function createIssue(string $title, string $body, array $labels): array
     // → GitHub API POST /repos/{owner}/{repo}/issues
-
-    public function listIssues(array $labels = [], string $state = 'open'): array
-    // → GitHub API GET /repos/{owner}/{repo}/issues
-
-    public function updateLabels(int $issueNumber, array $addLabels, array $removeLabels): void
-    // → GitHub API: Labels hinzufuegen/entfernen
+    // Einweg-Push: kein Read-Back, kein Sync
 }
 ```
 
@@ -469,22 +312,6 @@ class PreprocessingService
 }
 ```
 
-### MemoryService
-
-```php
-class MemoryService
-{
-    public function search(?string $scope, ?string $category, ?string $query): Collection
-    // → Volltextsuche + Filter nach Scope/Category
-
-    public function store(string $scope, string $category, string $content, string $source): Memory
-    // → Neuen Memory-Eintrag erstellen
-
-    public function destroy(Memory $memory): void
-    // → Memory loeschen
-}
-```
-
 ---
 
 ## Vue-Seiten (Inertia)
@@ -498,9 +325,9 @@ class MemoryService
 ### Notes/Show.vue
 - Status-Badge (aktueller Verarbeitungsstand)
 - Rohtranskript (editierbar)
-- "Verarbeiten" Button → POST /notes/{id}/process
+- "Verarbeiten" Button → POST /notes/{id}/process (synchron, Loading-Indikator)
 - Verarbeitetes Ergebnis: Titel (editierbar) + Body (editierbar)
-- "Ticket erstellen" Button → POST /notes/{id}/send
+- "Ticket erstellen" Button → POST /notes/{id}/send (synchron)
 - Link zum GitHub Issue (nach Erstellung)
 
 ### Notes/Index.vue
@@ -509,16 +336,12 @@ class MemoryService
 - NoteCard-Komponenten mit Status, Typ-Icon, Titel, Datum
 
 ### Dashboard.vue
-- Zahlen: Offene Notizen, gesendete Tickets, Agent-Memories
+- Zahlen: Offene Notizen, gesendete Tickets
 - Quick-Action: "Neue Aufnahme"
 - Letzte 5 Notizen
 
 ### Settings/Index.vue
 - Dark/Light Theme Toggle
-- **Agent-Tokens Sektion:**
-  - Token erstellen: Name + Scopes (Checkboxen) → Token wird einmalig angezeigt
-  - Aktive Tokens: Name, Scopes, letzter Zugriff, erstellt am
-  - Token widerrufen (mit Bestaetigung)
 - GitHub-Repo Info (Anzeige)
 - TOTP-Status
 
@@ -534,7 +357,7 @@ DEV und PROD sind absichtlich identisch aufgebaut (siehe [ADR-002](../adr/002-de
 |--------|-------------|----------------------|
 | PHP | 8.5 (php:8.5-apache) | 8.5 (nativ) |
 | Webserver | Apache (im Container) | Apache (Hosting) |
-| Queue | Cron → `schedule:run` | HTTP-Cron → `/cron/work` |
+| Verarbeitung | Synchron | Synchron |
 | SQLite | Docker Volume | Datei auf Server |
 | `.htaccess` | Identisch | Identisch |
 
@@ -543,22 +366,8 @@ DEV und PROD sind absichtlich identisch aufgebaut (siehe [ADR-002](../adr/002-de
 - PHP laeuft nativ auf dem Server (kein Docker)
 - Deployment via FTP-Upload
 - Eingeschraenkter SSH-Zugang (PHP 8.5 verfuegbar, `crontab` gesperrt)
-- HTTP-Cron verfuegbar (Hosting-Panel, nur HTTPS-Aufrufe, Basic Auth moeglich)
 - HTTPS via Hosting-Provider (noetig fuer MediaRecorder API)
-
-**Queue in Produktion:**
-HTTP-Cron-Endpoint `GET /cron/work` wird minuetlich vom Hosting-Provider aufgerufen.
-Der Endpoint ist via Basic Auth geschuetzt (Credentials im Hosting Cron-Panel hinterlegt).
-Intern fuehrt er `queue:work --stop-when-empty --tries=3 --max-time=50` aus.
-Kein dauerhaft laufender Worker-Prozess noetig.
-
-```
-# Hosting Cron-Panel Konfiguration:
-# Protokoll: https://
-# Pfad:      herold.example.com/cron/work
-# Intervall: minuetlich
-# HTTP Benutzer / Passwort: aus .env (CRON_USER / CRON_PASSWORD)
-```
+- Keine Cron-Konfiguration noetig (synchrone Verarbeitung, siehe [ADR-004](../adr/004-synchronous-processing.md))
 
 **Deployment-Workflow:**
 1. Lokal `npm run build` (kompiliert Vue/TS → `public/build/`)
@@ -571,9 +380,7 @@ Migrationen werden **nicht** im HTTP-Request-Pfad ausgefuehrt (kein `Artisan::ca
 ```bash
 APP_ENV=production
 APP_DEBUG=false
-QUEUE_CONNECTION=database    # Jobs in SQLite, HTTP-Cron arbeitet ab
-CRON_USER=herold-cron        # Basic Auth fuer /cron/work
-CRON_PASSWORD=<secret>       # Basic Auth fuer /cron/work
+QUEUE_CONNECTION=sync
 ```
 
 ### Auth-Recovery (bei Verlust von API-Key oder TOTP)
@@ -605,7 +412,7 @@ Ohne die Datei im Dateisystem ist `/recovery` nicht erreichbar (404).
 ## Docker Setup (lokale Entwicklung)
 
 Kein lokales PHP/Composer/Node noetig. Alles laeuft in Docker.
-Setup ist bewusst identisch zu Produktion (Apache + Cron, kein nginx, kein dauerhafter Worker).
+Setup ist bewusst identisch zu Produktion (Apache, kein nginx).
 
 ### docker-compose.yml Services
 
@@ -618,14 +425,6 @@ services:
     volumes:
       - .:/var/www/html           # Code-Mount fuer Live-Entwicklung
       - sqlite_data:/var/www/html/database  # SQLite Persistenz
-    env_file: .env
-
-  cron:                           # Cron → schedule:run (lokale Entwicklung)
-    build: .
-    command: cron -f
-    volumes:
-      - .:/var/www/html
-      - sqlite_data:/var/www/html/database
     env_file: .env
 
   node:                           # Vite Dev Server (nur Entwicklung)
@@ -652,8 +451,8 @@ FROM php:8.5-apache
 RUN a2enmod rewrite
 
 # PHP Extensions
-RUN apt-get update && apt-get install -y libsqlite3-dev cron \
-    && docker-php-ext-install pdo_sqlite pcntl \
+RUN apt-get update && apt-get install -y libsqlite3-dev \
+    && docker-php-ext-install pdo_sqlite \
     && rm -rf /var/lib/apt/lists/*
 
 # Composer
@@ -663,11 +462,6 @@ COPY --from=composer:2.9 /usr/bin/composer /usr/bin/composer
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
     /etc/apache2/sites-available/*.conf
-
-# Crontab fuer Laravel Scheduler
-RUN echo "* * * * * root cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1" \
-    > /etc/cron.d/herold-scheduler \
-    && chmod 0644 /etc/cron.d/herold-scheduler
 
 WORKDIR /var/www/html
 COPY . .
@@ -693,9 +487,6 @@ docker compose up -d
 # Laravel-Befehle ausfuehren
 docker compose exec app php artisan <command>
 
-# Queue-Jobs werden durch Cron-Service verarbeitet (jede Minute)
-# Logs: docker compose logs -f cron
-
 # Stoppen
 docker compose down
 ```
@@ -715,7 +506,7 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 
 ### Phase 1: Projektsetup + Docker
 1. Laravel 13 Projekt erstellen (via `composer create-project` im Container)
-2. Dockerfile (php:8.5-apache) + docker-compose.yml + Cron-Setup erstellen
+2. Dockerfile (php:8.5-apache) + docker-compose.yml erstellen (2 Services: app + node)
 3. Inertia.js 3 + Vue 3.5 + TypeScript 6 einrichten
 4. Vuetify 4 installieren und konfigurieren
 5. SQLite konfigurieren (Volume fuer Persistenz)
@@ -723,73 +514,54 @@ Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert
 7. `docker compose up` → App laeuft
 
 ### Phase 2: Datenmodell + Auth
-8. Migration `voice_notes` + `memories` erstellen
+8. Migration `voice_notes` erstellen
 9. VoiceNote Model + NoteStatus Enum
-10. Memory Model + MemoryScope/MemoryCategory Enums
-11. User Model mit Sanctum HasApiTokens
-12. Browser-Auth: API-Key Middleware + TOTP Setup
-13. Agent-Auth: Sanctum installieren + konfigurieren
-14. Login-Seite (Vue)
-15. Settings-Seite: Token-Verwaltung (erstellen, auflisten, widerrufen)
+10. User Model
+11. Browser-Auth: API-Key Middleware + TOTP Setup
+12. Login-Seite (Vue)
 
 ### Phase 3: Audio-Aufnahme
-16. `useAudioRecorder` Composable (MediaRecorder API)
-17. AudioRecorder Vue-Komponente (UI + Waveform)
-18. TypeSelector Komponente
-19. Recording/Create.vue Seite
-20. VoiceNoteController::store (Audio-Upload)
+13. `useAudioRecorder` Composable (MediaRecorder API)
+14. AudioRecorder Vue-Komponente (UI + Waveform)
+15. TypeSelector Komponente
+16. Recording/Create.vue Seite
+17. VoiceNoteController::store (Audio-Upload)
 
-### Phase 4: Verarbeitung
-21. AIService via laravel/ai (Whisper + Chat)
-22. config/herold.php mit Typ-Definitionen + Prompts
-23. PreprocessingService
-24. TranscribeAudioJob + PreprocessTranscriptJob
-25. Queue: Cron-basiert via Laravel Scheduler (identisch in DEV und PROD)
-26. Notes/Show.vue mit Status-Polling
+### Phase 4: Verarbeitung + Ticket-Erstellung
+18. AIService via laravel/ai (Whisper + Chat)
+19. config/herold.php mit Typ-Definitionen + Prompts
+20. PreprocessingService
+21. GitHubService (Einweg-Push)
+22. VoiceNoteController::process (synchrone Transkription + LLM)
+23. VoiceNoteController::send (synchroner GitHub-Push)
+24. Notes/Show.vue mit Loading-Indikator
 
-### Phase 5: Ticket-Erstellung
-27. GitHubService
-28. CreateGitHubIssueJob
-29. Ticket-Body Templates (mit herold:meta Kommentar)
-30. TicketController (erstellen + Status aendern)
+### Phase 5: UI vervollstaendigen
+25. Notes/Index.vue (History)
+26. Dashboard.vue
+27. Settings/Index.vue (Theme, GitHub-Info, TOTP-Status)
+28. Dark/Light Theme
 
-### Phase 6: Agent-API (Memory + Tickets)
-31. MemoryService + MemoryController (CRUD + Suche)
-32. AgentTicketController (Tickets lesen, Status aendern)
-33. Sanctum Ability-Middleware auf API-Routen
-34. Testen mit curl-Aufrufen
+### Phase 6: Recovery + Deployment
+29. Recovery-Route: `.herold-recovery`-Datei muss Random-Token enthalten, Reset-Formular fordert Token-Eingabe. Route mit Throttle (max 5 Versuche/Stunde). Recovery-Events loggen.
+30. Artisan-Command `herold:reset-auth` (fuer lokale Entwicklung)
+31. Produktions-Deployment dokumentieren (FTP-Workflow)
 
-### Phase 7: UI vervollstaendigen
-35. Notes/Index.vue (History)
-36. Dashboard.vue (inkl. Memory-Statistiken)
-37. Dark/Light Theme
-
-### Phase 8: Recovery + Deployment
-38. Recovery-Route: `.herold-recovery`-Datei muss Random-Token enthalten, Reset-Formular fordert Token-Eingabe. Route mit Throttle (max 5 Versuche/Stunde). Recovery-Events loggen.
-39. Artisan-Command `herold:reset-auth` (fuer lokale Entwicklung)
-40. Produktions-Deployment dokumentieren (FTP-Workflow)
-
-### Phase 9: Polish
-41. Error-Handling (fehlgeschlagene API-Calls, Retry-Logik in Jobs)
-42. CSP-Header (Content Security Policy, Vite-kompatibel) + weitere Haertung
-43. .env.example mit allen Variablen dokumentieren
-44. Spec aktualisieren
+### Phase 7: Polish
+32. Error-Handling (fehlgeschlagene API-Calls)
+33. CSP-Header (Content Security Policy, Vite-kompatibel) + weitere Haertung
+34. .env.example mit allen Variablen dokumentieren
+35. Spec aktualisieren
 
 ---
 
 ## Verifikation
 
-- **Docker**: `docker compose up -d` → alle Services laufen, App erreichbar unter localhost:8080
+- **Docker**: `docker compose up -d` → beide Services laufen, App erreichbar unter localhost:8080
 - **Audio-Aufnahme**: Im Browser aufnehmen, pruefen ob Datei in storage landet
-- **Transkription**: Audio hochladen, Cron-Logs pruefen (`docker compose logs -f cron`), Transkript pruefen
-- **Vorverarbeitung**: Transkript verarbeiten lassen, strukturiertes Ergebnis pruefen
-- **Ticket**: Issue in GitHub pruefen (Labels, Body-Format, Meta-Kommentar)
-- **Status-Lifecycle**: Labels manuell via `gh` aendern, pruefen ob App Status korrekt anzeigt
+- **Transkription + Vorverarbeitung**: Audio hochladen, "Verarbeiten" klicken, Loading-Indikator pruefen, strukturiertes Ergebnis pruefen
+- **Ticket**: "Ticket erstellen" klicken, Issue in GitHub pruefen (Labels, Body-Format)
 - **Browser-Auth**: Ohne Key → abgewiesen; mit Key ohne TOTP → abgewiesen; mit beidem → Zugang
-- **Agent-Auth**: Ohne Token → 401; mit Token ohne Scope → 403; mit korrektem Scope → Zugang
-- **Memory-API**: curl-Aufrufe zum Erstellen, Suchen und Loeschen von Memories
-- **Token-Verwaltung**: Token erstellen in Settings, widerrufen, pruefen ob Agent abgewiesen wird
 - **Typ-Erweiterung**: Neuen Typ in config/herold.php eintragen, pruefen ob UI + Processing funktioniert
-- **Persistenz**: `docker compose down && docker compose up -d` → SQLite-Daten + Memories bleiben erhalten
+- **Persistenz**: `docker compose down && docker compose up -d` → SQLite-Daten bleiben erhalten
 - **Recovery**: `.herold-recovery` per FTP hochladen → /recovery erreichbar → Auth zuruecksetzen → Datei loeschen → /recovery wieder 404
-- **Cron-Queue**: HTTP-Aufruf auf `/cron/work` mit Basic Auth verarbeitet ausstehende Jobs

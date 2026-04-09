@@ -17,17 +17,17 @@ Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inerti
 
 - Everything runs in Docker (`docker compose up -d`)
 - No local PHP/Node required
-- Docker setup mirrors production: Apache + cron-based queue (see ADR-002)
+- Docker setup mirrors production: Apache (see ADR-002), 2 services: `app` + `node`
 - Laravel commands: `docker compose exec app php artisan <command>`
-- Queue: cron runs `schedule:run` every minute (same as prod). For faster dev feedback: `docker compose exec app php artisan queue:work`
+- Processing is synchronous (no queue, no cron — see ADR-004)
 - SQLite database, persisted via Docker volume
 
 ## Architecture
 
 - **Browser UI:** Inertia.js routes in `web.php` (Session auth)
-- **Agent API:** JSON routes in `api.php` (Sanctum token auth)
+- **Ticket store:** GitHub Issues (one-way push, see ADR-003). No local ticket management, no agent API.
 - Message types are config-driven (`config/herold.php`), not code-driven
-- Production: shared hosting (FTP + cron, no shell access)
+- Production: shared hosting (FTP, no shell access)
 
 ## Documentation
 

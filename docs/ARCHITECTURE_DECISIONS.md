@@ -43,3 +43,45 @@ For detailed variant comparisons see [`adr/*.md`](../adr/).
 **Decision:** Option B -- Apache + cron in Docker.
 
 **Rationale:** Every component that matters (Apache, cron queue, `.htaccess`) is identical in dev and prod. This eliminates the most common deployment bugs for shared hosting. Simpler setup (3 services instead of 4, no nginx.conf). The 1-minute queue delay is acceptable for a single-user app. Detailed variant comparison: [`adr/002-dev-prod-parity.md`](../adr/002-dev-prod-parity.md).
+
+**Note:** Partially superseded by ADR-004. The cron-based queue has been removed in favor of synchronous processing. The Apache parity argument remains valid.
+
+---
+
+## ADR-003: GitHub Issues as Sole Ticket Store
+
+**Status:** Accepted
+
+**Context:** The original design stored tickets locally (SQLite) and maintained a parallel agent memory system, with GitHub Issues as one delivery channel. This gave Herold three responsibilities: voice processing, ticket management, and agent memory.
+
+**Options:**
+
+| Option | Description | Pros | Cons |
+|--------|------------|------|------|
+| **A -- All local** | Tickets + memory in SQLite. Agents use Herold API. | Single data source, no external deps | Full ticket CRUD + memory system to build, Herold becomes a platform |
+| **B -- Hybrid** | GitHub for tickets, SQLite for memory | Native agent support for tickets | Two systems for agents, memory is speculative |
+| **C -- GitHub only, defer memory** | Herold is a voice-to-GitHub dispatcher. No local tickets, no memory. | Clear single responsibility, minimal code | External dependency, no offline tickets, no agent memory |
+
+**Decision:** Option C -- GitHub Issues as sole ticket store, agent memory deferred.
+
+**Rationale:** Herold does one thing well: capture voice input and dispatch it as a GitHub Issue. Agents use GitHub natively (`gh` CLI). GitHub provides audit trail and agent communication (comments) for free. Agent memory was speculative -- it can be added later if a real need emerges. Detailed variant comparison: [`adr/003-github-issues-as-ticket-store.md`](../adr/003-github-issues-as-ticket-store.md).
+
+---
+
+## ADR-004: Synchronous Processing (no queue, no cron)
+
+**Status:** Accepted (partially supersedes ADR-002)
+
+**Context:** The original design used Laravel's queue system with cron-based workers for async processing (transcription, LLM, GitHub push). This required a cron Docker service, an HTTP-cron endpoint with Basic Auth for production, job classes, and frontend status polling.
+
+**Options:**
+
+| Option | Description | Pros | Cons |
+|--------|------------|------|------|
+| **A -- Async queue + cron** | Jobs dispatched to queue, cron worker processes them | Non-blocking UI, retry logic | Cron service, HTTP-cron endpoint, job classes, polling, 8-state enum |
+| **B -- Synchronous** | All steps run in a single HTTP request | No queue, no cron, drastically simpler | Blocking request (~10-30s), no auto-retry |
+| **C -- Sync + deferred GitHub push** | Transcription + LLM sync, GitHub push separate | Fast feedback, review step | Two-step UX (already exists in design) |
+
+**Decision:** Option B -- Synchronous processing.
+
+**Rationale:** Herold is a single-user demo project. The ~10-30s wait is acceptable with a loading indicator. Removing the queue eliminates: cron Docker service, `CronController`, HTTP-cron endpoint, three job classes, frontend polling, and intermediate `NoteStatus` states. Docker Compose reduced from 3 to 2 services. Shared hosting deployment simplified (no cron config needed). Detailed variant comparison: [`adr/004-synchronous-processing.md`](../adr/004-synchronous-processing.md).

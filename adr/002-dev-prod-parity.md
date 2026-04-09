@@ -1,5 +1,10 @@
 # Dev/Prod Parity -- Variant Comparison
 
+> **Note:** Partially superseded by [ADR-004](004-synchronous-processing.md).
+> The cron-based queue has been removed in favor of synchronous processing.
+> The Apache parity argument remains valid. Docker Compose now has 2 services
+> (`app` + `node`) instead of 3.
+
 ## Context
 
 Herold runs on shared hosting in production (native PHP, Apache, cron, FTP deployment).
