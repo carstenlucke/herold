@@ -14,8 +14,8 @@ stage?
 
 Key constraints:
 - Herold is a single-user app, primarily used on mobile for quick voice input
-- Local AI agents (Claude Code, OpenCode) already have native GitHub support via `gh` CLI
-- The app runs on shared hosting with limited resources (no shell access, FTP deployment)
+- Local AI agents (Claude Code, OpenCode) already have native GitHub support either via `gh` CLI, or plugins or MCP
+- The app shall run on shared hosting with limited resources (no shell access, FTP deployment)
 - Agent memory has fundamentally different access patterns than ticketing (high-frequency reads, structured queries, full-text search)
 
 ---
