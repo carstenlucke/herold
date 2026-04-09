@@ -17,7 +17,7 @@ Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einze
 - Laravel AI SDK (`laravel/ai`) fuer OpenAI Whisper + Chat API
 - GitHub Issues API (Fine-grained PAT)
 - Synchrone Verarbeitung (kein Queue, kein Cron)
-- Keine PWA, kein Service Worker
+- **Keine** PWA, **kein** Service Worker
 - SQLite als lokale DB
 - Docker Compose fuer lokale Entwicklung und Betrieb
 - Vite 8 (Rolldown-Bundler) fuer Frontend-Build
