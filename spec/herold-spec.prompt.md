@@ -522,10 +522,9 @@ docker compose down
 
 MediaRecorder API erfordert HTTPS (oder localhost). Optionen:
 - **localhost**: Funktioniert ohne HTTPS im Browser
-- **Caddy als Reverse Proxy**: Fuer Zugriff von anderen Geraeten im Netz
+- **Caddy als Reverse Proxy**: Fuer Zugriff von anderen Geraeten im Netz ist nicht vorgesehen, da es die lokale Entwicklung komplexer macht (z.B. Zertifikatsverwaltung, Port-Weiterleitung). Caddy koennte optional mit Self-Signed Cert eingerichtet werden, aber das ist fuer die meisten Entwickler zu aufwendig.
 
-Fuer lokale Entwicklung reicht `localhost:8080` – kein Caddy noetig.
-Falls Zugriff vom Handy gewuenscht: Caddy-Service ergaenzen mit Self-Signed Cert.
+Fuer lokale Entwicklung reicht `localhost:8080` – **kein Caddy noetig**.
 
 ---
 

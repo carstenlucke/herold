@@ -7,35 +7,9 @@ title Herold -- Datenmodell (SQLite)
 
 enum NoteStatus {
   recorded
-  transcribing
-  transcribed
-  processing
   processed
-  sending
   sent
   error
-  ==
-  **UI-Gruppierung:**
-  ..
-  Aufgenommen = recorded
-  Verarbeitung = transcribing,
-    transcribed, processing, sending
-  Fertig = processed
-  Gesendet = sent
-  Fehler = error
-}
-
-enum MemoryScope {
-  global
-  project:{name}
-  ticket:{number}
-}
-
-enum MemoryCategory {
-  decision
-  learning
-  preference
-  context
 }
 
 class voice_notes <<table>> {
@@ -55,20 +29,6 @@ class voice_notes <<table>> {
   updated_at : timestamp
 }
 
-class memories <<table>> {
-  **id** : ULID <<PK>>
-  --
-  scope : string <<MemoryScope>>
-  category : string <<MemoryCategory>>
-  content : text <<fulltext>>
-  source : string
-  created_at : timestamp
-  updated_at : timestamp
-  ..
-  <<index>> (scope, category)
-  <<fulltext>> (content)
-}
-
 class users <<table>> {
   **id** : bigint <<PK>>
   --
@@ -80,40 +40,9 @@ class users <<table>> {
   updated_at : timestamp
 }
 
-class personal_access_tokens <<table (Sanctum)>> {
-  **id** : bigint <<PK>>
-  --
-  tokenable_type : string
-  tokenable_id : bigint
-  name : string
-  token : string(64) <<unique>>
-  abilities : text [nullable]
-  last_used_at : timestamp [nullable]
-  expires_at : timestamp [nullable]
-  created_at : timestamp
-  updated_at : timestamp
-  ..
-  <<index>> (tokenable_type, tokenable_id)
-}
-
-class jobs <<table (Queue)>> {
-  **id** : bigint <<PK>>
-  --
-  queue : string <<index>>
-  payload : longtext
-  attempts : tinyint
-  reserved_at : integer [nullable]
-  available_at : integer
-  created_at : integer
-}
-
 ' -- Relationships --
 
-users "1" -- "0..*" personal_access_tokens : tokenable\n(polymorphic)
-
 voice_notes ..> NoteStatus : status
-memories ..> MemoryScope : scope
-memories ..> MemoryCategory : category
 
 note right of voice_notes
   **type**: general | youtube | diary
@@ -124,24 +53,10 @@ note right of voice_notes
   - andere Typen: typ-spezifisch
 end note
 
-note right of personal_access_tokens
-  Laravel Sanctum table -- stores
-  hashed Bearer tokens for agent
-  API authentication (CLI/curl).
-  Managed via Settings UI.
-  ..
-  **abilities** (Scopes):
-  - memory:read
-  - memory:write
-  - tickets:read
-  - tickets:status
-end note
-
-note bottom of jobs
-  Standard-Laravel Queue-Tabelle.
-  Jobs: TranscribeAudioJob,
-  PreprocessTranscriptJob,
-  CreateGitHubIssueJob
+note bottom of users
+  Single-user system — exactly one row.
+  Required by Laravel's auth system.
+  No agent accounts (thus no Sanctum), no multi-user support planned.
 end note
 
 @enduml
