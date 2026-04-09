@@ -9,6 +9,7 @@ Herold ist ein Voice-basierter Task-Dispatcher fuer lokale KI-Agenten. Ein einze
 - Vuetify 4 Breakpoints (xs/sm/md/lg/xl) konsequent nutzen
 - Touch-optimierte UI: grosse Tap-Targets, Swipe-Gesten wo sinnvoll
 - Bottom Navigation auf Mobile, Side Navigation auf Desktop
+- **UI-Referenz:** Die statischen HTML-Prototypen in `poc-ui/` sind die verbindliche Vorlage fuer Layout, Struktur und Interaktionsmuster aller Vue-Seiten. Farben und Typografie folgen `DESIGN.md`.
 
 **Entschiedener Stack:**
 - Laravel 13 (PHP 8.5) als Monolith
