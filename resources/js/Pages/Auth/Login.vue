@@ -16,22 +16,23 @@
 
         <!-- Step indicator dots -->
         <div class="d-flex justify-center ga-2 mb-6">
-          <div class="step-dot" :class="{ active: step >= 1 }" />
-          <div class="step-dot" :class="{ active: step >= 2 }" />
+          <div class="step-dot" :class="{ active: true }" />
+          <div class="step-dot" :class="{ active: step !== 'key' }" />
         </div>
 
         <!-- Step 1: API Key -->
-        <div v-if="step === 1">
+        <form v-if="step === 'key'" @submit.prevent="submitKey">
+          <input type="text" autocomplete="username" value="herold" hidden aria-hidden="true" />
           <v-text-field
             v-model="keyForm.api_key"
             label="API Key"
             type="password"
+            autocomplete="current-password"
             variant="filled"
             color="primary"
             prepend-inner-icon="mdi-key"
             :error-messages="keyForm.errors.api_key"
             :disabled="keyForm.processing"
-            @keyup.enter="submitKey"
           />
 
           <v-btn
@@ -40,15 +41,15 @@
             variant="outlined"
             size="large"
             class="mt-4"
+            type="submit"
             :loading="keyForm.processing"
-            @click="submitKey"
           >
             Verify
           </v-btn>
-        </div>
+        </form>
 
         <!-- Step 2: TOTP -->
-        <div v-if="step === 2 && !showTotpSetup">
+        <form v-if="step === 'totp'" @submit.prevent="submitTotp">
           <p class="text-body-2 text-center mb-4" style="color: var(--text-muted)">
             Enter the 6-digit code from your authenticator app.
           </p>
@@ -63,7 +64,6 @@
             inputmode="numeric"
             :error-messages="totpForm.errors.totp_code"
             :disabled="totpForm.processing"
-            @keyup.enter="submitTotp"
           />
 
           <v-btn
@@ -72,8 +72,8 @@
             variant="outlined"
             size="large"
             class="mt-4"
+            type="submit"
             :loading="totpForm.processing"
-            @click="submitTotp"
           >
             Login
           </v-btn>
@@ -88,20 +88,18 @@
           >
             Back
           </v-btn>
-        </div>
+        </form>
 
         <!-- Step 2b: TOTP Setup (first time) -->
-        <div v-if="step === 2 && showTotpSetup">
+        <form v-if="step === 'totp_setup'" @submit.prevent="submitTotp">
           <p class="text-body-2 text-center mb-4" style="color: var(--text-muted)">
             Scan this QR code with your authenticator app, then enter the code below.
           </p>
 
-          <div v-if="qrCodeSvg" class="d-flex justify-center mb-4">
-            <div
-              class="pa-3 rounded-lg"
-              style="background: #ffffff"
-              v-html="qrCodeSvg"
-            />
+          <div v-if="qrDataUrl" class="d-flex justify-center mb-4">
+            <div class="pa-3 rounded-lg" style="background: #ffffff">
+              <img :src="qrDataUrl" alt="TOTP QR Code" width="200" height="200" />
+            </div>
           </div>
 
           <v-text-field
@@ -114,7 +112,6 @@
             inputmode="numeric"
             :error-messages="totpForm.errors.totp_code"
             :disabled="totpForm.processing"
-            @keyup.enter="submitTotp"
           />
 
           <v-btn
@@ -123,8 +120,8 @@
             variant="outlined"
             size="large"
             class="mt-4"
+            type="submit"
             :loading="totpForm.processing"
-            @click="submitTotp"
           >
             Verify & Login
           </v-btn>
@@ -139,7 +136,7 @@
           >
             Back
           </v-btn>
-        </div>
+        </form>
 
         <!-- General error -->
         <v-alert
@@ -157,20 +154,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useForm, usePage } from '@inertiajs/vue3'
+import QRCode from 'qrcode'
 
 const props = defineProps<{
-  step?: number
-  showTotpSetup?: boolean
-  qrCodeSvg?: string | null
+  step?: string
+  needsSetup?: boolean
+  provisioningUri?: string | null
 }>()
 
 const page = usePage()
 
-const step = ref(props.step ?? 1)
-const showTotpSetup = ref(props.showTotpSetup ?? false)
-const qrCodeSvg = ref(props.qrCodeSvg ?? null)
+const step = ref(props.step ?? 'key')
+const provisioningUri = ref(props.provisioningUri ?? null)
+const qrDataUrl = ref<string | null>(null)
 
 const keyForm = useForm({
   api_key: '',
@@ -185,31 +183,37 @@ const generalError = computed(() => {
   return errors?.general ?? null
 })
 
+async function generateQrCode(uri: string) {
+  qrDataUrl.value = await QRCode.toDataURL(uri, { width: 200, margin: 0 })
+}
+
+watch(provisioningUri, (uri) => {
+  if (uri) generateQrCode(uri)
+}, { immediate: true })
+
 function submitKey() {
   keyForm.post('/login/key', {
     preserveScroll: true,
-    onSuccess: (response: any) => {
-      step.value = 2
+    onSuccess: () => {
       const pageProps = usePage().props as Record<string, any>
-      if (pageProps.showTotpSetup) {
-        showTotpSetup.value = true
-        qrCodeSvg.value = pageProps.qrCodeSvg ?? null
-      }
+      step.value = pageProps.step ?? 'totp'
+      provisioningUri.value = pageProps.provisioningUri ?? null
     },
   })
 }
 
 function submitTotp() {
-  totpForm.post('/login/totp', {
+  const url = step.value === 'totp_setup' ? '/login/totp/confirm' : '/login/totp'
+  totpForm.post(url, {
     preserveScroll: true,
   })
 }
 
 function goBack() {
-  step.value = 1
+  step.value = 'key'
   keyForm.reset()
   totpForm.reset()
-  showTotpSetup.value = false
-  qrCodeSvg.value = null
+  provisioningUri.value = null
+  qrDataUrl.value = null
 }
 </script>

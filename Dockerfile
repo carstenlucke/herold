@@ -4,7 +4,7 @@ FROM php:8.4-apache
 RUN a2enmod rewrite
 
 # PHP Extensions
-RUN apt-get update && apt-get install -y libsqlite3-dev \
+RUN apt-get update && apt-get install -y libsqlite3-dev gosu \
     && docker-php-ext-install pdo_sqlite \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,3 +19,6 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
 WORKDIR /var/www/html
 COPY . .
 RUN composer install --no-dev --optimize-autoloader
+
+COPY docker-entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["docker-entrypoint.sh"]

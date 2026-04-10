@@ -8,6 +8,7 @@
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
+        "@types/qrcode": "^1.5.6",
         "axios": ">=1.11.0 <=1.14.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^3.0.0",
@@ -19,6 +20,7 @@
         "@inertiajs/vue3": "^3.0.3",
         "@mdi/font": "^7.4.47",
         "@vitejs/plugin-vue": "^6.0.5",
+        "qrcode": "^1.5.4",
         "sass-embedded": "^1.99.0",
         "vue": "^3.5.32",
         "vuetify": "^4.0.5"

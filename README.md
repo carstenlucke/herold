@@ -84,24 +84,22 @@ cd herold
 
 # Configure environment
 cp .env.example .env
-# Edit .env: OPENAI_API_KEY, GITHUB_PAT, HEROLD_API_KEY, etc.
+# Edit .env: APP_KEY, OPENAI_API_KEY, GITHUB_TOKEN, HEROLD_API_KEY
 
-# Start containers
+# Generate APP_KEY
+docker compose run --rm app php artisan key:generate
+
+# Start all services
 docker compose up -d
-
-# Initialize Laravel
-docker compose exec app composer install
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate
-
-# Frontend dependencies
-docker compose exec node npm install
 ```
+
+Migrations and seeding run automatically on container start via
+`docker-entrypoint.sh`. No manual `php artisan migrate` required.
 
 ## Development
 
 ```bash
-# All services (App/Apache + Cron + Vite Dev Server)
+# Start services (App/Apache + Vite Dev Server)
 docker compose up -d
 
 # App:  http://localhost:8080
@@ -110,15 +108,11 @@ docker compose up -d
 # Laravel commands
 docker compose exec app php artisan <command>
 
-# Queue jobs are processed by cron (every minute)
-# For faster processing during dev:
-docker compose exec app php artisan queue:work
-
-# Cron logs
-docker compose logs -f cron
-
 # Stop
 docker compose down
+
+# Full reset (removes database volume)
+docker compose down -v
 ```
 
 ## Agent-API

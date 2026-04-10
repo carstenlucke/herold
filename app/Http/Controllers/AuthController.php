@@ -57,7 +57,24 @@ class AuthController extends Controller
         $request->session()->put('auth.key_verified', true);
         $request->session()->put('auth.user_id', $user->id);
 
-        return redirect()->route('login');
+        $needsSetup = ! $user->hasTotpEnabled();
+
+        if ($needsSetup) {
+            $secret = $this->generateTotpSecret();
+            $user->update(['totp_secret' => $secret]);
+            $provisioningUri = $this->buildProvisioningUri($secret, $user->email);
+
+            return Inertia::render('Auth/Login', [
+                'step' => 'totp_setup',
+                'needsSetup' => true,
+                'provisioningUri' => $provisioningUri,
+            ]);
+        }
+
+        return Inertia::render('Auth/Login', [
+            'step' => 'totp',
+            'needsSetup' => false,
+        ]);
     }
 
     public function setupTotp(Request $request)

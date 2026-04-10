@@ -1,11 +1,14 @@
 services:
   app:
     build: .
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     ports:
       - "8080:80"
     volumes:
       - .:/var/www/html
-      - sqlite_data:/var/www/html/database
+      - sqlite_data:/var/www/html/database/data
     env_file: .env
 
   node:
