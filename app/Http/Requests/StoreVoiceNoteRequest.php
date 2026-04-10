@@ -15,7 +15,7 @@ class StoreVoiceNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'audio' => ['required', 'file', 'max:25600', 'mimetypes:audio/webm,audio/ogg,audio/mp4'],
+            'audio' => ['required', 'file', 'max:25600', 'mimetypes:audio/webm,video/webm,audio/ogg,audio/mp4'],
             'type' => ['required', 'string', Rule::in(array_keys(config('herold.types', [])))],
             'metadata' => ['nullable', 'array'],
             'metadata.youtube_url' => ['required_if:type,youtube', 'nullable', 'url'],

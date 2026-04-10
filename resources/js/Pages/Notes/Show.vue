@@ -120,12 +120,9 @@
           </div>
 
           <template v-if="stepReached(2) || isEditing">
-            <!-- Transcript -->
+            <!-- Transcript (always read-only) -->
             <div class="mb-3">
-              <TranscriptEditor
-                v-model="editForm.transcript"
-                :readonly="!isEditing"
-              />
+              <TranscriptEditor :model-value="props.note.transcript ?? ''" />
             </div>
 
             <!-- Title -->
@@ -171,6 +168,16 @@
                   @click="saveEdits"
                 >
                   Save
+                </v-btn>
+                <v-btn
+                  v-if="props.note.transcript && editForm.processed_body !== props.note.transcript"
+                  variant="tonal"
+                  color="warning"
+                  size="small"
+                  prepend-icon="mdi-restore"
+                  @click="editForm.processed_body = props.note.transcript"
+                >
+                  Reset to Transcript
                 </v-btn>
                 <v-btn
                   variant="text"
@@ -225,7 +232,7 @@
           </div>
 
           <template v-if="stepReached(3)">
-            <div class="d-flex align-center ga-2">
+            <div class="d-flex align-center ga-2" style="margin-left: 36px">
               <v-icon icon="mdi-github" size="18" />
               <a
                 :href="note.github_issue_url ?? '#'"
@@ -293,7 +300,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import type { VoiceNote, MessageType } from '../../Types'
 import { useProcessing } from '../../Composables/useProcessing'
@@ -344,13 +351,19 @@ function stepClass(step: number): string {
 // Editing
 const isEditing = ref(false)
 const editForm = useForm({
-  transcript: props.note.transcript ?? '',
   processed_title: props.note.processed_title ?? '',
   processed_body: props.note.processed_body ?? '',
 })
 
+// Sync form when Inertia delivers updated note props (e.g. after processing)
+watch(() => props.note, (note) => {
+  if (!isEditing.value) {
+    editForm.processed_title = note.processed_title ?? ''
+    editForm.processed_body = note.processed_body ?? ''
+  }
+}, { deep: true })
+
 function startEditing() {
-  editForm.transcript = props.note.transcript ?? ''
   editForm.processed_title = props.note.processed_title ?? ''
   editForm.processed_body = props.note.processed_body ?? ''
   isEditing.value = true

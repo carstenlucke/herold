@@ -17,18 +17,24 @@ class AuthController extends Controller
     {
         $step = 'key';
         $needsSetup = false;
+        $provisioningUri = null;
 
         if ($request->session()->get('auth.key_verified')) {
             $user = User::find($request->session()->get('auth.user_id'));
             if ($user) {
                 $needsSetup = ! $user->hasTotpEnabled();
                 $step = $needsSetup ? 'totp_setup' : 'totp';
+
+                if ($needsSetup && $user->totp_secret) {
+                    $provisioningUri = $this->buildProvisioningUri($user->totp_secret, $user->email);
+                }
             }
         }
 
         return Inertia::render('Auth/Login', [
             'step' => $step,
             'needsSetup' => $needsSetup,
+            'provisioningUri' => $provisioningUri,
         ]);
     }
 
@@ -62,19 +68,9 @@ class AuthController extends Controller
         if ($needsSetup) {
             $secret = $this->generateTotpSecret();
             $user->update(['totp_secret' => $secret]);
-            $provisioningUri = $this->buildProvisioningUri($secret, $user->email);
-
-            return Inertia::render('Auth/Login', [
-                'step' => 'totp_setup',
-                'needsSetup' => true,
-                'provisioningUri' => $provisioningUri,
-            ]);
         }
 
-        return Inertia::render('Auth/Login', [
-            'step' => 'totp',
-            'needsSetup' => false,
-        ]);
+        return redirect()->route('login');
     }
 
     public function setupTotp(Request $request)

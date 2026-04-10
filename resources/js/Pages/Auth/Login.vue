@@ -170,6 +170,14 @@ const step = ref(props.step ?? 'key')
 const provisioningUri = ref(props.provisioningUri ?? null)
 const qrDataUrl = ref<string | null>(null)
 
+// Sync local refs when Inertia delivers new props after redirect
+watch(() => props.step, (newStep) => {
+  if (newStep) step.value = newStep
+})
+watch(() => props.provisioningUri, (newUri) => {
+  provisioningUri.value = newUri ?? null
+})
+
 const keyForm = useForm({
   api_key: '',
 })
@@ -194,11 +202,6 @@ watch(provisioningUri, (uri) => {
 function submitKey() {
   keyForm.post('/login/key', {
     preserveScroll: true,
-    onSuccess: () => {
-      const pageProps = usePage().props as Record<string, any>
-      step.value = pageProps.step ?? 'totp'
-      provisioningUri.value = pageProps.provisioningUri ?? null
-    },
   })
 }
 

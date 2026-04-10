@@ -119,6 +119,15 @@ export function useAudioRecorder() {
     }
   }
 
+  function reset() {
+    audioBlob.value = null
+    duration.value = 0
+    error.value = null
+    isRecording.value = false
+    isPaused.value = false
+    chunks = []
+  }
+
   return {
     isRecording: readonly(isRecording),
     isPaused: readonly(isPaused),
@@ -129,5 +138,6 @@ export function useAudioRecorder() {
     stop,
     pause,
     resume,
+    reset,
   }
 }

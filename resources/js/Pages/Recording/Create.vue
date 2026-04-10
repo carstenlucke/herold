@@ -35,7 +35,7 @@
 
     <!-- Audio recorder -->
     <div class="py-6">
-      <AudioRecorder @recorded="onRecorded" />
+      <AudioRecorder @recorded="onRecorded" @discarded="onDiscarded" />
     </div>
 
     <!-- Save button -->
@@ -114,21 +114,17 @@ function onRecorded(blob: Blob) {
   audioBlob.value = blob
 }
 
+function onDiscarded() {
+  audioBlob.value = null
+}
+
 function save() {
   if (!audioBlob.value) return
 
-  const formData = new FormData()
-  formData.append('type', selectedType.value)
-  formData.append('audio', new File([audioBlob.value], 'recording.webm', { type: audioBlob.value.type }))
-
-  if (Object.keys(extraFieldValues.value).length > 0) {
-    for (const [key, value] of Object.entries(extraFieldValues.value)) {
-      formData.append(`metadata[${key}]`, value)
-    }
-  }
-
   form.type = selectedType.value
-  form.audio = new File([audioBlob.value], 'recording.webm', { type: audioBlob.value.type })
+  // Normalize MIME type — strip codec suffix (e.g. "audio/webm;codecs=opus" → "audio/webm")
+  const mimeType = audioBlob.value.type.split(';')[0] || 'audio/webm'
+  form.audio = new File([audioBlob.value], 'recording.webm', { type: mimeType })
   form.metadata = { ...extraFieldValues.value }
 
   form.post('/notes', {
