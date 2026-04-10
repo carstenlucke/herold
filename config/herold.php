@@ -20,10 +20,13 @@ return [
             'icon' => 'mdi-message-text',
             'github_label' => 'type:general',
             'extra_fields' => [],
-            'preprocessing_prompt' => 'You are a task structuring assistant. Given a voice note transcript, '
-                . 'create a clear, actionable task. Respond with valid JSON containing two keys: '
-                . '"title" (a concise task title, max 80 chars) and "body" (a detailed task description '
-                . 'formatted in Markdown with sections as appropriate). Focus on clarity and actionability.',
+            'preprocessing_prompt' => 'You receive a voice note transcript. Your job is minimal cleanup, NOT restructuring. '
+                . 'Respond with valid JSON: {"title": "...", "body": "..."}. '
+                . 'Title: a concise summary of the transcript content (max 80 chars, same language as transcript). '
+                . 'Body: the transcript text with ONLY obvious speech-to-text errors corrected '
+                . '(misheard words, broken word boundaries, missing punctuation). '
+                . 'Do NOT add content, do NOT restructure, do NOT create task steps or instructions. '
+                . 'The body must stay faithful to what was actually said.',
         ],
 
         'youtube' => [
@@ -38,23 +41,35 @@ return [
                     'label' => 'YouTube URL',
                 ],
             ],
-            'preprocessing_prompt' => 'You are a transcription task assistant. Given a voice note transcript '
-                . 'and a YouTube URL, create a transcription task. Respond with valid JSON containing '
-                . 'two keys: "title" (a concise task title referencing the video, max 80 chars) and '
-                . '"body" (Markdown formatted with the YouTube URL, any context from the voice note, '
-                . 'and clear instructions for the transcription task).',
+            'preprocessing_prompt' => 'You receive a voice note transcript and a YouTube URL. Your job is minimal cleanup, NOT restructuring. '
+                . 'Respond with valid JSON: {"title": "...", "body": "..."}. '
+                . 'Title: a concise summary (max 80 chars, same language as transcript). '
+                . 'If you can identify the video name or creator from the transcript, include it in the title. '
+                . 'Body: the transcript text with ONLY obvious speech-to-text errors corrected. '
+                . 'Do NOT add content, do NOT restructure, do NOT create task steps.',
         ],
 
         'diary' => [
             'label' => 'Diary',
             'icon' => 'mdi-book-open-variant',
             'github_label' => 'type:diary',
-            'extra_fields' => [],
-            'preprocessing_prompt' => 'You are a diary formatting assistant. Given a voice note transcript of a '
-                . 'personal diary entry, format it into a clean, readable diary entry. Respond with '
-                . 'valid JSON containing two keys: "title" (a concise title capturing the essence of '
-                . 'the entry, max 80 chars) and "body" (the diary entry formatted in Markdown, '
-                . 'preserving the personal tone while improving structure and readability).',
+            'extra_fields' => [
+                [
+                    'name' => 'entry_date',
+                    'type' => 'date',
+                    'required' => false,
+                    'label' => 'Entry Date',
+                ],
+            ],
+            'preprocessing_prompt' => 'You receive a voice note transcript of a diary entry. Your job is minimal cleanup, NOT restructuring. '
+                . 'Respond with valid JSON: {"title": "...", "body": "...", "entry_date": "..." or null}. '
+                . 'Title: a concise summary of the entry (max 80 chars, same language as transcript). '
+                . 'Body: the transcript text with ONLY obvious speech-to-text errors corrected. '
+                . 'Do NOT restructure the text or change the personal tone. '
+                . 'entry_date: if the speaker explicitly mentions a date for this entry '
+                . '(e.g. "Eintrag fuer den fuenften April"), extract it as ISO 8601 (YYYY-MM-DD). '
+                . 'Use the current date context provided to resolve relative references. '
+                . 'If no date is mentioned, return null.',
         ],
     ],
 

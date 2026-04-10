@@ -23,7 +23,7 @@ class AIService
             ->timeout(120)
             ->attach('file', file_get_contents($audioPath), basename($audioPath))
             ->post("{$this->baseUrl}/audio/transcriptions", [
-                'model' => 'whisper-1',
+                'model' => 'gpt-4o-transcribe',
                 'response_format' => 'text',
             ]);
 
@@ -41,7 +41,7 @@ class AIService
         $response = Http::withToken($this->apiKey)
             ->timeout(60)
             ->post("{$this->baseUrl}/chat/completions", [
-                'model' => 'gpt-4o',
+                'model' => 'gpt-5.4-mini',
                 'temperature' => $temperature,
                 'response_format' => ['type' => 'json_object'],
                 'messages' => [
@@ -65,9 +65,6 @@ class AIService
             );
         }
 
-        return [
-            'title' => $parsed['title'],
-            'body' => $parsed['body'],
-        ];
+        return $parsed;
     }
 }

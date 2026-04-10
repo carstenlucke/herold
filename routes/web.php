@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/notes/{note}', [VoiceNoteController::class, 'update'])->name('notes.update');
     Route::delete('/notes/{note}', [VoiceNoteController::class, 'destroy'])->name('notes.destroy');
 
+    Route::get('/notes/{note}/audio', [VoiceNoteController::class, 'audio'])->name('notes.audio');
     Route::post('/notes/{note}/process', [VoiceNoteController::class, 'process'])->name('notes.process');
     Route::post('/notes/{note}/send', [VoiceNoteController::class, 'send'])->name('notes.send');
 

@@ -32,12 +32,25 @@ class PreprocessingService
             $userMessage .= "\n\nMetadata:\n{$metadataLines}";
         }
 
+        if ($note->type === 'diary') {
+            $userMessage .= "\n\nCurrent date: " . now()->toDateString();
+        }
+
         $result = $this->aiService->chat($systemPrompt, $userMessage);
 
-        $note->update([
+        $updateData = [
             'processed_title' => $result['title'],
             'processed_body' => $result['body'],
             'status' => NoteStatus::PROCESSED,
-        ]);
+        ];
+
+        // Merge type-specific extracted fields into metadata
+        if ($note->type === 'diary' && ! empty($result['entry_date'])) {
+            $metadata = $note->metadata ?? [];
+            $metadata['entry_date'] = $result['entry_date'];
+            $updateData['metadata'] = $metadata;
+        }
+
+        $note->update($updateData);
     }
 }

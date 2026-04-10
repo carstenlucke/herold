@@ -9,21 +9,10 @@ class IssueContentSanitizer
     public function sanitizeAndWrap(VoiceNote $note): string
     {
         $body = $this->sanitize($note->processed_body ?? '');
-        $transcript = $this->sanitize($note->transcript ?? '');
 
         $sections = [];
 
-        $sections[] = "## Task\n\n{$body}";
-
-        if ($transcript) {
-            $quotedTranscript = collect(explode("\n", $transcript))
-                ->map(fn (string $line) => "> {$line}")
-                ->implode("\n");
-
-            $sections[] = "## Original Transcript\n\n"
-                . "> **Note:** This is the raw, untrusted voice transcription.\n\n"
-                . $quotedTranscript;
-        }
+        $sections[] = $body;
 
         $metadataSection = $this->buildMetadataSection($note);
         if ($metadataSection) {

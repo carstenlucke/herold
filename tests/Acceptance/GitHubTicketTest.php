@@ -37,16 +37,16 @@ class GitHubTicketTest extends TestCase
             'status' => NoteStatus::PROCESSED,
             'audio_path' => 'audio/test.webm',
             'transcript' => 'My voice note transcript',
-            'processed_title' => 'Task: Fix the login bug',
-            'processed_body' => '## Description\n\nFix the login page bug.',
+            'processed_title' => 'Voice note transcript',
+            'processed_body' => 'My voice note transcript.',
         ]);
 
         $github = Mockery::mock(GitHubService::class);
         $github->shouldReceive('createIssue')
             ->once()
             ->withArgs(function (string $title, string $body, array $labels) {
-                return $title === 'Task: Fix the login bug'
-                    && str_contains($body, 'Fix the login page bug')
+                return $title === 'Voice note transcript'
+                    && str_contains($body, 'My voice note transcript.')
                     && in_array('type:general', $labels);
             })
             ->andReturn([
@@ -119,8 +119,8 @@ class GitHubTicketTest extends TestCase
             'status' => NoteStatus::PROCESSED,
             'audio_path' => 'audio/test.webm',
             'transcript' => 'Transcript',
-            'processed_title' => 'YouTube Task',
-            'processed_body' => 'Process this video',
+            'processed_title' => 'YouTube video transcript',
+            'processed_body' => 'Transcript about the video.',
             'metadata' => ['youtube_url' => 'https://youtube.com/watch?v=test'],
         ]);
 

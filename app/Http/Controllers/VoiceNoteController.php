@@ -83,6 +83,18 @@ class VoiceNoteController extends Controller
         ]);
     }
 
+    public function audio(VoiceNote $note)
+    {
+        if (! $note->audio_path || ! Storage::disk('local')->exists($note->audio_path)) {
+            abort(404);
+        }
+
+        return response()->file(
+            Storage::disk('local')->path($note->audio_path),
+            ['Content-Type' => 'audio/webm']
+        );
+    }
+
     public function update(Request $request, VoiceNote $note)
     {
         $validated = $request->validate([
@@ -90,6 +102,7 @@ class VoiceNoteController extends Controller
             'processed_title' => 'nullable|string|max:255',
             'processed_body' => 'nullable|string',
             'metadata' => 'nullable|array',
+            'metadata.entry_date' => 'nullable|date_format:Y-m-d',
         ]);
 
         $note->update($validated);

@@ -81,9 +81,18 @@
 
           <div class="text-body-2" style="color: var(--text-muted)">
             <div v-if="note.audio_path" class="d-flex align-center ga-2">
-              <v-icon icon="mdi-waveform" size="16" />
+              <v-btn
+                icon
+                variant="tonal"
+                :color="isPlayingAudio ? 'primary' : 'secondary'"
+                size="32"
+                @click="toggleAudioPlayback"
+              >
+                <v-icon :icon="isPlayingAudio ? 'mdi-pause' : 'mdi-play'" size="18" />
+              </v-btn>
               <span>Audio file recorded</span>
             </div>
+            <audio ref="noteAudioPlayer" :src="`/notes/${note.id}/audio`" @ended="isPlayingAudio = false" />
             <div v-if="note.metadata && Object.keys(note.metadata).length > 0" class="mt-2">
               <div v-for="(value, key) in note.metadata" :key="key">
                 <span class="font-label text-caption">{{ key }}:</span> {{ value }}
@@ -134,6 +143,33 @@
               :readonly="!isEditing"
               class="mb-3"
             />
+
+            <!-- Entry Date (diary only) -->
+            <v-menu
+              v-if="note.type === 'diary'"
+              v-model="dateMenu"
+              :close-on-content-click="false"
+              location="bottom start"
+            >
+              <template #activator="{ props: menuProps }">
+                <v-text-field
+                  v-bind="menuProps"
+                  :model-value="formattedEntryDate"
+                  label="Entry Date"
+                  variant="filled"
+                  color="primary"
+                  readonly
+                  prepend-inner-icon="mdi-calendar"
+                  :disabled="!isEditing"
+                  class="mb-3"
+                />
+              </template>
+              <v-date-picker
+                :model-value="entryDatePickerValue"
+                color="primary"
+                @update:model-value="onDatePicked"
+              />
+            </v-menu>
 
             <!-- Body -->
             <v-textarea
@@ -331,6 +367,22 @@ const formattedDate = computed(() => {
 // Stepper logic
 const statusOrder = ['recorded', 'processed', 'sent'] as const
 
+// Audio playback
+const noteAudioPlayer = ref<HTMLAudioElement | null>(null)
+const isPlayingAudio = ref(false)
+
+function toggleAudioPlayback() {
+  const player = noteAudioPlayer.value
+  if (!player) return
+  if (isPlayingAudio.value) {
+    player.pause()
+    isPlayingAudio.value = false
+  } else {
+    player.play()
+    isPlayingAudio.value = true
+  }
+}
+
 function stepReached(step: number): boolean {
   const statusIndex = statusOrder.indexOf(props.note.status as typeof statusOrder[number])
   if (statusIndex === -1) {
@@ -348,11 +400,35 @@ function stepClass(step: number): string {
   return 'neon-border-primary'
 }
 
+// Date picker
+const dateMenu = ref(false)
+
+const formattedEntryDate = computed(() => {
+  if (!editForm.entry_date) return ''
+  const d = new Date(editForm.entry_date + 'T00:00:00')
+  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+})
+
+const entryDatePickerValue = computed(() => {
+  if (!editForm.entry_date) return undefined
+  return new Date(editForm.entry_date + 'T00:00:00')
+})
+
+function onDatePicked(date: Date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  editForm.entry_date = `${y}-${m}-${d}`
+  dateMenu.value = false
+}
+
 // Editing
 const isEditing = ref(false)
 const editForm = useForm({
   processed_title: props.note.processed_title ?? '',
   processed_body: props.note.processed_body ?? '',
+  entry_date: (props.note.metadata as Record<string, string> | null)?.entry_date ?? '',
+  metadata: { ...(props.note.metadata ?? {}) } as Record<string, string>,
 })
 
 // Sync form when Inertia delivers updated note props (e.g. after processing)
@@ -360,12 +436,16 @@ watch(() => props.note, (note) => {
   if (!isEditing.value) {
     editForm.processed_title = note.processed_title ?? ''
     editForm.processed_body = note.processed_body ?? ''
+    editForm.entry_date = (note.metadata as Record<string, string> | null)?.entry_date ?? ''
+    editForm.metadata = { ...(note.metadata ?? {}) } as Record<string, string>
   }
 }, { deep: true })
 
 function startEditing() {
   editForm.processed_title = props.note.processed_title ?? ''
   editForm.processed_body = props.note.processed_body ?? ''
+  editForm.entry_date = (props.note.metadata as Record<string, string> | null)?.entry_date ?? ''
+  editForm.metadata = { ...(props.note.metadata ?? {}) } as Record<string, string>
   isEditing.value = true
 }
 
@@ -375,6 +455,11 @@ function cancelEditing() {
 }
 
 function saveEdits() {
+  // Merge entry_date back into metadata before saving
+  if (props.note.type === 'diary') {
+    editForm.metadata = { ...editForm.metadata, entry_date: editForm.entry_date }
+  }
+
   editForm.put(`/notes/${props.note.id}`, {
     preserveScroll: true,
     onSuccess: () => {

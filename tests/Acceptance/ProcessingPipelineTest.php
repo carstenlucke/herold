@@ -54,8 +54,8 @@ class ProcessingPipelineTest extends TestCase
         $aiService->shouldReceive('chat')
             ->once()
             ->andReturn([
-                'title' => 'Test Task Title',
-                'body' => '## Description\n\nThis is the processed body.',
+                'title' => 'Test voice note transcription',
+                'body' => 'This is a test transcription of my voice note.',
             ]);
 
         $this->app->instance(AIService::class, $aiService);
@@ -68,7 +68,7 @@ class ProcessingPipelineTest extends TestCase
 
         $this->assertEquals(NoteStatus::PROCESSED, $note->status);
         $this->assertEquals('This is a test transcription of my voice note.', $note->transcript);
-        $this->assertEquals('Test Task Title', $note->processed_title);
+        $this->assertEquals('Test voice note transcription', $note->processed_title);
         $this->assertNotNull($note->processed_body);
     }
 
