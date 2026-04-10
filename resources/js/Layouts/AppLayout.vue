@@ -85,6 +85,7 @@ const currentPath = computed(() => page.url)
 function isActive(to: string): boolean {
   const current = currentPath.value
   if (to === '/') return current === '/' || current === '/dashboard'
+  if (to === '/notes') return current === '/notes' || (current.startsWith('/notes/') && !current.startsWith('/notes/create'))
   return current.startsWith(to)
 }
 
