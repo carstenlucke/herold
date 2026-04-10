@@ -57,6 +57,10 @@ class RecoveryTest extends TestCase
         $response = $this->post('/recovery', ['token' => $token]);
 
         $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Auth/RecoverySuccess')
+            ->has('apiKey')
+        );
         $this->assertFileDoesNotExist($recoveryPath);
     }
 

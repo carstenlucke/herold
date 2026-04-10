@@ -64,9 +64,15 @@ class VoiceNoteController extends Controller
         $note->save();
 
         if ($request->hasFile('audio')) {
+            $ext = match ($request->file('audio')->getMimeType()) {
+                'audio/ogg' => 'ogg',
+                'audio/mp4' => 'm4a',
+                default => 'webm',
+            };
+
             $path = $request->file('audio')->storeAs(
                 'audio',
-                "{$note->id}.webm",
+                "{$note->id}.{$ext}",
                 'local'
             );
             $note->update(['audio_path' => $path]);
@@ -91,7 +97,7 @@ class VoiceNoteController extends Controller
 
         return response()->file(
             Storage::disk('local')->path($note->audio_path),
-            ['Content-Type' => 'audio/webm']
+            ['Content-Type' => Storage::disk('local')->mimeType($note->audio_path) ?: 'audio/webm']
         );
     }
 
@@ -153,6 +159,11 @@ class VoiceNoteController extends Controller
         IssueContentSanitizer $sanitizer,
         GitHubService $gitHubService,
     ) {
+        if ($note->status !== NoteStatus::PROCESSED) {
+            return redirect()->route('notes.show', $note)
+                ->withErrors(['status' => 'Note must be processed before sending.']);
+        }
+
         try {
             $body = $sanitizer->sanitizeAndWrap($note);
 

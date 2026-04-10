@@ -120,6 +120,36 @@ class AudioUploadTest extends TestCase
         $this->assertEquals('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $note->metadata['youtube_url']);
     }
 
+    public function test_ogg_upload_stores_with_ogg_extension(): void
+    {
+        $audio = UploadedFile::fake()->create('recording.ogg', 1024, 'audio/ogg');
+
+        $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'general',
+            ]);
+
+        $note = VoiceNote::first();
+        $this->assertStringEndsWith('.ogg', $note->audio_path);
+        Storage::assertExists($note->audio_path);
+    }
+
+    public function test_mp4_upload_stores_with_m4a_extension(): void
+    {
+        $audio = UploadedFile::fake()->create('recording.m4a', 1024, 'audio/mp4');
+
+        $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'general',
+            ]);
+
+        $note = VoiceNote::first();
+        $this->assertStringEndsWith('.m4a', $note->audio_path);
+        Storage::assertExists($note->audio_path);
+    }
+
     public function test_audio_upload_rate_limiting(): void
     {
         for ($i = 0; $i < 10; $i++) {

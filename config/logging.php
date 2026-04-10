@@ -60,6 +60,7 @@ return [
 
         'single' => [
             'driver' => 'single',
+            'tap' => [App\Logging\RedactSecrets::class],
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
@@ -67,6 +68,7 @@ return [
 
         'daily' => [
             'driver' => 'daily',
+            'tap' => [App\Logging\RedactSecrets::class],
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
@@ -96,6 +98,7 @@ return [
 
         'stderr' => [
             'driver' => 'monolog',
+            'tap' => [App\Logging\RedactSecrets::class],
             'level' => env('LOG_LEVEL', 'debug'),
             'handler' => StreamHandler::class,
             'handler_with' => [

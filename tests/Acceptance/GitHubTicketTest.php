@@ -112,6 +112,39 @@ class GitHubTicketTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_send_rejects_unprocessed_note(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'general',
+            'status' => NoteStatus::RECORDED,
+            'audio_path' => 'audio/test.webm',
+        ]);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/send")
+            ->assertSessionHasErrors('status');
+
+        $note->refresh();
+        $this->assertEquals(NoteStatus::RECORDED, $note->status);
+    }
+
+    public function test_send_rejects_already_sent_note(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'general',
+            'status' => NoteStatus::SENT,
+            'audio_path' => 'audio/test.webm',
+            'processed_title' => 'Title',
+            'processed_body' => 'Body',
+            'github_issue_number' => 42,
+            'github_issue_url' => 'https://github.com/test/test/issues/42',
+        ]);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/send")
+            ->assertSessionHasErrors('status');
+    }
+
     public function test_issue_body_contains_correct_labels(): void
     {
         $note = VoiceNote::create([

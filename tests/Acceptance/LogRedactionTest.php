@@ -3,6 +3,7 @@
 namespace Tests\Acceptance;
 
 use App\Logging\SecretRedactionProcessor;
+use Illuminate\Support\Facades\Log;
 use Monolog\Level;
 use Monolog\LogRecord;
 use Tests\TestCase;
@@ -108,6 +109,17 @@ class LogRedactionTest extends TestCase
 
         $this->assertEquals('[REDACTED]', $result->context['session_id']);
         $this->assertEquals('[REDACTED]', $result->context['cookie']);
+    }
+
+    public function test_processor_is_registered_on_single_channel(): void
+    {
+        $logger = Log::channel('single')->getLogger();
+        $processors = $logger->getProcessors();
+
+        $this->assertNotEmpty(array_filter(
+            $processors,
+            fn ($p) => $p instanceof SecretRedactionProcessor
+        ));
     }
 
     private function makeRecord(string $message, array $context = []): LogRecord

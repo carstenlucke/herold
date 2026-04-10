@@ -104,6 +104,21 @@ class AuthenticationTest extends TestCase
         $this->get('/')->assertRedirect('/login');
     }
 
+    public function test_totp_verify_rejects_user_with_unconfirmed_totp(): void
+    {
+        $user = User::factory()->create([
+            'api_key_hash' => hash('sha256', 'test-api-key-for-testing'),
+            'totp_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'totp_confirmed_at' => null,
+        ]);
+
+        $this->withSession(['auth.key_verified' => true, 'auth.user_id' => $user->id])
+            ->post('/login/totp', ['totp_code' => '123456'])
+            ->assertRedirect('/login');
+
+        $this->assertGuest();
+    }
+
     public function test_protected_routes_require_authentication(): void
     {
         $routes = [

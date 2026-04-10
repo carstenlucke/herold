@@ -133,6 +133,10 @@ class AuthController extends Controller
 
         $user = User::findOrFail($request->session()->get('auth.user_id'));
 
+        if (! $user->hasTotpEnabled()) {
+            return redirect()->route('login');
+        }
+
         if (! $this->verifyTotpCode($user->totp_secret, $request->input('totp_code'))) {
             Log::warning('Failed TOTP verification attempt.', [
                 'ip' => $request->ip(),
@@ -235,7 +239,7 @@ class AuthController extends Controller
         ]);
 
         return Inertia::render('Auth/RecoverySuccess', [
-            'api_key' => $newApiKey,
+            'apiKey' => $newApiKey,
         ]);
     }
 
