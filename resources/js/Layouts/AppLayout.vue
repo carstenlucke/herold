@@ -30,6 +30,18 @@
           @click.prevent="navigate(item.to)"
         />
       </v-list>
+
+      <template #append>
+        <div class="px-2 pb-4">
+          <v-list-item
+            prepend-icon="mdi-logout"
+            title="Logout"
+            color="error"
+            rounded="lg"
+            @click="logout"
+          />
+        </div>
+      </template>
     </v-navigation-drawer>
 
     <!-- Main content -->
@@ -96,5 +108,9 @@ const activeNavIndex = computed(() => {
 
 function navigate(to: string) {
   router.visit(to)
+}
+
+function logout() {
+  router.post('/logout')
 }
 </script>
