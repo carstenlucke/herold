@@ -1,4 +1,4 @@
-FROM php:8.4-apache
+FROM php:8.5-apache
 
 # Apache mod_rewrite (for Laravel .htaccess)
 RUN a2enmod rewrite
