@@ -2,8 +2,8 @@
 
 namespace Tests\Acceptance;
 
-use App\Models\VoiceNote;
 use App\Enums\NoteStatus;
+use App\Models\VoiceNote;
 use App\Services\IssueContentSanitizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -24,7 +24,7 @@ class IssueSanitizationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->sanitizer = new IssueContentSanitizer();
+        $this->sanitizer = new IssueContentSanitizer;
     }
 
     public function test_html_comments_are_removed_from_body(): void

@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\VoiceNoteController;
+use App\Services\MessageTypeRegistry;
 use Illuminate\Support\Facades\Route;
 
 // Auth
@@ -36,6 +37,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
 
     Route::get('/types', fn () => response()->json(
-        app(\App\Services\MessageTypeRegistry::class)->all()
+        app(MessageTypeRegistry::class)->all()
     ))->name('types');
 });

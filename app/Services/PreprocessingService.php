@@ -33,7 +33,7 @@ class PreprocessingService
         }
 
         if ($note->type === 'diary') {
-            $userMessage .= "\n\nCurrent date: " . now()->toDateString();
+            $userMessage .= "\n\nCurrent date: ".now()->toDateString();
         }
 
         $result = $this->aiService->chat($systemPrompt, $userMessage);

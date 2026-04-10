@@ -74,6 +74,6 @@ class IssueContentSanitizer
             return null;
         }
 
-        return "## Metadata\n\n" . implode("\n", $lines);
+        return "## Metadata\n\n".implode("\n", $lines);
     }
 }

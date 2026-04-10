@@ -3,8 +3,8 @@
 namespace Tests\Acceptance;
 
 use App\Logging\SecretRedactionProcessor;
-use Monolog\LogRecord;
 use Monolog\Level;
+use Monolog\LogRecord;
 use Tests\TestCase;
 
 /**
@@ -28,7 +28,7 @@ class LogRedactionTest extends TestCase
             'herold.openai.api_key' => 'sk-secretopenaikey123',
         ]);
 
-        $this->processor = new SecretRedactionProcessor();
+        $this->processor = new SecretRedactionProcessor;
     }
 
     public function test_app_key_is_redacted(): void
@@ -113,7 +113,7 @@ class LogRedactionTest extends TestCase
     private function makeRecord(string $message, array $context = []): LogRecord
     {
         return new LogRecord(
-            datetime: new \DateTimeImmutable(),
+            datetime: new \DateTimeImmutable,
             channel: 'test',
             level: Level::Info,
             message: $message,

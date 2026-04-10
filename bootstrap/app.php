@@ -13,7 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \Inertia\Middleware::class,
+            Inertia\Middleware::class,
             SecurityHeaders::class,
         ]);
     })

@@ -36,7 +36,7 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="HEROLD_API_KEY" value="test-api-key-for-testing"/>
-        <env name="GITHUB_TOKEN" value="test-github-token"/>
+        <env name="HEROLD_GITHUB_TOKEN" value="test-github-token"/>
         <env name="GITHUB_OWNER" value="test-owner"/>
         <env name="GITHUB_REPO" value="test-repo"/>
         <env name="OPENAI_API_KEY" value="test-openai-key"/>

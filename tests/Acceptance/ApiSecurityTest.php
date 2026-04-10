@@ -35,6 +35,7 @@ class ApiSecurityTest extends TestCase
 
         $this->assertStringNotContainsString('OPENAI_API_KEY', $json);
         $this->assertStringNotContainsString('GITHUB_TOKEN', $json);
+        $this->assertStringNotContainsString('HEROLD_GITHUB_TOKEN', $json);
         $this->assertStringNotContainsString('HEROLD_API_KEY', $json);
         $this->assertStringNotContainsString(config('herold.openai.api_key') ?? '', $json);
     }

@@ -14,7 +14,7 @@ jobs:
       DB_CONNECTION: sqlite
       DB_DATABASE: ":memory:"
       HEROLD_API_KEY: test-api-key-for-ci
-      GITHUB_TOKEN: test-github-token
+      HEROLD_GITHUB_TOKEN: test-github-token
       GITHUB_OWNER: test-owner
       GITHUB_REPO: test-repo
       OPENAI_API_KEY: test-openai-key
