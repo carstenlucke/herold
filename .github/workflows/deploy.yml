@@ -40,14 +40,32 @@ jobs:
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
+      - name: Validate FTP_BASE_PATH
+        run: |
+          if [ -z "$FTP_BASE_PATH" ]; then
+            echo "::error::FTP_BASE_PATH is empty"
+            exit 1
+          fi
+          if [ "$FTP_BASE_PATH" = "/" ]; then
+            echo "::error::FTP_BASE_PATH must not be '/' (account root)"
+            exit 1
+          fi
+        env:
+          FTP_BASE_PATH: ${{ vars.FTP_BASE_PATH }}
+
       - name: Deploy via FTPS
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_BASE_PATH: ${{ vars.FTP_BASE_PATH }}
         run: |
           set -euo pipefail
           lftp -c "
             set ftp:ssl-force true
             set ssl:verify-certificate yes
-            open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ftp://${{ secrets.FTP_HOST }}
-            cd ${{ vars.FTP_BASE_PATH }}
+            open -u $FTP_USER,$FTP_PASSWORD ftp://$FTP_HOST
+            cd $FTP_BASE_PATH
             mirror --reverse --delete --verbose \
               --exclude ^\.git/ \
               --exclude ^\.github/ \
