@@ -10,7 +10,7 @@
       style="border-right: 1px solid rgba(255, 255, 255, 0.06)"
     >
       <div class="pa-5 pb-2 d-flex align-center ga-3">
-        <img :src="`${import.meta.env.BASE_URL}images/herold-icon.png`" alt="Herold" style="height: 32px; width: auto" />
+        <img :src="iconSrc" alt="Herold" style="height: 32px; width: auto" />
         <div>
           <div class="brand-text text-h5">Herold</div>
           <div class="brand-subtitle mt-1" style="font-size: 0.5rem">VOICE DISPATCH SYSTEM</div>
@@ -87,6 +87,8 @@ import { useDisplay } from 'vuetify'
 
 const { mobile } = useDisplay({ mobileBreakpoint: 960 })
 const page = usePage()
+
+const iconSrc = `${import.meta.env.BASE_URL}images/herold-icon.png`
 
 const navItems = [
   { label: 'Dashboard', icon: 'mdi-view-dashboard', to: '/' },
