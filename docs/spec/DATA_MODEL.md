@@ -30,7 +30,7 @@ The central entity of Herold. Each row represents one voice note from recording 
 
 ### NoteStatus
 
-Tracks progress through the voice-note processing pipeline. Processing is synchronous (see [ADR-002](../adr/002-dev-prod-parity.md)), so only four states are needed.
+Tracks progress through the voice-note processing pipeline. Processing is synchronous (see [ADR-002](../../adr/002-dev-prod-parity.md)), so only four states are needed.
 
 | Value | Meaning |
 |-------|---------|

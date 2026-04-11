@@ -2,7 +2,7 @@
 
 This document records key architecture decisions made for the project. Each decision documents the context, considered options, and rationale.
 
-For detailed variant comparisons see [`adr/*.md`](../adr/).
+For detailed variant comparisons see [`adr/*.md`](../../adr/).
 
 ---
 
@@ -22,7 +22,7 @@ For detailed variant comparisons see [`adr/*.md`](../adr/).
 
 **Decision:** Option C -- Inertia.js.
 
-**Rationale:** A monolith does not need a separate API layer for the browser UI. Inertia eliminates duplicate routing, frontend auth, and manual error handling. The complex audio UI (MediaRecorder, waveform) requires Vue -- Blade would not suffice. The browser UI runs via Inertia (`web.php` + session). Agents interact directly with GitHub, not with Herold (see ADR-003). Detailed variant comparison: [`adr/001-inertia-frontend-bridge.md`](../adr/001-inertia-frontend-bridge.md).
+**Rationale:** A monolith does not need a separate API layer for the browser UI. Inertia eliminates duplicate routing, frontend auth, and manual error handling. The complex audio UI (MediaRecorder, waveform) requires Vue -- Blade would not suffice. The browser UI runs via Inertia (`web.php` + session). Agents interact directly with GitHub, not with Herold (see ADR-003). Detailed variant comparison: [`adr/001-inertia-frontend-bridge.md`](../../adr/001-inertia-frontend-bridge.md).
 
 ---
 
@@ -43,7 +43,7 @@ For detailed variant comparisons see [`adr/*.md`](../adr/).
 
 **Decision:** Option C -- Apache + synchronous processing.
 
-**Rationale:** Apache parity ensures `.htaccess` is tested in dev. Synchronous processing eliminates disproportionate queue infrastructure (cron service, HTTP-cron endpoint, job classes, polling) for a single-user demo project. The ~10-30s wait is acceptable with a loading indicator. 2 Docker services (`app` + `node`), no cron config on shared hosting. Detailed variant comparison: [`adr/002-dev-prod-parity.md`](../adr/002-dev-prod-parity.md).
+**Rationale:** Apache parity ensures `.htaccess` is tested in dev. Synchronous processing eliminates disproportionate queue infrastructure (cron service, HTTP-cron endpoint, job classes, polling) for a single-user demo project. The ~10-30s wait is acceptable with a loading indicator. 2 Docker services (`app` + `node`), no cron config on shared hosting. Detailed variant comparison: [`adr/002-dev-prod-parity.md`](../../adr/002-dev-prod-parity.md).
 
 ---
 
@@ -63,4 +63,4 @@ For detailed variant comparisons see [`adr/*.md`](../adr/).
 
 **Decision:** Option C -- GitHub Issues as sole ticket store, agent memory deferred.
 
-**Rationale:** Herold does one thing well: capture voice input and dispatch it as a GitHub Issue. Agents use GitHub natively (`gh` CLI). GitHub provides audit trail and agent communication (comments) for free. Agent memory was speculative -- it can be added later if a real need emerges. Detailed variant comparison: [`adr/003-github-issues-as-ticket-store.md`](../adr/003-github-issues-as-ticket-store.md).
+**Rationale:** Herold does one thing well: capture voice input and dispatch it as a GitHub Issue. Agents use GitHub natively (`gh` CLI). GitHub provides audit trail and agent communication (comments) for free. Agent memory was speculative -- it can be added later if a real need emerges. Detailed variant comparison: [`adr/003-github-issues-as-ticket-store.md`](../../adr/003-github-issues-as-ticket-store.md).

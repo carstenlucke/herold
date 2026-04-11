@@ -155,9 +155,10 @@ curl -X PATCH -H "Authorization: Bearer herold_..." \
 
 ```
 herold/
-  spec/                     # Specification, NFRs, constraints
-  adr/                      # Architecture Decision Records
-  docs/                     # Architecture decisions index
+  adr/                      # Architecture Decision Records (detailed variants)
+  docs/
+    arch/                   # Architecture decisions index
+    spec/                   # Specification, NFRs, constraints, data model
   app/
     Http/Controllers/       # Web + API controllers
     Models/                 # VoiceNote, Memory, User

@@ -22,7 +22,7 @@ fi
 if [[ $# -gt 0 ]]; then
     files=("$@")
 else
-    files=("$DOCS_DIR"/*.plantuml)
+    files=("$DOCS_DIR"/spec/*.plantuml)
 fi
 
 for f in "${files[@]}"; do
