@@ -93,8 +93,9 @@ docker compose run --rm app php artisan key:generate
 docker compose up -d
 ```
 
-Migrations and seeding run automatically on container start via
-`docker-entrypoint.sh`. No manual `php artisan migrate` required.
+Migrations run automatically on container start via `docker-entrypoint.sh`.
+No manual `php artisan migrate` required. The initial admin user is created
+by a migration on first run.
 
 ## Development
 
@@ -111,8 +112,8 @@ docker compose exec app php artisan <command>
 # Stop
 docker compose down
 
-# Full reset (removes database volume)
-docker compose down -v
+# Remove database
+rm database/data/database.sqlite
 ```
 
 ## Agent-API

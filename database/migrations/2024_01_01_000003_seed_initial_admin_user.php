@@ -7,16 +7,16 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (app()->runningUnitTests() || DB::table('users')->exists()) {
+            return;
+        }
+
         $apiKey = config('herold.api_key');
 
         if (blank($apiKey)) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'HEROLD_API_KEY must be set in .env before running migrations.'
             );
-        }
-
-        if (DB::table('users')->exists()) {
-            return;
         }
 
         DB::table('users')->insert([
