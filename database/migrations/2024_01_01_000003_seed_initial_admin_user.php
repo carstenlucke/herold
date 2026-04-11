@@ -7,11 +7,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::table('users')->insertOrIgnore([
+        $apiKey = config('herold.api_key');
+
+        if (blank($apiKey)) {
+            throw new \RuntimeException(
+                'HEROLD_API_KEY must be set in .env before running migrations.'
+            );
+        }
+
+        if (DB::table('users')->exists()) {
+            return;
+        }
+
+        DB::table('users')->insert([
             'name' => 'Herold',
             'email' => 'herold@flitzpeople.com',
             'password' => bcrypt('password'),
-            'api_key_hash' => hash('sha256', config('herold.api_key') ?? 'default-dev-key'),
+            'api_key_hash' => hash('sha256', $apiKey),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
