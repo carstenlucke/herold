@@ -57,15 +57,15 @@ jobs:
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          LFTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
           FTP_BASE_PATH: ${{ vars.FTP_BASE_PATH }}
         run: |
           set -euo pipefail
           lftp -c "
             set ftp:ssl-force true
             set ssl:verify-certificate yes
-            open --user \"$FTP_USER\" --password \"$FTP_PASSWORD\" \"ftp://$FTP_HOST\"
-            cd $FTP_BASE_PATH
+            open --user \"$FTP_USER\" --env-password \"ftp://$FTP_HOST\"
+            cd \"$FTP_BASE_PATH\"
             mirror --reverse --delete --verbose \
               --exclude ^\.git/ \
               --exclude ^\.github/ \
