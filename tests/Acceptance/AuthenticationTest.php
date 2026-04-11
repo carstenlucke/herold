@@ -122,10 +122,20 @@ class AuthenticationTest extends TestCase
 
     public function test_verify_key_selects_configured_admin_when_multiple_users_exist(): void
     {
-        // Create a second user with a different API key
-        User::factory()->create([
+        // Delete setUp admin and recreate with non-admin FIRST (lower ID),
+        // so User::first() would return the wrong user if code regresses.
+        $this->user->delete();
+
+        $nonAdmin = User::factory()->create([
             'email' => 'other@example.com',
             'api_key_hash' => hash('sha256', 'other-api-key'),
+        ]);
+
+        $this->user = User::factory()->create([
+            'email' => config('herold.admin_email'),
+            'api_key_hash' => hash('sha256', 'test-api-key-for-testing'),
+            'totp_secret' => encrypt('JBSWY3DPEHPK3PXP'),
+            'totp_confirmed_at' => now(),
         ]);
 
         $response = $this->post('/login/key', ['api_key' => 'test-api-key-for-testing']);

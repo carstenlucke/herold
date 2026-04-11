@@ -33,6 +33,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('users')->where('email', config('herold.admin_email', 'herold@flitzpeople.com'))->delete();
+        // Delete by the hardcoded name (stable) rather than the mutable email config.
+        DB::table('users')->where('name', 'Herold')->delete();
     }
 };
