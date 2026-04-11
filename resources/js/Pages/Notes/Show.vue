@@ -144,7 +144,20 @@
               class="mb-3"
             />
 
-            <!-- Date fields (any type with date extra_fields) -->
+            <!-- Extra fields (text/url) -->
+            <template v-for="field in textFields" :key="field.name">
+              <v-text-field
+                v-model="editForm.metadata[field.name]"
+                :label="field.label"
+                :type="field.type === 'url' ? 'url' : 'text'"
+                variant="filled"
+                color="primary"
+                :readonly="!isEditing"
+                class="mb-3"
+              />
+            </template>
+
+            <!-- Extra fields (date) -->
             <template v-for="field in dateFields" :key="field.name">
               <v-menu
                 v-model="dateMenus[field.name]"
@@ -404,6 +417,12 @@ function stepClass(step: number): string {
 // Date fields (generic for any type)
 const dateMenus = ref<Record<string, boolean>>({})
 
+const textFields = computed(() => {
+  const tc = typeConfig.value
+  if (!tc) return []
+  return tc.extra_fields.filter((f: { type: string }) => f.type === 'text' || f.type === 'url')
+})
+
 const dateFields = computed(() => {
   const tc = typeConfig.value
   if (!tc) return []
@@ -455,7 +474,10 @@ function startEditing() {
 
 function cancelEditing() {
   isEditing.value = false
-  editForm.reset()
+  editForm.processed_title = props.note.processed_title ?? ''
+  editForm.processed_body = props.note.processed_body ?? ''
+  editForm.metadata = { ...(props.note.metadata ?? {}) } as Record<string, string>
+  editForm.clearErrors()
 }
 
 function saveEdits() {
