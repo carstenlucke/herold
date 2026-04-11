@@ -29,6 +29,9 @@ database/database.sqlite
 # PHPUnit
 .phpunit.result.cache
 
+# Vite
+.vite
+
 # IDE
 .idea
 .vscode
