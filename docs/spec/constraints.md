@@ -29,7 +29,18 @@ SQLite is the sole database. No MySQL, PostgreSQL, or other database server.
 **Rationale:** No extra service to manage. Single-user write load is well
 within SQLite's capabilities. Portable — the entire database is one file.
 
-### CON-3a-04: Vite 8 Build Toolchain
+### CON-3a-04: Single-User System
+
+Herold supports exactly one user account. The `users` table is limited to
+at most one row, enforced by a SQLite trigger (`enforce_users_singleton`).
+No multi-user support, no agent accounts, no Sanctum tokens.
+
+**Rationale:** Herold is a personal tool for a single operator. Multi-user
+would add authentication complexity (roles, permissions, account management)
+with no benefit. Agents interact with GitHub, not with Herold
+(see [ADR-003](../../adr/003-github-issues-as-ticket-store.md)).
+
+### CON-3a-05: Vite 8 Build Toolchain
 
 Frontend assets are built with Vite 8 (Rolldown bundler). Node.js 24 LTS
 is required only for the build process, not at runtime.
