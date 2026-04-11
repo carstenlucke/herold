@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - sqlite_data:/var/www/html/database/data
+    env_file: .env
+
+  node:
+    image: node:22-alpine
+    working_dir: /var/www/html
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+
+volumes:
+  sqlite_data:
+  node_modules:
