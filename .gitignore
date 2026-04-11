@@ -24,7 +24,8 @@ npm-debug.log
 yarn-error.log
 
 # SQLite
-database/database.sqlite
+database/data/*.sqlite
+database/data/*.sqlite-*
 
 # PHPUnit
 .phpunit.result.cache
