@@ -4,6 +4,8 @@ return [
 
     'api_key' => env('HEROLD_API_KEY'),
 
+    'admin_email' => env('HEROLD_ADMIN_EMAIL', 'herold@flitzpeople.com'),
+
     'github' => [
         'token' => env('HEROLD_GITHUB_TOKEN'),
         'owner' => env('GITHUB_OWNER'),

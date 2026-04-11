@@ -23,6 +23,7 @@ class AuthenticationTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create([
+            'email' => config('herold.admin_email'),
             'api_key_hash' => hash('sha256', 'test-api-key-for-testing'),
             'totp_secret' => encrypt('JBSWY3DPEHPK3PXP'),
             'totp_confirmed_at' => now(),
@@ -117,6 +118,32 @@ class AuthenticationTest extends TestCase
             ->assertRedirect('/login');
 
         $this->assertGuest();
+    }
+
+    public function test_verify_key_selects_configured_admin_when_multiple_users_exist(): void
+    {
+        // Create a second user with a different API key
+        User::factory()->create([
+            'email' => 'other@example.com',
+            'api_key_hash' => hash('sha256', 'other-api-key'),
+        ]);
+
+        $response = $this->post('/login/key', ['api_key' => 'test-api-key-for-testing']);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertSessionHas('auth.key_verified', true);
+        $response->assertSessionHas('auth.user_id', $this->user->id);
+    }
+
+    public function test_verify_key_rejects_non_admin_api_key_even_if_valid_for_other_user(): void
+    {
+        User::factory()->create([
+            'email' => 'other@example.com',
+            'api_key_hash' => hash('sha256', 'other-api-key'),
+        ]);
+
+        $this->post('/login/key', ['api_key' => 'other-api-key'])
+            ->assertSessionHasErrors('api_key');
     }
 
     public function test_protected_routes_require_authentication(): void

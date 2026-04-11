@@ -84,7 +84,7 @@ cd herold
 
 # Configure environment
 cp .env.example .env
-# Edit .env: APP_KEY, OPENAI_API_KEY, GITHUB_TOKEN, HEROLD_API_KEY
+# Edit .env: APP_KEY, OPENAI_API_KEY, GITHUB_TOKEN, HEROLD_API_KEY, HEROLD_ADMIN_EMAIL
 
 # Generate APP_KEY
 docker compose run --rm app php artisan key:generate
