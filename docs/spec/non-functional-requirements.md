@@ -66,7 +66,7 @@ built-in a11y support should be preserved (ARIA labels, keyboard navigation).*
 
 Audio transcription, LLM preprocessing, and GitHub issue creation run
 synchronously in the HTTP request. No queue, no cron, no background jobs.
-See [ADR-002](../adr/002-dev-prod-parity.md).
+See [ADR-002](../../adr/002-dev-prod-parity.md).
 
 - Processing time: ~10-30 seconds per voice note
 - The UI shows a loading indicator during processing
@@ -127,7 +127,7 @@ The application must run on standard shared hosting with:
 - FTP access for deployment
 - HTTPS (provided by hosting)
 - Limited SSH access (PHP 8.5 available, `crontab` not available)
-- No cron jobs required (synchronous processing, see [ADR-002](../adr/002-dev-prod-parity.md))
+- No cron jobs required (synchronous processing, see [ADR-002](../../adr/002-dev-prod-parity.md))
 - No Docker support
 
 **Fit Criterion:** Application deploys and runs correctly on the target
@@ -139,7 +139,7 @@ maintenance commands (for example `php artisan migrate --force`).
 **NFR-13c-01: Agent Interoperability**
 
 Local AI agents (Claude Code, OpenCode) interact exclusively with GitHub
-Issues, not with Herold. See [ADR-003](../adr/003-github-issues-as-ticket-store.md).
+Issues, not with Herold. See [ADR-003](../../adr/003-github-issues-as-ticket-store.md).
 
 - Ticket consumption: `gh issue list`, `gh issue view`
 - Status updates: `gh issue comment`, `gh issue edit` (labels)
@@ -307,10 +307,10 @@ audio for transcription). No GDPR implications as it is a personal tool.*
 - Code, comments, variable names: English
 - Documentation (README, ADRs, docs/): English
 - Git commits: English (conventional commits)
-- Exception: `spec/herold-spec.prompt.md` remains in German
+- Exception: `prompts/herold-spec.prompt.md` remains in German
 
 **Fit Criterion:** No German text appears in the UI, codebase, or
-documentation (except `spec/herold-spec.prompt.md`).
+documentation (except `prompts/herold-spec.prompt.md`).
 
 ---
 

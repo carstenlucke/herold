@@ -19,9 +19,11 @@ return new class extends Migration
             );
         }
 
+        $adminEmail = config('herold.admin_email', 'herold@flitzpeople.com');
+
         DB::table('users')->insert([
             'name' => 'Herold',
-            'email' => 'herold@flitzpeople.com',
+            'email' => $adminEmail,
             'password' => bcrypt('password'),
             'api_key_hash' => hash('sha256', $apiKey),
             'created_at' => now(),
@@ -31,6 +33,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('users')->where('email', 'herold@flitzpeople.com')->delete();
+        // Intentional no-op: never delete users via migration rollback.
     }
 };

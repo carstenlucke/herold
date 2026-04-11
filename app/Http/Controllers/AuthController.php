@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\MultipleRecordsFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -44,7 +46,7 @@ class AuthController extends Controller
             'api_key' => 'required|string',
         ]);
 
-        $user = User::first();
+        $user = $this->resolveAdminUser();
 
         if (! $user || ! $user->api_key_hash) {
             return back()->withErrors(['api_key' => 'Invalid API key.']);
@@ -219,7 +221,7 @@ class AuthController extends Controller
 
         Storage::disk('local')->delete($recoveryPath);
 
-        $user = User::first();
+        $user = $this->resolveAdminUser();
 
         if (! $user) {
             abort(404);
@@ -241,6 +243,15 @@ class AuthController extends Controller
         return Inertia::render('Auth/RecoverySuccess', [
             'apiKey' => $newApiKey,
         ]);
+    }
+
+    private function resolveAdminUser(): ?User
+    {
+        try {
+            return User::sole();
+        } catch (ModelNotFoundException|MultipleRecordsFoundException) {
+            return null;
+        }
     }
 
     /**

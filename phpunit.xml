@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
 >
     <testsuites>
@@ -36,6 +36,7 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="HEROLD_API_KEY" value="test-api-key-for-testing"/>
+        <env name="HEROLD_ADMIN_EMAIL" value="herold@flitzpeople.com"/>
         <env name="HEROLD_GITHUB_TOKEN" value="test-github-token"/>
         <env name="GITHUB_OWNER" value="test-owner"/>
         <env name="GITHUB_REPO" value="test-repo"/>

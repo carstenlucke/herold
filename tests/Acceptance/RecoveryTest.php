@@ -24,7 +24,12 @@ class RecoveryTest extends TestCase
     {
         parent::setUp();
 
+        // Clean up recovery file from previous tests to ensure isolation
+        $recoveryPath = storage_path('app/private/.herold-recovery');
+        @unlink($recoveryPath);
+
         $this->user = User::factory()->create([
+            'email' => config('herold.admin_email'),
             'api_key_hash' => hash('sha256', 'test-api-key-for-testing'),
             'totp_secret' => encrypt('JBSWY3DPEHPK3PXP'),
             'totp_confirmed_at' => now(),

@@ -84,7 +84,7 @@ cd herold
 
 # Configure environment
 cp .env.example .env
-# Edit .env: APP_KEY, OPENAI_API_KEY, GITHUB_TOKEN, HEROLD_API_KEY
+# Edit .env: APP_KEY, OPENAI_API_KEY, HEROLD_GITHUB_TOKEN, HEROLD_API_KEY, HEROLD_ADMIN_EMAIL
 
 # Generate APP_KEY
 docker compose run --rm app php artisan key:generate
@@ -155,9 +155,10 @@ curl -X PATCH -H "Authorization: Bearer herold_..." \
 
 ```
 herold/
-  spec/                     # Specification, NFRs, constraints
-  adr/                      # Architecture Decision Records
-  docs/                     # Architecture decisions index
+  adr/                      # Architecture Decision Records (detailed variants)
+  docs/
+    arch/                   # Architecture decisions index
+    spec/                   # Specification, NFRs, constraints, data model
   app/
     Http/Controllers/       # Web + API controllers
     Models/                 # VoiceNote, Memory, User
