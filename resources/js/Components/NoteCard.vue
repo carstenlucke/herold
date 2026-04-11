@@ -33,6 +33,17 @@
 
         <div class="d-flex align-center ga-2">
           <NoteStatusBadge :status="note.status" />
+          <a
+            v-if="note.github_issue_url"
+            :href="note.github_issue_url"
+            target="_blank"
+            rel="noopener"
+            class="text-caption text-primary d-inline-flex align-center ga-1"
+            @click.stop
+          >
+            <v-icon icon="mdi-github" size="14" />
+            #{{ note.github_issue_number }}
+          </a>
           <span class="text-caption" style="color: var(--text-muted)">
             {{ formattedDate }}
           </span>
