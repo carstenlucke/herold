@@ -1,0 +1,93 @@
+name: Deploy
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ vars.ENABLE_FTP_DEPLOY == 'true' }}
+
+    env:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, mbstring, xml
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Composer dependencies (production)
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Verify build output
+        run: test -d public/build
+
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Deploy via FTPS
+        run: |
+          set -euo pipefail
+          lftp -c "
+            set ftp:ssl-force true
+            set ssl:verify-certificate yes
+            open -u ${{ secrets.FTP_USER }},${{ secrets.FTP_PASSWORD }} ftp://${{ secrets.FTP_HOST }}
+            cd ${{ vars.FTP_BASE_PATH }}
+            mirror --reverse --delete --verbose \
+              --exclude ^\.git/ \
+              --exclude ^\.github/ \
+              --exclude ^\.claude/ \
+              --exclude ^\.opencode/ \
+              --exclude ^\.vite/ \
+              --exclude ^node_modules/ \
+              --exclude ^\.env \
+              --exclude ^database/data/ \
+              --exclude ^storage/app/private/ \
+              --exclude ^storage/logs/ \
+              --exclude ^storage/framework/sessions/ \
+              --exclude ^storage/framework/cache/ \
+              --exclude ^tests/ \
+              --exclude ^Dockerfile$ \
+              --exclude ^docker-compose\.yml$ \
+              --exclude ^docker-entrypoint\.sh$ \
+              --exclude ^package\.json$ \
+              --exclude ^package-lock\.json$ \
+              --exclude ^vite\.config\.ts$ \
+              --exclude ^vitest\.config\.ts$ \
+              --exclude ^phpunit\.xml$ \
+              --exclude ^\.phpunit\.result\.cache$ \
+              --exclude ^CLAUDE\.md$ \
+              --exclude ^AGENTS\.md$ \
+              --exclude ^DESIGN\.md$ \
+              --exclude ^README\.md$ \
+              --exclude ^adr/ \
+              --exclude ^docs/ \
+              --exclude ^prompts/ \
+              --exclude ^poc-ui/ \
+              --exclude ^icons/ \
+              --exclude ^srs/ \
+              --exclude ^sh/ \
+              --exclude ^scripts/ \
+              --exclude ^\.DS_Store$ \
+              .
+            bye
+          "
