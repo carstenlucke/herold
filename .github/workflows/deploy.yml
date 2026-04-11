@@ -46,10 +46,6 @@ jobs:
             echo "::error::FTP_BASE_PATH is empty"
             exit 1
           fi
-          if [ "$FTP_BASE_PATH" = "/" ]; then
-            echo "::error::FTP_BASE_PATH must not be '/' (account root)"
-            exit 1
-          fi
         env:
           FTP_BASE_PATH: ${{ vars.FTP_BASE_PATH }}
 
