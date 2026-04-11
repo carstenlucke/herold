@@ -170,6 +170,81 @@ class AudioUploadTest extends TestCase
             ->assertStatus(429);
     }
 
+    public function test_obsidian_type_accepts_optional_vault(): void
+    {
+        $audio = UploadedFile::fake()->create('recording.webm', 1024, 'audio/webm');
+
+        $response = $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'obsidian',
+                'metadata' => ['vault' => 'Work'],
+            ]);
+
+        $response->assertRedirect();
+
+        $note = VoiceNote::latest()->first();
+        $this->assertEquals('Work', $note->metadata['vault']);
+    }
+
+    public function test_obsidian_type_works_without_vault(): void
+    {
+        $audio = UploadedFile::fake()->create('recording.webm', 1024, 'audio/webm');
+
+        $response = $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'obsidian',
+            ]);
+
+        $response->assertRedirect();
+    }
+
+    public function test_todo_type_accepts_valid_deadline(): void
+    {
+        $audio = UploadedFile::fake()->create('recording.webm', 1024, 'audio/webm');
+
+        $response = $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'todo',
+                'metadata' => ['deadline' => '2026-04-20'],
+            ]);
+
+        $response->assertRedirect();
+
+        $note = VoiceNote::latest()->first();
+        $this->assertEquals('2026-04-20', $note->metadata['deadline']);
+    }
+
+    public function test_todo_type_rejects_invalid_deadline_format(): void
+    {
+        $audio = UploadedFile::fake()->create('recording.webm', 1024, 'audio/webm');
+
+        $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'todo',
+                'metadata' => ['deadline' => 'next friday'],
+            ])
+            ->assertSessionHasErrors('metadata.deadline');
+    }
+
+    public function test_unknown_metadata_keys_are_stripped(): void
+    {
+        $audio = UploadedFile::fake()->create('recording.webm', 1024, 'audio/webm');
+
+        $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'general',
+                'metadata' => ['rogue_key' => 'should be stripped'],
+            ]);
+
+        $note = VoiceNote::latest()->first();
+        $this->assertNull($note->metadata);
+    }
+
     public function test_voice_note_can_be_deleted(): void
     {
         $audio = UploadedFile::fake()->create('recording.webm', 1024, 'audio/webm');

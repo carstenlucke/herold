@@ -32,7 +32,7 @@ class PreprocessingService
             $userMessage .= "\n\nMetadata:\n{$metadataLines}";
         }
 
-        if ($note->type === 'diary') {
+        if (! empty($typeConfig['needs_current_date_context'])) {
             $userMessage .= "\n\nCurrent date: ".now()->toDateString();
         }
 
@@ -45,9 +45,19 @@ class PreprocessingService
         ];
 
         // Merge type-specific extracted fields into metadata
-        if ($note->type === 'diary' && ! empty($result['entry_date'])) {
-            $metadata = $note->metadata ?? [];
-            $metadata['entry_date'] = $result['entry_date'];
+        $extraFields = $typeConfig['extra_fields'] ?? [];
+        $metadata = $note->metadata ?? [];
+        $metadataChanged = false;
+
+        foreach ($extraFields as $field) {
+            $fieldName = $field['name'];
+            if (! empty($result[$fieldName])) {
+                $metadata[$fieldName] = $result[$fieldName];
+                $metadataChanged = true;
+            }
+        }
+
+        if ($metadataChanged) {
             $updateData['metadata'] = $metadata;
         }
 

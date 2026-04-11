@@ -144,32 +144,33 @@
               class="mb-3"
             />
 
-            <!-- Entry Date (diary only) -->
-            <v-menu
-              v-if="note.type === 'diary'"
-              v-model="dateMenu"
-              :close-on-content-click="false"
-              location="bottom start"
-            >
-              <template #activator="{ props: menuProps }">
-                <v-text-field
-                  v-bind="menuProps"
-                  :model-value="formattedEntryDate"
-                  label="Entry Date"
-                  variant="filled"
+            <!-- Date fields (any type with date extra_fields) -->
+            <template v-for="field in dateFields" :key="field.name">
+              <v-menu
+                v-model="dateMenus[field.name]"
+                :close-on-content-click="false"
+                location="bottom start"
+              >
+                <template #activator="{ props: menuProps }">
+                  <v-text-field
+                    v-bind="menuProps"
+                    :model-value="formatDateField(editForm.metadata[field.name])"
+                    :label="field.label"
+                    variant="filled"
+                    color="primary"
+                    readonly
+                    prepend-inner-icon="mdi-calendar"
+                    :disabled="!isEditing"
+                    class="mb-3"
+                  />
+                </template>
+                <v-date-picker
+                  :model-value="parseDateField(editForm.metadata[field.name])"
                   color="primary"
-                  readonly
-                  prepend-inner-icon="mdi-calendar"
-                  :disabled="!isEditing"
-                  class="mb-3"
+                  @update:model-value="(d: Date) => onEditDatePicked(field.name, d)"
                 />
-              </template>
-              <v-date-picker
-                :model-value="entryDatePickerValue"
-                color="primary"
-                @update:model-value="onDatePicked"
-              />
-            </v-menu>
+              </v-menu>
+            </template>
 
             <!-- Body -->
             <v-textarea
@@ -400,26 +401,32 @@ function stepClass(step: number): string {
   return 'neon-border-primary'
 }
 
-// Date picker
-const dateMenu = ref(false)
+// Date fields (generic for any type)
+const dateMenus = ref<Record<string, boolean>>({})
 
-const formattedEntryDate = computed(() => {
-  if (!editForm.entry_date) return ''
-  const d = new Date(editForm.entry_date + 'T00:00:00')
+const dateFields = computed(() => {
+  const tc = typeConfig.value
+  if (!tc) return []
+  return tc.extra_fields.filter((f: { type: string }) => f.type === 'date')
+})
+
+function formatDateField(iso?: string): string {
+  if (!iso) return ''
+  const d = new Date(iso + 'T00:00:00')
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-})
+}
 
-const entryDatePickerValue = computed(() => {
-  if (!editForm.entry_date) return undefined
-  return new Date(editForm.entry_date + 'T00:00:00')
-})
+function parseDateField(iso?: string): Date | undefined {
+  if (!iso) return undefined
+  return new Date(iso + 'T00:00:00')
+}
 
-function onDatePicked(date: Date) {
+function onEditDatePicked(fieldName: string, date: Date) {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
-  editForm.entry_date = `${y}-${m}-${d}`
-  dateMenu.value = false
+  editForm.metadata[fieldName] = `${y}-${m}-${d}`
+  dateMenus.value[fieldName] = false
 }
 
 // Editing
@@ -427,7 +434,6 @@ const isEditing = ref(false)
 const editForm = useForm({
   processed_title: props.note.processed_title ?? '',
   processed_body: props.note.processed_body ?? '',
-  entry_date: (props.note.metadata as Record<string, string> | null)?.entry_date ?? '',
   metadata: { ...(props.note.metadata ?? {}) } as Record<string, string>,
 })
 
@@ -436,7 +442,6 @@ watch(() => props.note, (note) => {
   if (!isEditing.value) {
     editForm.processed_title = note.processed_title ?? ''
     editForm.processed_body = note.processed_body ?? ''
-    editForm.entry_date = (note.metadata as Record<string, string> | null)?.entry_date ?? ''
     editForm.metadata = { ...(note.metadata ?? {}) } as Record<string, string>
   }
 }, { deep: true })
@@ -444,7 +449,6 @@ watch(() => props.note, (note) => {
 function startEditing() {
   editForm.processed_title = props.note.processed_title ?? ''
   editForm.processed_body = props.note.processed_body ?? ''
-  editForm.entry_date = (props.note.metadata as Record<string, string> | null)?.entry_date ?? ''
   editForm.metadata = { ...(props.note.metadata ?? {}) } as Record<string, string>
   isEditing.value = true
 }
@@ -455,11 +459,6 @@ function cancelEditing() {
 }
 
 function saveEdits() {
-  // Merge entry_date back into metadata before saving
-  if (props.note.type === 'diary') {
-    editForm.metadata = { ...editForm.metadata, entry_date: editForm.entry_date }
-  }
-
   editForm.put(`/notes/${props.note.id}`, {
     preserveScroll: true,
     onSuccess: () => {

@@ -103,13 +103,39 @@ class VoiceNoteController extends Controller
 
     public function update(Request $request, VoiceNote $note)
     {
-        $validated = $request->validate([
+        $rules = [
             'transcript' => 'nullable|string',
             'processed_title' => 'nullable|string|max:255',
             'processed_body' => 'nullable|string',
             'metadata' => 'nullable|array',
-            'metadata.entry_date' => 'nullable|date_format:Y-m-d',
-        ]);
+        ];
+
+        $typeConfig = config("herold.types.{$note->type}");
+        $allowedKeys = [];
+
+        foreach ($typeConfig['extra_fields'] ?? [] as $field) {
+            $fieldRule = 'nullable|'.match ($field['type']) {
+                'url' => 'url',
+                'date' => 'date_format:Y-m-d',
+                default => 'string',
+            };
+            $rules["metadata.{$field['name']}"] = $fieldRule;
+            $allowedKeys[] = $field['name'];
+        }
+
+        $validated = $request->validate($rules);
+
+        // Filter metadata to only allowed keys for this type
+        if (! empty($validated['metadata'])) {
+            $validated['metadata'] = array_intersect_key(
+                $validated['metadata'],
+                array_flip($allowedKeys),
+            );
+
+            if (empty($validated['metadata'])) {
+                $validated['metadata'] = null;
+            }
+        }
 
         $note->update($validated);
 

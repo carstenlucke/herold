@@ -30,6 +30,31 @@
           color="primary"
           class="mb-2"
         />
+        <v-menu
+          v-else-if="field.type === 'date'"
+          v-model="dateMenus[field.name]"
+          :close-on-content-click="false"
+          location="bottom start"
+        >
+          <template #activator="{ props: menuProps }">
+            <v-text-field
+              v-bind="menuProps"
+              :model-value="formatDate(extraFieldValues[field.name])"
+              :label="field.label"
+              variant="filled"
+              color="primary"
+              readonly
+              prepend-inner-icon="mdi-calendar"
+              class="mb-2"
+              :rules="field.required ? [rules.required] : []"
+            />
+          </template>
+          <v-date-picker
+            :model-value="parseDateForPicker(extraFieldValues[field.name])"
+            color="primary"
+            @update:model-value="(d: Date) => onDateFieldPicked(field.name, d)"
+          />
+        </v-menu>
       </template>
     </div>
 
@@ -68,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import type { MessageType } from '../../Types'
 import AppLayout from '../../Layouts/AppLayout.vue'
@@ -82,6 +107,19 @@ const props = defineProps<{
 const selectedType = ref(Object.keys(props.types)[0] ?? 'general')
 const audioBlob = ref<Blob | null>(null)
 const extraFieldValues = ref<Record<string, string>>({})
+const dateMenus = ref<Record<string, boolean>>({})
+
+// Prune stale metadata keys when type changes
+watch(selectedType, () => {
+  const allowedKeys = new Set(currentExtraFields.value.map(f => f.name))
+  const pruned: Record<string, string> = {}
+  for (const key of Object.keys(extraFieldValues.value)) {
+    if (allowedKeys.has(key)) {
+      pruned[key] = extraFieldValues.value[key]
+    }
+  }
+  extraFieldValues.value = pruned
+})
 
 const form = useForm({
   type: '',
@@ -108,6 +146,25 @@ const canSave = computed(() => {
 
 const rules = {
   required: (v: string) => !!v || 'This field is required',
+}
+
+function formatDate(iso?: string): string {
+  if (!iso) return ''
+  const d = new Date(iso + 'T00:00:00')
+  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function parseDateForPicker(iso?: string): Date | undefined {
+  if (!iso) return undefined
+  return new Date(iso + 'T00:00:00')
+}
+
+function onDateFieldPicked(fieldName: string, date: Date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  extraFieldValues.value[fieldName] = `${y}-${m}-${d}`
+  dateMenus.value[fieldName] = false
 }
 
 function onRecorded(blob: Blob) {

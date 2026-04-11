@@ -150,6 +150,94 @@ class ProcessingPipelineTest extends TestCase
         $this->assertNull($note->error_message);
     }
 
+    public function test_process_extracts_deadline_for_todo_type(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'todo',
+            'status' => NoteStatus::RECORDED,
+            'audio_path' => 'audio/test.webm',
+        ]);
+
+        Storage::put('audio/test.webm', 'fake-audio-content');
+
+        $aiService = Mockery::mock(AIService::class);
+        $aiService->shouldReceive('transcribe')
+            ->andReturn('Buy groceries by next Friday.');
+        $aiService->shouldReceive('chat')
+            ->once()
+            ->withArgs(function ($systemPrompt, $userMessage) {
+                // Verify current date context is appended for types with needs_current_date_context
+                return str_contains($userMessage, 'Current date:');
+            })
+            ->andReturn([
+                'title' => 'Buy groceries',
+                'body' => 'Buy groceries by next Friday.',
+                'deadline' => '2026-04-17',
+            ]);
+
+        $this->app->instance(AIService::class, $aiService);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/process")
+            ->assertRedirect();
+
+        $note->refresh();
+        $this->assertEquals(NoteStatus::PROCESSED, $note->status);
+        $this->assertEquals('2026-04-17', $note->metadata['deadline']);
+    }
+
+    public function test_process_extracts_vault_for_obsidian_type(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'obsidian',
+            'status' => NoteStatus::RECORDED,
+            'audio_path' => 'audio/test.webm',
+        ]);
+
+        Storage::put('audio/test.webm', 'fake-audio-content');
+
+        $aiService = Mockery::mock(AIService::class);
+        $aiService->shouldReceive('transcribe')
+            ->andReturn('Note for my research vault about quantum computing.');
+        $aiService->shouldReceive('chat')
+            ->once()
+            ->withArgs(function ($systemPrompt, $userMessage) {
+                // Obsidian has no needs_current_date_context, so no date context
+                return ! str_contains($userMessage, 'Current date:');
+            })
+            ->andReturn([
+                'title' => 'Quantum computing research note',
+                'body' => 'Note for my research vault about quantum computing.',
+                'vault' => 'Research',
+            ]);
+
+        $this->app->instance(AIService::class, $aiService);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/process")
+            ->assertRedirect();
+
+        $note->refresh();
+        $this->assertEquals(NoteStatus::PROCESSED, $note->status);
+        $this->assertEquals('Research', $note->metadata['vault']);
+    }
+
+    public function test_todo_deadline_is_validated_on_update(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'todo',
+            'status' => NoteStatus::PROCESSED,
+            'processed_title' => 'Test',
+            'processed_body' => 'Test body',
+        ]);
+
+        $this->actingAs($this->user)
+            ->put("/notes/{$note->id}", [
+                'metadata' => ['deadline' => 'invalid-date'],
+            ])
+            ->assertSessionHasErrors('metadata.deadline');
+    }
+
     public function test_note_fields_are_editable_after_processing(): void
     {
         $note = VoiceNote::create([

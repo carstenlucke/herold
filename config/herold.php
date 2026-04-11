@@ -55,6 +55,7 @@ return [
             'label' => 'Diary',
             'icon' => 'mdi-book-open-variant',
             'github_label' => 'type:diary',
+            'needs_current_date_context' => true,
             'extra_fields' => [
                 [
                     'name' => 'entry_date',
@@ -70,8 +71,58 @@ return [
                 .'Do NOT restructure the text or change the personal tone. '
                 .'entry_date: if the speaker explicitly mentions a date for this entry '
                 .'(e.g. "Eintrag fuer den fuenften April"), extract it as ISO 8601 (YYYY-MM-DD). '
-                .'Use the current date context provided to resolve relative references. '
+                .'Resolve relative date references (e.g. "gestern", "vorgestern", "morgen", '
+                .'"naechsten Freitag", "diese Woche Montag", "letzte Woche Montag") '
+                .'using the current date context provided. When ambiguous, prefer the nearest future date. '
                 .'If no date is mentioned, return null.',
+        ],
+
+        'obsidian' => [
+            'label' => 'Obsidian',
+            'icon' => 'mdi-note-text',
+            'github_label' => 'type:obsidian',
+            'extra_fields' => [
+                [
+                    'name' => 'vault',
+                    'type' => 'text',
+                    'required' => false,
+                    'label' => 'Vault Name',
+                ],
+            ],
+            'preprocessing_prompt' => 'You receive a voice note transcript destined for an Obsidian vault. Your job is minimal cleanup, NOT restructuring. '
+                .'Respond with valid JSON: {"title": "...", "body": "...", "vault": "..." or null}. '
+                .'Title: a concise summary of the content (max 80 chars, same language as transcript). '
+                .'Body: the transcript text with ONLY obvious speech-to-text errors corrected. '
+                .'Do NOT restructure the text or add content. '
+                .'vault: if the speaker explicitly mentions a target vault name '
+                .'(e.g. "das soll in meinen Work-Vault" or "put this in my research vault"), extract the vault name. '
+                .'If no vault is mentioned, return null.',
+        ],
+
+        'todo' => [
+            'label' => 'To-Do',
+            'icon' => 'mdi-checkbox-marked-outline',
+            'github_label' => 'type:todo',
+            'needs_current_date_context' => true,
+            'extra_fields' => [
+                [
+                    'name' => 'deadline',
+                    'type' => 'date',
+                    'required' => false,
+                    'label' => 'Deadline',
+                ],
+            ],
+            'preprocessing_prompt' => 'You receive a voice note transcript capturing a task or to-do item. Your job is minimal cleanup, NOT restructuring. '
+                .'Respond with valid JSON: {"title": "...", "body": "...", "deadline": "..." or null}. '
+                .'Title: a concise description of the task (max 80 chars, same language as transcript). '
+                .'Body: the transcript text with ONLY obvious speech-to-text errors corrected. '
+                .'Do NOT restructure the text or create step-by-step instructions. '
+                .'deadline: if the speaker explicitly mentions a deadline or due date '
+                .'(e.g. "bis naechsten Freitag", "deadline is April 15th"), extract it as ISO 8601 (YYYY-MM-DD). '
+                .'Resolve relative date references (e.g. "gestern", "vorgestern", "morgen", '
+                .'"naechsten Freitag", "diese Woche Montag", "letzte Woche Montag") '
+                .'using the current date context provided. When ambiguous, prefer the nearest future date. '
+                .'If no deadline is mentioned, return null.',
         ],
     ],
 

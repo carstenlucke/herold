@@ -40,6 +40,8 @@ class TypeExtensionTest extends TestCase
         $this->assertContains('general', $keys);
         $this->assertContains('youtube', $keys);
         $this->assertContains('diary', $keys);
+        $this->assertContains('obsidian', $keys);
+        $this->assertContains('todo', $keys);
     }
 
     public function test_types_endpoint_returns_all_types_without_prompts(): void
@@ -53,10 +55,17 @@ class TypeExtensionTest extends TestCase
         $this->assertArrayHasKey('general', $data);
         $this->assertArrayHasKey('youtube', $data);
         $this->assertArrayHasKey('diary', $data);
+        $this->assertArrayHasKey('obsidian', $data);
+        $this->assertArrayHasKey('todo', $data);
 
         // NFR-15b-02: No preprocessing prompts in response
         foreach ($data as $type) {
             $this->assertArrayNotHasKey('preprocessing_prompt', $type);
+        }
+
+        // needs_current_date_context must not leak to frontend
+        foreach ($data as $type) {
+            $this->assertArrayNotHasKey('needs_current_date_context', $type);
         }
     }
 
@@ -108,6 +117,32 @@ class TypeExtensionTest extends TestCase
         $all = $registry->all();
         $this->assertArrayHasKey('custom_test', $all);
         $this->assertArrayNotHasKey('preprocessing_prompt', $all['custom_test']);
+    }
+
+    public function test_obsidian_type_has_vault_extra_field(): void
+    {
+        $response = $this->actingAs($this->user)->getJson('/types');
+
+        $obsidian = $response->json('obsidian');
+        $this->assertNotEmpty($obsidian['extra_fields']);
+
+        $vaultField = collect($obsidian['extra_fields'])->firstWhere('name', 'vault');
+        $this->assertNotNull($vaultField);
+        $this->assertEquals('text', $vaultField['type']);
+        $this->assertFalse($vaultField['required']);
+    }
+
+    public function test_todo_type_has_deadline_extra_field(): void
+    {
+        $response = $this->actingAs($this->user)->getJson('/types');
+
+        $todo = $response->json('todo');
+        $this->assertNotEmpty($todo['extra_fields']);
+
+        $deadlineField = collect($todo['extra_fields'])->firstWhere('name', 'deadline');
+        $this->assertNotNull($deadlineField);
+        $this->assertEquals('date', $deadlineField['type']);
+        $this->assertFalse($deadlineField['required']);
     }
 
     public function test_recording_page_loads_types(): void

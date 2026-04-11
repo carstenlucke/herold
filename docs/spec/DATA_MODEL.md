@@ -13,13 +13,13 @@ The central entity of Herold. Each row represents one voice note from recording 
 | Column | Purpose |
 |--------|---------|
 | `id` | ULID primary key (time-sortable, no auto-increment) |
-| `type` | Message type (`general`, `youtube`, `diary`). Not an enum — validated against `config/herold.php` so new types require only a config entry, no code change. |
+| `type` | Message type (`general`, `youtube`, `diary`, `obsidian`, `todo`). Not an enum — validated against `config/herold.php` so new types require only a config entry, no code change. |
 | `status` | Processing state, see [NoteStatus](#notestatus). |
 | `audio_path` | Relative path in `storage/app/private/audio/`. Set on upload, nullable until then. |
 | `transcript` | Raw transcription from OpenAI Whisper. |
 | `processed_title` | LLM-generated title for the GitHub issue. Editable by user before sending. |
 | `processed_body` | LLM-generated issue body in **Markdown** format. Editable by user before sending. |
-| `metadata` | Type-specific JSON data (e.g. `{"youtube_url": "..."}` for youtube type). Schema depends on `type`, defined via `extra_fields` in `config/herold.php`. |
+| `metadata` | Type-specific JSON data. Schema depends on `type`, defined via `extra_fields` in `config/herold.php`. Examples: youtube `{"youtube_url": "..."}`, diary `{"entry_date": "2026-04-11"}`, obsidian `{"vault": "Work"}`, todo `{"deadline": "2026-04-20"}`. |
 | `github_issue_number` | GitHub issue number after successful creation. |
 | `github_issue_url` | Full URL to the created GitHub issue. |
 | `error_message` | Error details when a processing step fails. |
