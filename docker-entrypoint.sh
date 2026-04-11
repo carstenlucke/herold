@@ -12,9 +12,8 @@ if [ $# -gt 0 ]; then
     exec gosu www-data "$@"
 fi
 
-# Run migrations and seeds as www-data so SQLite file + WAL journals
+# Run migrations as www-data so SQLite file + WAL journals
 # are created with correct ownership (fixes readonly database bug)
 gosu www-data php artisan migrate --force
-gosu www-data php artisan db:seed --class=UserSeeder --force
 
 exec apache2-foreground
