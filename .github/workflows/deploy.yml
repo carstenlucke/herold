@@ -64,7 +64,7 @@ jobs:
           lftp -c "
             set ftp:ssl-force true
             set ssl:verify-certificate yes
-            open -u $FTP_USER,$FTP_PASSWORD ftp://$FTP_HOST
+            open --user \"$FTP_USER\" --password \"$FTP_PASSWORD\" \"ftp://$FTP_HOST\"
             cd $FTP_BASE_PATH
             mirror --reverse --delete --verbose \
               --exclude ^\.git/ \
