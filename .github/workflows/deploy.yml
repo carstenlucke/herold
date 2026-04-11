@@ -9,17 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ vars.ENABLE_FTP_DEPLOY == 'true' }}
 
-    env:
-      DB_CONNECTION: sqlite
-      DB_DATABASE: ":memory:"
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: pdo_sqlite, mbstring, xml
           coverage: none
 
