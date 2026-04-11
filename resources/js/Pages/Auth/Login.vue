@@ -10,6 +10,7 @@
       >
         <!-- Brand header -->
         <div class="text-center mb-8">
+          <img :src="iconSrc" alt="Herold" style="height: 48px; width: auto; display: block; margin: 0 auto 16px" />
           <div class="brand-text text-h4 mb-1">Herold</div>
           <div class="brand-subtitle">VOICE DISPATCH SYSTEM</div>
         </div>
@@ -165,6 +166,8 @@ const props = defineProps<{
 }>()
 
 const page = usePage()
+
+const iconSrc = `${import.meta.env.BASE_URL}images/herold-icon.png`
 
 const step = ref(props.step ?? 'key')
 const provisioningUri = ref(props.provisioningUri ?? null)
