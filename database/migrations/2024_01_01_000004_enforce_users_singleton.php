@@ -21,7 +21,7 @@ return new class extends Migration
             BEFORE INSERT ON users
             WHEN (SELECT COUNT(*) FROM users) >= 1
             BEGIN
-                SELECT RAISE(ABORT, 'users table is limited to exactly one row (single-user system)');
+                SELECT RAISE(ABORT, 'users table is limited to at most one row (single-user system)');
             END
         ");
     }

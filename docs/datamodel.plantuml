@@ -57,7 +57,7 @@ note right of voice_notes
 end note
 
 note bottom of users
-  Single-user system — exactly one row.
+  Single-user system — at most one row.
   Enforced by SQLite trigger ""enforce_users_singleton""
   (BEFORE INSERT, RAISE ABORT when count >= 1).
   Required by Laravel's auth system.

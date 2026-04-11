@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\MultipleRecordsFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -247,7 +249,7 @@ class AuthController extends Controller
     {
         try {
             return User::sole();
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException|\Illuminate\Database\MultipleRecordsFoundException) {
+        } catch (ModelNotFoundException|MultipleRecordsFoundException) {
             return null;
         }
     }
