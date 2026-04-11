@@ -48,11 +48,14 @@ class users <<table>> {
 voice_notes ..> NoteStatus : status
 
 note right of voice_notes
-  **type**: general | youtube | diary
+  **type**: general | youtube | diary | obsidian | todo
   (erweiterbar via config/herold.php)
 
   **metadata** (JSON):
   - youtube: { youtube_url }
+  - diary: { entry_date }
+  - obsidian: { vault }
+  - todo: { deadline }
   - andere Typen: typ-spezifisch
 end note
 

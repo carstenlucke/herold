@@ -9,7 +9,7 @@ class MessageTypeRegistry
         $types = config('herold.types', []);
 
         return array_map(function (array $type) {
-            return collect($type)->except('preprocessing_prompt')->all();
+            return collect($type)->except(['preprocessing_prompt', 'needs_current_date_context'])->all();
         }, $types);
     }
 

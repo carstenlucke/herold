@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\VoiceNote;
 use App\Services\AIService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\TestCase;
@@ -148,6 +149,159 @@ class ProcessingPipelineTest extends TestCase
         $note->refresh();
         $this->assertEquals(NoteStatus::PROCESSED, $note->status);
         $this->assertNull($note->error_message);
+    }
+
+    public function test_process_extracts_deadline_for_todo_type(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'todo',
+            'status' => NoteStatus::RECORDED,
+            'audio_path' => 'audio/test.webm',
+        ]);
+
+        Storage::put('audio/test.webm', 'fake-audio-content');
+
+        $aiService = Mockery::mock(AIService::class);
+        $aiService->shouldReceive('transcribe')
+            ->andReturn('Buy groceries by next Friday.');
+        $aiService->shouldReceive('chat')
+            ->once()
+            ->withArgs(function ($systemPrompt, $userMessage) {
+                // Verify current date context is appended for types with needs_current_date_context
+                return str_contains($userMessage, 'Current date:');
+            })
+            ->andReturn([
+                'title' => 'Buy groceries',
+                'body' => 'Buy groceries by next Friday.',
+                'deadline' => '2026-04-17',
+            ]);
+
+        $this->app->instance(AIService::class, $aiService);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/process")
+            ->assertRedirect();
+
+        $note->refresh();
+        $this->assertEquals(NoteStatus::PROCESSED, $note->status);
+        $this->assertEquals('2026-04-17', $note->metadata['deadline']);
+    }
+
+    public function test_process_extracts_vault_for_obsidian_type(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'obsidian',
+            'status' => NoteStatus::RECORDED,
+            'audio_path' => 'audio/test.webm',
+        ]);
+
+        Storage::put('audio/test.webm', 'fake-audio-content');
+
+        $aiService = Mockery::mock(AIService::class);
+        $aiService->shouldReceive('transcribe')
+            ->andReturn('Note for my research vault about quantum computing.');
+        $aiService->shouldReceive('chat')
+            ->once()
+            ->withArgs(function ($systemPrompt, $userMessage) {
+                // Obsidian has no needs_current_date_context, so no date context
+                return ! str_contains($userMessage, 'Current date:');
+            })
+            ->andReturn([
+                'title' => 'Quantum computing research note',
+                'body' => 'Note for my research vault about quantum computing.',
+                'vault' => 'Research',
+            ]);
+
+        $this->app->instance(AIService::class, $aiService);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/process")
+            ->assertRedirect();
+
+        $note->refresh();
+        $this->assertEquals(NoteStatus::PROCESSED, $note->status);
+        $this->assertEquals('Research', $note->metadata['vault']);
+    }
+
+    public function test_todo_deadline_is_validated_on_update(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'todo',
+            'status' => NoteStatus::PROCESSED,
+            'processed_title' => 'Test',
+            'processed_body' => 'Test body',
+        ]);
+
+        $this->actingAs($this->user)
+            ->put("/notes/{$note->id}", [
+                'metadata' => ['deadline' => 'invalid-date'],
+            ])
+            ->assertSessionHasErrors('metadata.deadline');
+    }
+
+    public function test_update_rejects_clearing_required_metadata_field(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'youtube',
+            'status' => NoteStatus::PROCESSED,
+            'processed_title' => 'Test',
+            'processed_body' => 'Test body',
+            'metadata' => ['youtube_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'],
+        ]);
+
+        $this->actingAs($this->user)
+            ->put("/notes/{$note->id}", [
+                'processed_title' => 'Updated Title',
+                'metadata' => ['youtube_url' => ''],
+            ])
+            ->assertSessionHasErrors('metadata.youtube_url');
+
+        $note->refresh();
+        $this->assertEquals('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $note->metadata['youtube_url']);
+    }
+
+    public function test_store_validation_scoped_to_selected_type(): void
+    {
+        // Add a second type that reuses the field name 'priority' with different rules
+        config(['herold.types.type_a' => [
+            'label' => 'Type A',
+            'icon' => 'mdi-alpha-a',
+            'github_label' => 'type:type-a',
+            'extra_fields' => [
+                ['name' => 'priority', 'type' => 'text', 'required' => true, 'label' => 'Priority'],
+            ],
+            'preprocessing_prompt' => 'Process type A.',
+        ]]);
+
+        config(['herold.types.type_b' => [
+            'label' => 'Type B',
+            'icon' => 'mdi-alpha-b',
+            'github_label' => 'type:type-b',
+            'extra_fields' => [
+                ['name' => 'priority', 'type' => 'text', 'required' => false, 'label' => 'Priority'],
+            ],
+            'preprocessing_prompt' => 'Process type B.',
+        ]]);
+
+        $audio = UploadedFile::fake()->create('recording.webm', 1024, 'audio/webm');
+
+        // type_a requires priority — submitting without it should fail
+        $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'type_a',
+            ])
+            ->assertSessionHasErrors('metadata.priority');
+
+        // type_b does not require priority — submitting without it should succeed
+        $audio = UploadedFile::fake()->create('recording2.webm', 1024, 'audio/webm');
+
+        $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'type_b',
+            ])
+            ->assertRedirect();
     }
 
     public function test_note_fields_are_editable_after_processing(): void
