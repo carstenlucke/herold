@@ -33,7 +33,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Delete by the hardcoded name (stable) rather than the mutable email config.
-        DB::table('users')->where('name', 'Herold')->delete();
+        // Intentional no-op: never delete users via migration rollback.
     }
 };

@@ -245,7 +245,11 @@ class AuthController extends Controller
 
     private function resolveAdminUser(): ?User
     {
-        return User::where('email', config('herold.admin_email'))->first();
+        try {
+            return User::sole();
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException|\Illuminate\Database\MultipleRecordsFoundException) {
+            return null;
+        }
     }
 
     /**

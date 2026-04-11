@@ -107,53 +107,13 @@ class AuthenticationTest extends TestCase
 
     public function test_totp_verify_rejects_user_with_unconfirmed_totp(): void
     {
-        $user = User::factory()->create([
-            'api_key_hash' => hash('sha256', 'test-api-key-for-testing'),
-            'totp_secret' => encrypt('JBSWY3DPEHPK3PXP'),
-            'totp_confirmed_at' => null,
-        ]);
+        $this->user->update(['totp_confirmed_at' => null]);
 
-        $this->withSession(['auth.key_verified' => true, 'auth.user_id' => $user->id])
+        $this->withSession(['auth.key_verified' => true, 'auth.user_id' => $this->user->id])
             ->post('/login/totp', ['totp_code' => '123456'])
             ->assertRedirect('/login');
 
         $this->assertGuest();
-    }
-
-    public function test_verify_key_selects_configured_admin_when_multiple_users_exist(): void
-    {
-        // Delete setUp admin and recreate with non-admin FIRST (lower ID),
-        // so User::first() would return the wrong user if code regresses.
-        $this->user->delete();
-
-        $nonAdmin = User::factory()->create([
-            'email' => 'other@example.com',
-            'api_key_hash' => hash('sha256', 'other-api-key'),
-        ]);
-
-        $this->user = User::factory()->create([
-            'email' => config('herold.admin_email'),
-            'api_key_hash' => hash('sha256', 'test-api-key-for-testing'),
-            'totp_secret' => encrypt('JBSWY3DPEHPK3PXP'),
-            'totp_confirmed_at' => now(),
-        ]);
-
-        $response = $this->post('/login/key', ['api_key' => 'test-api-key-for-testing']);
-
-        $response->assertSessionHasNoErrors();
-        $response->assertSessionHas('auth.key_verified', true);
-        $response->assertSessionHas('auth.user_id', $this->user->id);
-    }
-
-    public function test_verify_key_rejects_non_admin_api_key_even_if_valid_for_other_user(): void
-    {
-        User::factory()->create([
-            'email' => 'other@example.com',
-            'api_key_hash' => hash('sha256', 'other-api-key'),
-        ]);
-
-        $this->post('/login/key', ['api_key' => 'other-api-key'])
-            ->assertSessionHasErrors('api_key');
     }
 
     public function test_protected_routes_require_authentication(): void

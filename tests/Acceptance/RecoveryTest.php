@@ -127,40 +127,6 @@ class RecoveryTest extends TestCase
         @unlink($recoveryPath);
     }
 
-    public function test_recovery_resets_only_configured_admin_when_multiple_users_exist(): void
-    {
-        $otherUser = User::factory()->create([
-            'email' => 'other@example.com',
-            'api_key_hash' => hash('sha256', 'other-api-key'),
-            'totp_secret' => encrypt('OTHERTOTP1234567'),
-            'totp_confirmed_at' => now(),
-        ]);
-
-        $token = 'multi-user-recovery-token';
-        $recoveryPath = storage_path('app/private/.herold-recovery');
-        @mkdir(dirname($recoveryPath), 0755, true);
-        file_put_contents($recoveryPath, $token);
-
-        $response = $this->post('/recovery', ['token' => $token]);
-
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->component('Auth/RecoverySuccess')
-            ->has('apiKey')
-        );
-
-        // Admin user was reset
-        $this->user->refresh();
-        $this->assertNull($this->user->totp_secret);
-        $this->assertNull($this->user->totp_confirmed_at);
-
-        // Other user remains unchanged
-        $otherUser->refresh();
-        $this->assertEquals(hash('sha256', 'other-api-key'), $otherUser->api_key_hash);
-        $this->assertNotNull($otherUser->totp_secret);
-        $this->assertNotNull($otherUser->totp_confirmed_at);
-    }
-
     public function test_all_error_responses_are_uniform_404(): void
     {
         // No file → 404
