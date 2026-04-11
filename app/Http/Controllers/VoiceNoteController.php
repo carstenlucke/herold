@@ -114,12 +114,21 @@ class VoiceNoteController extends Controller
         $allowedKeys = [];
 
         foreach ($typeConfig['extra_fields'] ?? [] as $field) {
-            $fieldRule = 'nullable|'.match ($field['type']) {
+            $fieldRules = [];
+
+            if ($field['required']) {
+                $fieldRules[] = 'required';
+            } else {
+                $fieldRules[] = 'nullable';
+            }
+
+            $fieldRules[] = match ($field['type']) {
                 'url' => 'url',
                 'date' => 'date_format:Y-m-d',
                 default => 'string',
             };
-            $rules["metadata.{$field['name']}"] = $fieldRule;
+
+            $rules["metadata.{$field['name']}"] = $fieldRules;
             $allowedKeys[] = $field['name'];
         }
 

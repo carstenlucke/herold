@@ -20,24 +20,24 @@ class StoreVoiceNoteRequest extends FormRequest
             'metadata' => ['nullable', 'array'],
         ];
 
-        foreach (config('herold.types', []) as $typeKey => $typeConfig) {
-            foreach ($typeConfig['extra_fields'] ?? [] as $field) {
-                $fieldRules = [];
+        $typeConfig = config("herold.types.{$this->input('type')}");
 
-                if ($field['required']) {
-                    $fieldRules[] = "required_if:type,{$typeKey}";
-                }
+        foreach ($typeConfig['extra_fields'] ?? [] as $field) {
+            $fieldRules = [];
 
+            if ($field['required']) {
+                $fieldRules[] = 'required';
+            } else {
                 $fieldRules[] = 'nullable';
-
-                $fieldRules[] = match ($field['type']) {
-                    'url' => 'url',
-                    'date' => 'date_format:Y-m-d',
-                    default => 'string',
-                };
-
-                $rules["metadata.{$field['name']}"] = $fieldRules;
             }
+
+            $fieldRules[] = match ($field['type']) {
+                'url' => 'url',
+                'date' => 'date_format:Y-m-d',
+                default => 'string',
+            };
+
+            $rules["metadata.{$field['name']}"] = $fieldRules;
         }
 
         return $rules;
