@@ -41,3 +41,5 @@ database/data/*.sqlite-*
 .vscode
 *.swp
 *.swo
+.env-prod
+.env-testing

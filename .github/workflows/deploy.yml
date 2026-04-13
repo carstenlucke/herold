@@ -69,6 +69,7 @@ jobs:
               --exclude ^\.opencode/ \
               --exclude ^\.vite/ \
               --exclude ^node_modules/ \
+              --exclude ^public/hot$ \
               --exclude ^\.env \
               --exclude ^database/data/ \
               --exclude ^storage/app/private/ \
