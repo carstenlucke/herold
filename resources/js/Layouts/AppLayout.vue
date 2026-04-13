@@ -88,7 +88,7 @@ import { useDisplay } from 'vuetify'
 const { mobile } = useDisplay({ mobileBreakpoint: 960 })
 const page = usePage()
 
-const iconSrc = `${import.meta.env.BASE_URL}images/herold-icon.png`
+const iconSrc = '/images/herold-icon.png'
 
 const navItems = [
   { label: 'Dashboard', icon: 'mdi-view-dashboard', to: '/' },

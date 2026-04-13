@@ -167,7 +167,7 @@ const props = defineProps<{
 
 const page = usePage()
 
-const iconSrc = `${import.meta.env.BASE_URL}images/herold-icon.png`
+const iconSrc = '/images/herold-icon.png'
 
 const step = ref(props.step ?? 'key')
 const provisioningUri = ref(props.provisioningUri ?? null)

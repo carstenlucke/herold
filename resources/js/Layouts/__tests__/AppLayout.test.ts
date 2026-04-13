@@ -1,15 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createVuetify } from 'vuetify'
 import AppLayout from '../AppLayout.vue'
-
-beforeEach(() => {
-    vi.stubEnv('BASE_URL', '/herold/')
-})
-
-afterEach(() => {
-    vi.unstubAllEnvs()
-})
 
 vi.mock('@inertiajs/vue3', () => ({
     usePage: () => ({ url: '/' }),
@@ -19,7 +11,7 @@ vi.mock('@inertiajs/vue3', () => ({
 const vuetify = createVuetify()
 
 describe('AppLayout', () => {
-    it('builds brand icon src from BASE_URL', () => {
+    it('renders brand icon from public directory', () => {
         const wrapper = mount(AppLayout, {
             global: {
                 plugins: [vuetify],
@@ -29,7 +21,6 @@ describe('AppLayout', () => {
 
         const img = wrapper.find('img[alt="Herold"]')
         expect(img.exists()).toBe(true)
-        expect(img.attributes('src')).toBe('/herold/images/herold-icon.png')
-        expect(img.attributes('src')).not.toBe('/images/herold-icon.png')
+        expect(img.attributes('src')).toBe('/images/herold-icon.png')
     })
 })

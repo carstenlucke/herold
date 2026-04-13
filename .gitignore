@@ -27,6 +27,9 @@ yarn-error.log
 database/data/*.sqlite
 database/data/*.sqlite-*
 
+# Backups
+/backups
+
 # PHPUnit
 .phpunit.result.cache
 
@@ -38,3 +41,5 @@ database/data/*.sqlite-*
 .vscode
 *.swp
 *.swo
+.env-prod
+.env-testing
