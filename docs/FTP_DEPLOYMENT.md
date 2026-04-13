@@ -20,7 +20,9 @@ Herold is deployed to shared hosting via FTPS. There are two deployment methods:
 
 1. Place a `.env` file in the application root on the server (the directory that `FTP_BASE_PATH` points to). This file is never overwritten by deployments.
 
-2. Ensure the following directories exist and are writable by Apache:
+2. Upload an empty marker file `.herold-deploy-root` to the same directory. This marker is a safety guard: deployment aborts if it is missing, preventing `mirror --delete` from wiping an unintended directory when `FTP_BASE_PATH` is misconfigured.
+
+3. Ensure the following directories exist and are writable by Apache:
    - `storage/app/private/audio/`
    - `storage/framework/cache/`
    - `storage/framework/sessions/`
@@ -28,7 +30,7 @@ Herold is deployed to shared hosting via FTPS. There are two deployment methods:
    - `storage/logs/`
    - `database/data/`
 
-3. Run initial migrations via SSH:
+4. Run initial migrations via SSH:
    ```
    php artisan migrate --force
    ```

@@ -56,6 +56,25 @@ echo "Build complete."
 echo "Deploying via FTPS..."
 export LFTP_PASSWORD="$FTP_PASSWORD"
 
+# --- Safety guard: require deployment marker file in target directory ---
+# Prevents destructive `mirror --delete` when FTP_BASE_PATH is misconfigured.
+# Create the marker once after verifying the app root:
+#   echo "herold deploy root" > .herold-deploy-root
+# then upload it manually via FTP client.
+echo "Verifying deployment marker in ${FTP_BASE_PATH}..."
+if ! lftp -c "
+  set ftp:ssl-force true
+  set ssl:verify-certificate yes
+  open --user \"$FTP_USER\" --env-password \"ftp://$FTP_HOST\"
+  cd \"$FTP_BASE_PATH\"
+  glob --exist .herold-deploy-root && exit 0 || exit 1
+"; then
+    echo "Error: deployment marker .herold-deploy-root not found in ${FTP_BASE_PATH}." >&2
+    echo "  This is a safety check to prevent 'mirror --delete' from wiping the wrong directory." >&2
+    echo "  If ${FTP_BASE_PATH} really is the Herold app root, upload an empty .herold-deploy-root file there and retry." >&2
+    exit 1
+fi
+
 lftp -c "
   set ftp:ssl-force true
   set ssl:verify-certificate yes
@@ -68,6 +87,7 @@ lftp -c "
   mkdir -p storage/app/private/audio
   mkdir -p database/data
   mirror --reverse --delete --verbose \
+    --exclude ^\.herold-deploy-root$ \
     --exclude ^\.git/ \
     --exclude ^\.github/ \
     --exclude ^\.claude/ \

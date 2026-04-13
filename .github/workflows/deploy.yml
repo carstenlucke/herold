@@ -49,6 +49,25 @@ jobs:
         env:
           FTP_BASE_PATH: ${{ vars.FTP_BASE_PATH }}
 
+      - name: Verify deployment marker
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_BASE_PATH: ${{ vars.FTP_BASE_PATH }}
+        run: |
+          set -euo pipefail
+          if ! lftp -c "
+            set ftp:ssl-force true
+            set ssl:verify-certificate yes
+            open --user \"$FTP_USER\" --env-password \"ftp://$FTP_HOST\"
+            cd \"$FTP_BASE_PATH\"
+            glob --exist .herold-deploy-root && exit 0 || exit 1
+          "; then
+            echo "::error::Deployment marker .herold-deploy-root not found in $FTP_BASE_PATH. Upload an empty marker file to the Herold app root to enable deploys."
+            exit 1
+          fi
+
       - name: Deploy via FTPS
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
@@ -63,6 +82,7 @@ jobs:
             open --user \"$FTP_USER\" --env-password \"ftp://$FTP_HOST\"
             cd \"$FTP_BASE_PATH\"
             mirror --reverse --delete --verbose \
+              --exclude ^\.herold-deploy-root$ \
               --exclude ^\.git/ \
               --exclude ^\.github/ \
               --exclude ^\.claude/ \
