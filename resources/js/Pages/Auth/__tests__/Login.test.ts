@@ -1,15 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createVuetify } from 'vuetify'
 import Login from '../Login.vue'
-
-beforeEach(() => {
-    vi.stubEnv('BASE_URL', '/herold/')
-})
-
-afterEach(() => {
-    vi.unstubAllEnvs()
-})
 
 vi.mock('@inertiajs/vue3', () => ({
     usePage: () => ({ props: { errors: {} } }),
@@ -29,7 +21,7 @@ vi.mock('qrcode', () => ({
 const vuetify = createVuetify()
 
 describe('Login', () => {
-    it('builds brand icon src from BASE_URL', () => {
+    it('renders brand icon from public directory', () => {
         const wrapper = mount(Login, {
             global: {
                 plugins: [vuetify],
@@ -39,7 +31,6 @@ describe('Login', () => {
 
         const img = wrapper.find('img[alt="Herold"]')
         expect(img.exists()).toBe(true)
-        expect(img.attributes('src')).toBe('/herold/images/herold-icon.png')
-        expect(img.attributes('src')).not.toBe('/images/herold-icon.png')
+        expect(img.attributes('src')).toBe('/images/herold-icon.png')
     })
 })
