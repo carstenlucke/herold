@@ -18,12 +18,11 @@ FILES_TO_BACKUP=()
 DB_FILE="database/data/database.sqlite"
 DB_SNAPSHOT="database/data/database-backup.sqlite"
 if [[ -f "$DB_FILE" ]]; then
-    # Create a consistent snapshot via sqlite3 .backup command
-    if command -v sqlite3 &>/dev/null; then
-        sqlite3 "$DB_FILE" ".backup '${DB_SNAPSHOT}'"
-    else
-        cp "$DB_FILE" "$DB_SNAPSHOT"
+    if ! command -v sqlite3 &>/dev/null; then
+        echo "Error: sqlite3 is required for a consistent backup (WAL-safe). Install it and retry." >&2
+        exit 1
     fi
+    sqlite3 "$DB_FILE" ".backup '${DB_SNAPSHOT}'"
     FILES_TO_BACKUP+=("$DB_SNAPSHOT")
 else
     echo "Warning: Database file not found at ${DB_FILE}" >&2
