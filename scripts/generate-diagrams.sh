@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 # Generate PNG images from PlantUML diagrams.
 # Usage: ./scripts/generate-diagrams.sh [file.plantuml ...]
-# Without arguments, converts all .plantuml files in docs/.
+# Without arguments, converts all .plantuml files in docs/spec/diagrams/.
+# Output PNGs land in docs/spec/diagrams-png/.
 
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DOCS_DIR="$PROJECT_ROOT/docs"
+SRC_DIR="$PROJECT_ROOT/docs/spec/diagrams"
+OUT_DIR="$PROJECT_ROOT/docs/spec/diagrams-png"
 PLANTUML_JAR="$PROJECT_ROOT/scripts/.plantuml.jar"
 PLANTUML_VERSION="1.2025.2"
 PLANTUML_URL="https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar"
+
+mkdir -p "$OUT_DIR"
 
 # Download PlantUML JAR if missing
 if [[ ! -f "$PLANTUML_JAR" ]]; then
@@ -22,7 +26,7 @@ fi
 if [[ $# -gt 0 ]]; then
     files=("$@")
 else
-    files=("$DOCS_DIR"/spec/*.plantuml)
+    files=("$SRC_DIR"/*.plantuml)
 fi
 
 for f in "${files[@]}"; do
@@ -30,8 +34,8 @@ for f in "${files[@]}"; do
         echo "Skipping: $f (not found)"
         continue
     fi
-    echo "Generating: ${f%.plantuml}.png"
-    java -jar "$PLANTUML_JAR" -tpng "$f"
+    echo "Generating: $OUT_DIR/$(basename "${f%.plantuml}").png"
+    java -jar "$PLANTUML_JAR" -tpng -o "$OUT_DIR" "$f"
 done
 
 echo "Done."

@@ -1,6 +1,6 @@
 # Herold Data Model
 
-Visual diagram: [`datamodel.plantuml`](datamodel.plantuml) (generate PNG with `./scripts/generate-diagrams.sh`).
+Visual diagram: [`diagrams-png/datamodel.png`](diagrams-png/datamodel.png) — source: [`diagrams/datamodel.plantuml`](diagrams/datamodel.plantuml). Regenerate with `./scripts/generate-diagrams.sh`.
 
 ---
 

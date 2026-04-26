@@ -1,7 +1,14 @@
-# Project Constraints
+# P1 — Project Constraints (Annex)
 
-Based on the [Volere Requirements Specification Template](https://www.volere.org/templates/volere-requirements-specification-template/), Section 3 — Mandated Constraints (Robertson & Robertson).
-Only sections relevant to Herold are included.
+Detailed mandated constraints referenced from
+[`P1-ziele-rahmenbedingungen.md`](P1-ziele-rahmenbedingungen.md) § P1.5.
+Constraints define the non-negotiable solution space — they are
+distinct from non-functional requirements (see
+[`N1-nichtfunktional.md`](N1-nichtfunktional.md)).
+
+Based on the [Volere Requirements Specification Template](https://www.volere.org/templates/volere-requirements-specification-template/),
+Section 3 — Mandated Constraints (Robertson & Robertson). Only sections
+relevant to Herold are included.
 
 ---
 
@@ -20,7 +27,7 @@ for a personal tool.
 The frontend uses Inertia.js 3 with Vue 3.5, TypeScript 6, and Vuetify 4.
 No separate SPA, no vue-router, no dedicated API layer for the browser UI.
 
-**Rationale:** See [ADR-001](../../adr/001-inertia-frontend-bridge.md).
+**Rationale:** See [ADR-001](../arch/001-inertia-frontend-bridge.md).
 
 ### CON-3a-03: SQLite Database
 
@@ -38,7 +45,7 @@ No multi-user support, no agent accounts, no Sanctum tokens.
 **Rationale:** Herold is a personal tool for a single operator. Multi-user
 would add authentication complexity (roles, permissions, account management)
 with no benefit. Agents interact with GitHub, not with Herold
-(see [ADR-003](../../adr/003-github-issues-as-ticket-store.md)).
+(see [ADR-003](../arch/003-github-issues-as-ticket-store.md)).
 
 ### CON-3a-05: Vite 8 Build Toolchain
 
@@ -58,7 +65,7 @@ The production environment is shared hosting with limited shell access.
 Deployment is done via FTP upload. Optional SSH is available for one-off
 maintenance commands (for example `php artisan migrate --force`).
 Processing is synchronous (no cron jobs, no queue). See
-[ADR-002](../../adr/002-dev-prod-parity.md).
+[ADR-002](../arch/002-dev-prod-parity.md).
 
 - No Docker in production
 - No long-running processes, no queue worker, no cron jobs
@@ -75,7 +82,7 @@ Docker Compose is used exclusively for local development. Services:
 No local PHP, Composer, or Node.js installation required.
 
 The Docker setup intentionally mirrors production (Apache, synchronous
-processing) to eliminate dev/prod parity issues. See [ADR-002](../../adr/002-dev-prod-parity.md).
+processing) to eliminate dev/prod parity issues. See [ADR-002](../arch/002-dev-prod-parity.md).
 
 **Rationale:** Reproducible development environment with zero dev/prod drift.
 Shared hosting does not support Docker (see CON-3b-01).
@@ -108,7 +115,7 @@ Local coding agents consume tickets exclusively via GitHub (`gh` CLI or
 GitHub API). Agents do not interact with Herold directly — Herold is a
 one-way voice-to-issue dispatcher. Agents manage their own memory locally
 via file-based mechanisms (e.g., `CLAUDE.md`).
-See [ADR-003](../../adr/003-github-issues-as-ticket-store.md).
+See [ADR-003](../arch/003-github-issues-as-ticket-store.md).
 
 **Rationale:** Agents already have native GitHub support. No custom API,
 no Sanctum tokens, no agent onboarding required.
