@@ -1,9 +1,12 @@
-# Non-Functional Requirements
+# N1 — Non-Functional Requirements
 
-Based on the [Volere Requirements Specification Template](https://www.volere.org/templates/volere-requirements-specification-template/), Sections 10-17 (Robertson & Robertson).
-Only sections relevant to Herold are included. Empty Volere sections are omitted.
+Measurable quality requirements with fit criteria. Distinct from project
+constraints (which define the solution space) — those live in
+[`P1-constraints.md`](P1-constraints.md).
 
-For project constraints (Volere Section 3 — Mandated Constraints), see [`constraints.md`](./constraints.md).
+Based on the [Volere Requirements Specification Template](https://www.volere.org/templates/volere-requirements-specification-template/),
+Sections 10–17 (Robertson & Robertson). Only sections relevant to
+Herold are included. Empty Volere sections are omitted.
 
 ---
 
@@ -66,7 +69,7 @@ built-in a11y support should be preserved (ARIA labels, keyboard navigation).*
 
 Audio transcription, LLM preprocessing, and GitHub issue creation run
 synchronously in the HTTP request. No queue, no cron, no background jobs.
-See [ADR-002](../../adr/002-dev-prod-parity.md).
+See [ADR-002](../arch/002-dev-prod-parity.md).
 
 - Processing time: ~10-30 seconds per voice note
 - The UI shows a loading indicator during processing
@@ -127,7 +130,7 @@ The application must run on standard shared hosting with:
 - FTP access for deployment
 - HTTPS (provided by hosting)
 - Limited SSH access (PHP 8.5 available, `crontab` not available)
-- No cron jobs required (synchronous processing, see [ADR-002](../../adr/002-dev-prod-parity.md))
+- No cron jobs required (synchronous processing, see [ADR-002](../arch/002-dev-prod-parity.md))
 - No Docker support
 
 **Fit Criterion:** Application deploys and runs correctly on the target
@@ -139,7 +142,7 @@ maintenance commands (for example `php artisan migrate --force`).
 **NFR-13c-01: Agent Interoperability**
 
 Local AI agents (Claude Code, OpenCode) interact exclusively with GitHub
-Issues, not with Herold. See [ADR-003](../../adr/003-github-issues-as-ticket-store.md).
+Issues, not with Herold. See [ADR-003](../arch/003-github-issues-as-ticket-store.md).
 
 - Ticket consumption: `gh issue list`, `gh issue view`
 - Status updates: `gh issue comment`, `gh issue edit` (labels)

@@ -1,0 +1,19 @@
+@startuml p2-system-context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title System Context — Herold
+
+Person(operator, "Operator", "Single human user; mobile-first")
+
+System(herold, "Herold", "Voice-to-issue dispatcher (Laravel monolith)")
+
+System_Ext(openai, "OpenAI API", "Whisper + Chat Completion")
+System_Ext(github, "GitHub Issues", "Sole ticket store")
+System_Ext(agents, "Local AI agents", "Claude Code, OpenCode, ...")
+
+Rel(operator, herold, "Records, reviews, dispatches", "HTTPS, session")
+BiRel(herold, openai, "Audio -> transcript;\nprompt -> title + body", "HTTPS, API key")
+Rel(herold, github, "Pushes issue\n(title, body, labels)", "HTTPS, fine-grained PAT")
+BiRel(agents, github, "Read, comment, close,\noptionally open new issues", "gh CLI / API")
+
+@enduml

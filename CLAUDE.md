@@ -54,7 +54,7 @@ Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inerti
 
 ## Documentation
 
-- **Data model diagram:** `docs/spec/datamodel.plantuml` — when changing database schema (migrations, models, enums), check if the PlantUML diagram needs updating. Regenerate PNG with `./scripts/generate-diagrams.sh`.
+- **Diagrams:** PlantUML sources live in `docs/spec/diagrams/`, generated PNGs in `docs/spec/diagrams-png/`. When changing the database schema (migrations, models, enums), update `docs/spec/diagrams/datamodel.plantuml`. Regenerate all PNGs with `./scripts/generate-diagrams.sh`.
 
 ## Language
 
