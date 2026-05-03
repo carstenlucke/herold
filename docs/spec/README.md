@@ -1,15 +1,8 @@
 # Herold — Specification
 
-Specification of Herold structured according to the building-block model of
-**Johannes Siedersleben**. Each block captures one well-defined view on the
-system and lives in its own file. This document is the orchestrator: it
-introduces the model, indexes all blocks, and records which blocks are not
-applicable.
+Specification of Herold structured according to the building-block model of **Johannes Siedersleben**. Each block captures one well-defined view on the system and lives in its own file. This document is the orchestrator: it introduces the model, indexes all blocks, and records which blocks are not applicable.
 
-The reference description of the building-block model is in
-[`SIEDERSLEBEN.md`](SIEDERSLEBEN.md). Source: SIEDERSLEBEN, J. (ed.) 2003.
-*Softwaretechnik — Praxiswissen für Softwareingenieure.* München: Carl
-Hanser Verlag.
+The reference description of the building-block model is in [`SIEDERSLEBEN.md`](SIEDERSLEBEN.md). Source: SIEDERSLEBEN, J. (ed.) 2003. *Softwaretechnik — Praxiswissen für Softwareingenieure.* München: Carl Hanser Verlag.
 
 ---
 
@@ -18,10 +11,8 @@ Hanser Verlag.
 ### Audience
 
 - The operator (single user) — to understand what Herold does and why.
-- Future maintainers (humans or AI agents) — to navigate the codebase
-  through a stable conceptual map.
-- Reviewers — to assess scope, constraints, and decisions independently
-  of the source code.
+- Future maintainers (humans or AI agents) — to navigate the codebase through a stable conceptual map.
+- Reviewers — to assess scope, constraints, and decisions independently of the source code.
 
 ### How to read
 
@@ -29,19 +20,15 @@ Hanser Verlag.
 2. Continue with **P2** — the structural skeleton that frames everything else.
 3. Read **F1–F3** for the functional view (processes, use cases, functions).
 4. Use **D1–D2** as the data reference while reading any other block.
-5. Consult **B1** for UI specifics, **S1/S3** for integration and rollout,
-   **N1/N2** for cross-cutting qualities.
+5. Consult **B1** for UI specifics, **S1/S3** for integration and rollout, **N1/N2** for cross-cutting qualities.
 6. **E2** is a glossary — look up terms as needed.
 
 ### Conventions
 
 - Blocks are identified by Siedersleben's two-letter codes (`P1`, `F2`, …).
 - One file per block, named `<code>-<topic>.md`.
-- The specification describes **what** the system is and **why**, not
-  implementation detail. Architecture-level and code-level decisions live in
-  [`docs/arch/`](../arch/) (ADRs and the dedicated architecture document).
-- Language: English. The German block names from Siedersleben are kept
-  for traceability; content is written in English.
+- The specification describes **what** the system is and **why**, not implementation detail. Architecture-level and code-level decisions live in [`docs/arch/`](../arch/) (ADRs and the dedicated architecture document).
+- Language: English. The German block names from Siedersleben are kept for traceability; content is written in English.
 
 ### Status legend for the index below
 
@@ -111,22 +98,16 @@ Hanser Verlag.
 
 ## Blocks Not Applicable
 
-The following blocks of the Siedersleben model are deliberately not
-produced for Herold. The rationale is recorded here so that the absence is
-intentional and documented.
+The following blocks of the Siedersleben model are deliberately not produced for Herold. The rationale is recorded here so that the absence is intentional and documented.
 
 ### B2 — Batch
 
-Herold has no batch processing. The processing pipeline is synchronous
-inside the HTTP request (see ADR-002). The production environment forbids
-`crontab`, and there is no queue, worker, or scheduler.
+Herold has no batch processing. The processing pipeline is synchronous inside the HTTP request (see ADR-002). The production environment forbids `crontab`, and there is no queue, worker, or scheduler.
 
 ### B3 — Print Output
 
-Herold has no reports, PDFs, or other print artefacts. The sole output is
-a GitHub Issue, which is covered by S1.
+Herold has no reports, PDFs, or other print artefacts. The sole output is a GitHub Issue, which is covered by S1.
 
 ### S2 — Data Migration
 
-Herold is a greenfield project with no predecessor system and no legacy
-data to migrate. Initial deployment starts with an empty database.
+Herold is a greenfield project with no predecessor system and no legacy data to migrate. Initial deployment starts with an empty database.

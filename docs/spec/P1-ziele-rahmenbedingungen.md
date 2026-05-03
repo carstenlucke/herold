@@ -1,21 +1,14 @@
 # P1 — Goals and Constraints
 
-Foundation block of the Herold specification according to Siedersleben.
-Answers: Why is the system built, who is it for, and which constraints frame
-the solution space?
+Foundation block of the Herold specification according to Siedersleben. Answers: Why is the system built, who is it for, and which constraints frame the solution space?
 
 ---
 
 ## P1.1 Mission
 
-Herold is a single-user voice-to-issue dispatcher. The user records a voice
-note on a mobile device; the system transcribes it, derives structured
-content, and pushes the result as a GitHub Issue into a private repository.
-Local AI coding agents (e.g. Claude Code, OpenCode) consume the issues
-through GitHub's native interfaces and act on them.
+Herold is a single-user voice-to-issue dispatcher. The user records a voice note on a mobile device; the system transcribes it, derives structured content, and pushes the result as a GitHub Issue into a private repository. Local AI coding agents (e.g. Claude Code, OpenCode) consume the issues through GitHub's native interfaces and act on them.
 
-Herold replaces the cognitive overhead of typing well-formed tickets while
-walking, driving, or otherwise away from the keyboard.
+Herold replaces the cognitive overhead of typing well-formed tickets while walking, driving, or otherwise away from the keyboard.
 
 ---
 
@@ -40,8 +33,7 @@ walking, driving, or otherwise away from the keyboard.
 | **Hosting provider** | Shared hosting operator. | Provides PHP 8.5, Apache, HTTPS, FTP, limited SSH. |
 | **External APIs** | OpenAI, GitHub. | Called synchronously during the processing pipeline. |
 
-Multi-user support is explicitly out of scope (see CON-3a-04 in
-[constraints.md](constraints.md)).
+Multi-user support is explicitly out of scope (see CON-3a-04 in [constraints.md](constraints.md)).
 
 ---
 
@@ -72,10 +64,7 @@ Multi-user support is explicitly out of scope (see CON-3a-04 in
 
 ## P1.5 Constraints
 
-Detailed constraints with rationale are kept as an annex in
-[`P1-constraints.md`](P1-constraints.md), structured along Volere
-Section 3 (Mandated Constraints). The annex is the authoritative
-source; this section is an index.
+Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`](P1-constraints.md), structured along Volere Section 3 (Mandated Constraints). The annex is the authoritative source; this section is an index.
 
 | ID | Constraint |
 |----|------------|
