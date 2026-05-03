@@ -1,0 +1,61 @@
+@startuml f1-activities
+
+title F1 — Voice-to-Issue Dispatch (Activity Diagram)
+
+skinparam backgroundColor white
+skinparam ActivityFontSize 12
+skinparam ActivityDiamondFontSize 12
+skinparam SwimlaneTitleFontStyle bold
+skinparam DefaultTextAlignment center
+skinparam ArrowColor #555555
+skinparam ActivityBorderColor #333333
+skinparam ActivityBackgroundColor #F5F5F5
+
+|Operator|
+start
+:A1 — Form intent
+//(idea, task, observation)//;
+
+|Browser|
+:A2 — Select message type;
+:A3 — Record voice note
+//(audio + optional extra fields)//;
+
+|Herold|
+:A4 — Begin processing
+//(persist note · status = recorded)//;
+
+|OpenAI|
+:A5 — Transcribe audio
+//(Whisper)//;
+:A6 — Generate title + body
+//(Chat · type-specific prompt)//;
+
+|Herold|
+:Persist structured content
+//(status = processed)//;
+
+|Operator|
+repeat
+  :A7 — Review and edit content;
+repeat while (Satisfied?) is (no) not (yes)
+
+|Herold|
+:A8 — Sanitise markdown
++ push to GitHub
+//(status = sent)//;
+
+|GitHub|
+:Issue persisted
+//(title, body, type label)//;
+
+|Downstream consumer|
+:A9 — Read issue,
+interpret type label,
+act accordingly;
+:A10 — Closure
+//(close, archive, or persist)//;
+
+stop
+
+@enduml

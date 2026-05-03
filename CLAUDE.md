@@ -55,6 +55,8 @@ Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inerti
 ## Documentation
 
 - **Diagrams:** PlantUML sources live in `docs/spec/diagrams/`, generated PNGs in `docs/spec/diagrams-png/`. When changing the database schema (migrations, models, enums), update `docs/spec/diagrams/datamodel.plantuml`. Regenerate all PNGs with `./scripts/generate-diagrams.sh`.
+- **Specification is implementation-free:** Files under `docs/spec/` describe **what** the system does and **why**. No code-level implementation details belong there — no file paths (e.g. `config/herold.php`), no class or method names, no concrete library/framework APIs (e.g. `MediaRecorder`), no codec/format specifics (e.g. `WebM/Opus`), no internal data formats (e.g. raw JSON shapes), no SQL, no migration steps. Reference product names of *neighbouring systems* (OpenAI Whisper, GitHub Issues) is permitted because they are spec-level constraints declared in P1/P2. Implementation choices live in `docs/arch/` (ADRs) and in code/comments.
+- **Spec stays in sync with code:** Any code change must keep the specification (`docs/spec/`) and architecture documentation (`docs/arch/`) current. Before implementing a non-trivial change, identify which spec/arch blocks are affected (e.g. data model change → D1 + datamodel diagram; new use case → F2; new neighbouring system → P2 + S1; new constraint → P1; new NFR → N1) and include those updates in the same change set. Plan the documentation impact *before* writing code, not after.
 
 ## Language
 
