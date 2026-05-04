@@ -4,7 +4,7 @@ Real-world workflows that Herold participates in, in the sense of Siedersleben (
 
 Herold is one such supporting IT system. The process documented here therefore extends beyond Herold's HTTP boundary: it starts before the operator opens the browser and ends after a downstream consumer has acted on the resulting GitHub Issue. Herold is the *capture and dispatch* segment of the process — important, but not the whole.
 
-The blocks that translate this process into Herold-implemented behaviour are **F2** (use cases — the DV-supported activities) and **F3** (application functions — the algorithms reused across use cases).
+The blocks that translate this process into Herold-implemented behaviour are **F2** (use cases — the system-supported activities) and **F3** (application functions — the algorithms reused across use cases).
 
 ---
 
@@ -28,7 +28,7 @@ Note that Herold itself, the AI agent, GitHub, and OpenAI are listed as actors h
 
 ### F1.1.2 Activities
 
-Listed in temporal order. The **Support** column names which actor materially performs the activity; activities labelled *manual* are not DV-supported even when an IT system is incidentally present.
+Listed in temporal order. The **Support** column names which actor materially performs the activity; activities labelled *manual* are not system-supported even when an IT system is incidentally present.
 
 | # | Activity | Support | Notes |
 |---|----------|---------|-------|
