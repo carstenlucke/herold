@@ -5,6 +5,12 @@ skinparam classAttributeIconSize 0
 
 title Herold -- Datenmodell (SQLite)
 
+' Strict subset of the D1 Persistent region (see d1-information-model)
+' mapped to concrete SQLite columns. Framework tables
+' (sessions, password_reset_tokens, cache*, jobs*) and framework-only
+' columns (remember_token, email_verified_at) are intentionally not
+' shown — they are Laravel scaffolding, not part of the domain model.
+
 enum NoteStatus {
   recorded
   processed
@@ -34,11 +40,9 @@ class users <<table>> {
   --
   name : string
   email : string <<unique>>
-  password : string
   api_key_hash : string [nullable]
   totp_secret : text (encrypted) [nullable]
   totp_confirmed_at : timestamp [nullable]
-  remember_token : string [nullable]
   created_at : timestamp
   updated_at : timestamp
 }
@@ -48,23 +52,42 @@ class users <<table>> {
 voice_notes ..> NoteStatus : status
 
 note right of voice_notes
+  Maps D1 **VoiceNote**.
   **type**: general | youtube | diary | obsidian | todo
-  (erweiterbar via config/herold.php)
+  (open set, configured in ""config/herold.php"").
 
-  **metadata** (JSON):
+  Column-to-D1 mapping:
+  - ""metadata"" persists D1 **VoiceNote.extraFields**
+  - ""audio_path"" persists D1 **VoiceNote.audioPath**
+  - ""github_issue_number"" / ""github_issue_url""
+    persist D1 **VoiceNote.githubIssueNumber/Url**
+
+  **metadata** (JSON) shape per type:
   - youtube: { youtube_url }
   - diary: { entry_date }
   - obsidian: { vault }
   - todo: { deadline }
-  - andere Typen: typ-spezifisch
+  - general: {}
 end note
 
 note bottom of users
+  Maps D1 **Operator**.
   Single-user system — at most one row.
   Enforced by SQLite trigger ""enforce_users_singleton""
   (BEFORE INSERT, RAISE ABORT when count >= 1).
-  Required by Laravel's auth system.
-  No agent accounts (thus no Sanctum), no multi-user support planned.
+
+  Authentication is **API key + TOTP**:
+  - ""api_key_hash"" persists D1 **Operator.apiKeyHash**
+    (SHA-256, constant-time compare)
+  - ""totp_secret"" persists D1 **Operator.totpSecret**
+    (Laravel cast ""encrypted"")
+  - ""totp_confirmed_at"" persists D1 **Operator.totpConfirmedAt**
+
+  Framework columns ""password"", ""remember_token"" and
+  ""email_verified_at"" exist in the migration but are
+  not part of D1's auth model — Herold does not verify
+  passwords and does not use Laravel's remember-me or
+  email-verification flows. They are omitted here.
 end note
 
 @enduml
