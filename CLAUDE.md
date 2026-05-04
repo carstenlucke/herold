@@ -18,7 +18,7 @@ Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inerti
 | Vite | 8.x | Rolldown bundler (Rust) |
 | Node.js | 24 LTS | Build only, not runtime |
 | SQLite | 3.51.x | |
-| laragear/two-factor | 4.x | TOTP auth |
+| TOTP (home-rolled) | — | `users.totp_secret` (encrypted) + `users.totp_confirmed_at` |
 
 ## Architecture
 

@@ -36,12 +36,12 @@ Each use case is described with a tabular specification template adopted from Po
 | **Description** | Operator authenticates with both factors and receives a session valid for any further use case. |
 | **Trigger** | Operator opens Herold without an active session. |
 | **Actors** | Operator (primary). |
-| **Precondition** | TOTP has been enrolled (UC-02). The operator possesses both factors: the registered authenticator and the time-based code source. |
+| **Precondition** | An API key is bound to the operator account (initial setup); TOTP has been enrolled (UC-02). The operator possesses both factors: the API key and the registered authenticator. |
 | **Postcondition** | Authenticated session active. Operator may proceed with any other UC. |
-| **Main scenario** | 1. System presents the sign-in screen.<br>2. Operator presents the first factor.<br>3. System verifies the first factor.<br>4. System prompts for the time-based one-time password.<br>5. Operator enters the current code.<br>6. System verifies the code and establishes an authenticated session.<br>7. Operator is taken to the dashboard. |
+| **Main scenario** | 1. System presents the sign-in screen.<br>2. Operator presents the API key as the first factor.<br>3. System verifies the API key in constant time against the bound `Operator.apiKeyHash`.<br>4. System prompts for the time-based one-time password.<br>5. Operator enters the current code.<br>6. System verifies the code against the bound `Operator.totpSecret` and establishes an authenticated session.<br>7. Operator is taken to the dashboard. |
 | **Alternative scenarios** | *Session expired during the flow:* operator is sent back to step 1. |
-| **Exception scenarios** | *First factor fails:* operator may retry within the rate limit; no session is established.<br>*TOTP code fails:* operator may retry within the same rate limit, or pivot to UC-03. |
-| **Qualities** | [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout*. |
+| **Exception scenarios** | *API key is rejected:* operator may retry within the rate limit; no session is established.<br>*TOTP code fails:* operator may retry within the same rate limit, or pivot to UC-03. |
+| **Qualities** | [NFR-15a-01](N1-nichtfunktional.md) *Two-Factor Browser Authentication*; [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout*. |
 
 ### UC-02 — Enrol second factor
 
@@ -49,14 +49,15 @@ Each use case is described with a tabular specification template adopted from Po
 |---------|---------|
 | **Identifier** | UC-02 |
 | **Name** | Enrol second factor |
-| **Description** | Operator binds a TOTP secret to the account and receives one-time recovery codes. |
+| **Description** | Operator binds a TOTP secret to the account so that subsequent sign-ins (UC-01) can succeed. |
 | **Trigger** | Initial setup, or follow-up to UC-03 after a recovery. |
 | **Actors** | Operator (primary). |
-| **Precondition** | Operator has authenticated the first factor; no TOTP secret is currently bound to the account, or a recovery flow has invalidated the previous one. |
-| **Postcondition** | TOTP is enrolled; recovery codes have been issued; UC-01 can succeed. |
-| **Result** | Fresh TOTP secret bound to the account; set of one-time recovery codes shown to the operator. |
-| **Main scenario** | 1. System generates a fresh TOTP secret and a set of recovery codes.<br>2. System displays the secret as a scannable code together with the recovery codes.<br>3. Operator captures the secret in an authenticator app and stores the recovery codes safely.<br>4. Operator enters a confirmation code generated from the new secret.<br>5. System verifies the confirmation code and persists the secret. |
-| **Exception scenarios** | *Confirmation code wrong:* operator retries; the secret is not yet bound.<br>*Operator abandons setup before confirming:* the secret is discarded. |
+| **Precondition** | Operator has presented the first factor (API key) successfully; no TOTP secret is currently bound to the account, or a recovery flow has invalidated the previous one. |
+| **Postcondition** | TOTP is enrolled (`Operator.totpSecret` and `Operator.totpConfirmedAt` populated); UC-01 can succeed. |
+| **Result** | Fresh TOTP secret bound to the account, captured by the operator in an authenticator app of their choice. |
+| **Main scenario** | 1. System generates a fresh TOTP secret and binds it provisionally to the account.<br>2. System displays the secret in a form an authenticator app can capture (scannable provisioning information and the raw secret as fallback).<br>3. Operator registers the secret in their authenticator app.<br>4. Operator enters a confirmation code produced by the authenticator from the new secret.<br>5. System verifies the confirmation code and marks the secret confirmed; from this point on UC-01 succeeds with the second factor. |
+| **Exception scenarios** | *Confirmation code wrong:* operator retries; the secret remains provisional and is not yet usable in UC-01.<br>*Operator abandons setup before confirming:* the unconfirmed secret is replaced on the next attempt; UC-01 cannot succeed until a confirmation code completes step 5. |
+| **Qualities** | No backup codes are issued. The recovery path for a lost authenticator is UC-03 (out-of-band file token), not a stored backup-code list. |
 
 ### UC-03 — Recover access
 
@@ -64,14 +65,14 @@ Each use case is described with a tabular specification template adopted from Po
 |---------|---------|
 | **Identifier** | UC-03 |
 | **Name** | Recover access |
-| **Description** | Operator regains a session by spending an unused recovery code; the bound TOTP is invalidated and must be re-enrolled. |
-| **Trigger** | Operator cannot produce a TOTP code (lost device, app reset). |
+| **Description** | Operator regains access to a locked-out account by redeeming a one-time recovery token they placed on the host out-of-band. The redemption resets the second factor and rotates the API key. |
+| **Trigger** | Operator has lost the API key, lost access to the authenticator, or both — and cannot complete UC-01. |
 | **Actors** | Operator (primary). |
-| **Precondition** | Operator possesses an unused recovery code issued in UC-02; the first factor is still available. |
-| **Postcondition** | Authenticated session active. TOTP unbound; one recovery code consumed. UC-02 must be run again before normal use resumes. |
-| **Main scenario** | 1. Operator selects the recovery option from the sign-in screen.<br>2. Operator enters a recovery code.<br>3. System verifies the code, marks it consumed, and invalidates the bound TOTP secret.<br>4. System establishes an authenticated session.<br>5. Operator is required to run UC-02 again before resuming normal use. |
-| **Exception scenarios** | *Invalid recovery code:* retry within the rate limit. |
-| **Qualities** | [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout*; [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry* (60-minute time-to-live on the recovery channel). |
+| **Precondition** | Operator has out-of-band write access to the host (e.g. via FTP) and has placed a recovery token, as a single freshly created file in the local storage area, on the server within the last 60 minutes. The token's content is the operator's chosen secret string. |
+| **Postcondition** | Authenticated session active. The bound TOTP is unbound (`Operator.totpSecret` and `Operator.totpConfirmedAt` cleared); a fresh API key has been generated, persisted as `Operator.apiKeyHash`, and shown to the operator exactly once. The recovery-token file has been deleted. UC-02 must be run again before normal use resumes. |
+| **Main scenario** | 1. Operator selects the recovery option from the sign-in screen.<br>2. System checks that a recovery token exists and has not expired (see [NFR-15a-04](N1-nichtfunktional.md)).<br>3. Operator enters the token's secret string.<br>4. System verifies the entered string in constant time against the file's content, then deletes the recovery-token file.<br>5. System unbinds the TOTP secret, generates a fresh API key, persists its hash, and establishes an authenticated session.<br>6. System displays the new API key to the operator exactly once; the operator records it.<br>7. Operator is required to run UC-02 again before resuming normal use. |
+| **Exception scenarios** | *No recovery token present, or token expired, or entered string does not match:* all three return the same generic rejection without disclosing which condition was hit; rejections are rate-limited and logged.<br>*Operator closes the screen before recording the new API key in step 6:* the API key cannot be retrieved; the operator must run UC-03 again with a freshly placed recovery token. |
+| **Qualities** | [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout* (recovery branch); [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry* (60-minute time-to-live based on the file modification time). |
 
 ### UC-04 — Sign out
 
@@ -246,4 +247,4 @@ The four use cases in this group form the supported segment of the business proc
 | [N1](N1-nichtfunktional.md) | Latency budget for UC-06 and UC-08 ([NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*); error handling on retry ([NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*); rate limiting for UC-01, UC-03 ([NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout*); audio upload constraints for UC-05 ([NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*); recovery token expiry for UC-03 ([NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry*); content sanitisation for UC-08 ([NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization*). |
 | [N2] (planned) | Authentication and TOTP handling underpin UC-01 to UC-04. |
 | [S1] (planned) | OpenAI and GitHub interface contracts consumed by UC-06 and UC-08. |
-| [E2](E2-glossar.md) | Definitions for *message type*, *recovery code*, *fine-grained PAT*, *voice note*. |
+| [E2](E2-glossar.md) | Definitions for *message type*, *Recovery* (file-based recovery flow), *fine-grained PAT*, *voice note*. |
