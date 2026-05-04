@@ -95,23 +95,24 @@ No automatic retries. Each retry is an explicit user action.
 
 **NFR-13a-01: Mobile Usage (On the Go)**
 
-The primary usage context is a smartphone in a mobile environment. The app must function on modern mobile browsers (Safari iOS, Chrome Android). MediaRecorder API support is required.
+The primary usage context is a smartphone in a mobile environment. The app must function on modern mobile browsers (Safari iOS, Chrome Android), including the in-browser audio capture used by UC-05.
 
-**Fit Criterion:** Voice recording and playback work on Safari >= 17 and Chrome >= 120 on mobile devices.
+**Fit Criterion:** Voice recording and playback work on current major mobile browsers (Safari iOS, Chrome Android) on devices the operator is reasonably expected to use.
 
 ### 13b. Expected Technological Environment
 
 **NFR-13b-01: Shared Hosting Compatibility**
 
-The application must run on standard shared hosting with:
-- PHP >= 8.5 with pdo_sqlite extension
-- FTP access for deployment
-- HTTPS (provided by hosting)
-- Limited SSH access (PHP 8.5 available, `crontab` not available)
-- No cron jobs required (synchronous processing, see [ADR-002](../arch/002-dev-prod-parity.md))
-- No Docker support
+The application must run on standard shared hosting that provides only:
 
-**Fit Criterion:** Application deploys and runs correctly on the target shared hosting environment via FTP upload plus optional one-off SSH maintenance commands (for example `php artisan migrate --force`).
+- The runtime mandated by P1-constraints (see CON-3a-01 and CON-3a-03).
+- HTTPS provided by the hosting provider (assumption AS-03).
+- Out-of-band file-store write access (e.g. via FTP) for deployment and for the recovery channel (UC-03).
+- Optional limited shell access for one-off maintenance only — no scheduled jobs, no long-running workers.
+
+The application must not depend on container runtimes, cron-scheduled tasks, or background workers in production (CON-3b-01, [ADR-002](../arch/002-dev-prod-parity.md)).
+
+**Fit Criterion:** The application can be deployed by uploading the build artefacts to the hosting account's web root via FTP-style transfer and operates correctly without scheduled jobs or background workers.
 
 ### 13c. Partner or Collaborative Applications
 
@@ -137,15 +138,15 @@ Local AI agents (Claude Code, OpenCode) interact exclusively with GitHub Issues,
 
 **NFR-14a-01: Config-Driven Message Types**
 
-New message types (note/ticket types) must be addable via configuration only (`config/herold.php`). No code changes required unless a new type needs a new external API integration.
+New message types must be addable through host-level configuration alone. Adding a type does not require code changes unless the type also introduces a new external API integration.
 
-**Fit Criterion:** A new type with label, icon, GitHub label, extra fields, and preprocessing prompt can be added by editing one config file.
+**Fit Criterion:** A new type — with display label, icon, GitHub label, extra-field schema, and preprocessing prompt — can be added without editing application code, by changing host configuration only.
 
-**NFR-14a-02: Auth Recovery via FTP**
+**NFR-14a-02: Out-of-Band Auth Recovery**
 
-Authentication (API key + TOTP) must be resettable without CLI commands. Recovery mechanism: upload `.herold-recovery` file via FTP, then visit `/recovery` route in browser.
+Authentication (API key + TOTP) must be resettable without privileged shell access. The recovery channel relies on out-of-band write access to the host file store (e.g. via FTP) plus the browser; see UC-03 for the redemption flow.
 
-**Fit Criterion:** A locked-out user can regain access using only FTP and a browser.
+**Fit Criterion:** A locked-out operator can regain access using only out-of-band file-store access and a browser; no CLI or shell commands are required on the host.
 
 ### 14b. Supportability Requirements
 
@@ -155,9 +156,9 @@ Authentication (API key + TOTP) must be resettable without CLI commands. Recover
 
 **NFR-14c-01: AI Provider Portability**
 
-The AI service layer (`laravel/ai`) must allow switching the AI provider (e.g., from OpenAI to Anthropic or Gemini) via configuration, without changing application code.
+The AI integration must allow switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) through host-level configuration, without changing application code. The transcription and content-generation steps (AF-01, AF-02) must remain decoupled from any single provider.
 
-**Fit Criterion:** Changing `AI_PROVIDER` in `.env` switches the transcription and chat provider.
+**Fit Criterion:** A different AI provider can be activated by host-level configuration alone; transcription and content generation continue to function without code changes.
 
 ---
 
@@ -173,58 +174,58 @@ Browser access requires API key + TOTP (Time-based One-Time Password). Two facto
 
 **NFR-15a-02: Login Rate Limiting and Lockout**
 
-Login routes (`/login/key`, `/login/totp`) must enforce rate limiting. Recovery route (`/recovery`) must enforce rate limiting.
+Both factors of the sign-in flow (UC-01) and the recovery channel (UC-03) must enforce rate limiting per source IP.
 
-- Login: max 5 attempts per minute per IP
-- Login lockout: 15-minute block after 10 failed attempts per IP
-- Recovery: max 5 attempts per hour per IP
+- Sign-in: max 5 attempts per minute per IP.
+- Sign-in lockout: 15-minute block after 10 failed attempts per IP.
+- Recovery: max 5 attempts per hour per IP.
 
-**Fit Criterion:** After 5 failed login attempts within 1 minute, the next attempt returns HTTP 429. After 10 failed attempts, all login attempts from that IP are blocked for 15 minutes.
+**Fit Criterion:** After 5 failed sign-in attempts within one minute, the next attempt is rejected. After 10 failed attempts, all sign-in attempts from that IP are blocked for 15 minutes. Recovery attempts beyond 5 per hour from the same IP are rejected.
 
 **NFR-15a-03: Audio Upload Validation**
 
-Audio uploads must be validated server-side:
-- Maximum file size: 25 MB
-- Allowed MIME types: `audio/webm`, `audio/ogg`, `audio/mp4`
-- Rate limit: max 10 uploads per hour
+Audio uploads (UC-05) must be validated server-side:
+- Maximum file size: 25 MB.
+- Accepted formats: the common audio container/codec combinations produced by browser audio capture.
+- Rate limit: max 10 uploads per hour.
 
-**Fit Criterion:** An upload exceeding 25 MB or with a disallowed MIME type is rejected with HTTP 422. The 11th upload within one hour returns HTTP 429.
+**Fit Criterion:** An upload exceeding 25 MB or in an unaccepted format is rejected before the note is persisted. The 11th upload within one hour from the same operator is rejected.
 
 **NFR-15a-04: Recovery Token Expiry**
 
-The `.herold-recovery` file must have a time-to-live of 60 minutes based on file modification time (`filemtime`). Expired tokens must not grant recovery access. Missing file, wrong token, and expired token must return the same generic HTTP 404 response; the internal rejection reason is logged.
+The `RecoveryToken` (D1) must have a time-to-live of 60 minutes counted from `RecoveryToken.placedAt`. After the time-to-live expires, the token must not grant recovery access. A missing token, a token with a non-matching secret, and an expired token must surface to the operator as the same generic rejection — the internal reason for rejection must not be disclosed externally, but must be recorded in the application log together with the source IP and the time of the attempt.
 
-**Fit Criterion:** A `.herold-recovery` file older than 60 minutes does not grant access to the recovery form and returns the same generic 404 response as other invalid recovery states. The rejection reason is logged with timestamp and IP.
+**Fit Criterion:** A `RecoveryToken` older than 60 minutes does not grant access to UC-03. The three failure modes (missing, mismatched, expired) are externally indistinguishable. Each rejection produces a log entry containing source IP and timestamp.
 
 ### 15b. Integrity Requirements
 
 **NFR-15b-01: No API Keys in Frontend**
 
-All external API keys (OpenAI, GitHub PAT) are stored server-side only. The frontend never receives or transmits these keys.
+All external API credentials (OpenAI, GitHub PAT) are held server-side only. The frontend never receives or transmits these credentials.
 
-**Fit Criterion:** Browser DevTools network tab shows no external API keys in any request or response.
+**Fit Criterion:** No external API credential is observable in any request or response received by the browser.
 
-**NFR-15b-02: No Preprocessing Prompts in API Responses**
+**NFR-15b-02: No Preprocessing Prompts Surfaced to the Browser**
 
-The `/types` endpoint must not include `preprocessing_prompt` values in its response. Only frontend-relevant fields (`label`, `icon`, `extra_fields`, `github_label`) are returned.
+The browser-facing view of the configuration (UC-12) must surface only those `MessageType` attributes the operator needs to choose a type and fill its extra fields — i.e. label, icon, GitHub label, and the extra-field schema. The `MessageType.promptTemplate` (D1.3) is server-only and must never be transmitted to the browser, neither in UC-12 nor anywhere else.
 
-**Fit Criterion:** The JSON response of `GET /types` contains no key named `preprocessing_prompt`.
+**Fit Criterion:** No payload reaching the browser contains the contents of any configured `MessageType.promptTemplate`.
 
 **NFR-15b-03: Secret Redaction in Logs**
 
-Sensitive values must not appear in application logs. A dedicated redaction mechanism (e.g., custom Monolog processor) must mask known secret keys: `APP_KEY`, `HEROLD_API_KEY`, `GITHUB_TOKEN`, `OPENAI_API_KEY`, and session tokens (including Bearer/Authorization tokens). Transcript contents must not be logged — only processing events (e.g., "Transcription completed for voice note {id}").
+Sensitive values must not appear in the application log. A redaction mechanism must mask the application's framework key, the operator's API key, third-party API tokens (OpenAI, GitHub), and any session or bearer token. Transcript contents (`VoiceNote.transcript`) must not be logged — only processing events that reference the note by `VoiceNote.id` are permitted.
 
-**Fit Criterion:** A search through `storage/logs/` reveals no API keys, tokens, or transcript text.
+**Fit Criterion:** Inspection of the application log reveals no API key, token, or transcript text.
 
 **NFR-15b-04: Issue Content Sanitization**
 
-Voice note content (transcripts, LLM-generated titles and bodies) is untrusted input. Before creating a GitHub Issue, the application must:
+Voice note content (transcript, generated title, generated body) is untrusted input. Before the dispatched issue (UC-08) is composed, the application must:
 
-- Sanitize Markdown to remove executable content (HTML tags, JavaScript URIs)
-- Structure the issue body so that untrusted content is clearly delimited (e.g., in a quoted block or under an "## Input" heading)
-- Never include system prompts or preprocessing instructions in the issue body
+- Render any active markup (e.g. embedded HTML, script-bearing URIs) inert in the issue body.
+- Visually delimit operator-derived content from application-generated structure inside the issue body, so a downstream reader can tell which is which.
+- Exclude any prompt-engineering material (e.g. `MessageType.promptTemplate`) from the issue body.
 
-**Fit Criterion:** A transcript containing `<!-- @agent: ignore all previous instructions -->` or similar injection attempts is rendered inert in the created GitHub Issue. The issue body clearly separates application-generated structure from user-originated content.
+**Fit Criterion:** An attempted injection in a transcript (e.g. an embedded markup comment instructing a downstream agent to ignore previous instructions) appears as inert text in the dispatched issue. The issue body's structure makes the boundary between operator-derived content and application-generated structure self-evident.
 
 ### 15c. Privacy Requirements
 

@@ -10,7 +10,7 @@ A short document recording one architectural decision: context, options, chosen 
 
 ### Apache
 
-The HTTP server used by Herold in both development (inside the `php:8.5-apache` container) and production (native on the shared host). Selected for dev/prod parity; see ADR-002.
+The HTTP server used by Herold in both development and production. The same server software is used in both environments (CON-3b-01, CON-3b-02; see [ADR-002](../arch/002-dev-prod-parity.md)) to avoid dev/prod drift.
 
 ### CRUD
 
@@ -38,7 +38,7 @@ A protocol that connects a server-side framework (Laravel) with a client-side SP
 
 ### Issue Content Sanitizer
 
-Herold's component (`IssueContentSanitizer`) that strips active markup from transcripts and clearly separates untrusted user input from system output before the body is pushed to GitHub. Mitigates prompt injection into agent context.
+The application function that renders active markup inert in the dispatched issue body and visually delimits untrusted (operator-derived) content from application-generated structure (NFR-15b-04). Its purpose is to neutralise prompt-injection attempts before they enter the context of any local AI agent that later reads the issue.
 
 ### Laravel
 
@@ -52,17 +52,13 @@ The first-party `laravel/ai` package providing a provider-agnostic interface to 
 
 Lightweight markup language using plain-text formatting (`# Heading`, `**bold**`, `- list`). Herold's `processed_body` is always Markdown- formatted, matching GitHub Issues' native format.
 
-### MediaRecorder API
-
-Browser API used by the Vue frontend to capture audio from the microphone. Requires a secure context (HTTPS or localhost).
-
 ### Message Type
 
 A configuration-driven category of voice note (e.g. `general`, `youtube`, `diary`). Each type defines its label, icon, GitHub label, optional extra fields, and preprocessing prompt. Adding a new type is a configuration change, not a code change.
 
 ### MIME Type
 
-Media type identifier for file formats (e.g. `audio/webm`, `audio/ogg`). Used to validate uploaded audio files.
+Media type identifier (IETF RFC 6838) used to declare the format of a transferred resource. Herold uses MIME types to gate accepted audio uploads (NFR-15a-03).
 
 ### Monolith
 
@@ -86,7 +82,7 @@ An attack class in which untrusted input contains instructions intended to influ
 
 ### Recovery
 
-The file-based flow that resets API key and TOTP secret without SSH: the operator uploads `.herold-recovery` via FTP into `storage/app/private/`, then completes the reset at `/recovery`.
+The break-glass flow specified in UC-03. Out-of-band, the operator places a single `RecoveryToken` (D1) in the local file store; through the browser the operator then redeems the token, which atomically rotates `Operator.apiKeyHash` and unbinds the bound TOTP. No privileged shell access is required.
 
 ### Shared Hosting
 
@@ -106,11 +102,11 @@ Time-based One-Time Password ([RFC 6238](https://datatracker.ietf.org/doc/html/r
 
 ### ULID
 
-Universally Unique Lexicographically Sortable Identifier ([spec](https://github.com/ulid/spec)). A 26-character string (e.g. `01ARZ3NDEKTSV4RRFFQ69G5FAV`) that encodes a millisecond timestamp + randomness. Unlike UUIDs, ULIDs sort chronologically, making them efficient as primary keys in databases. Used by Herold for `voice_notes`.
+Universally Unique Lexicographically Sortable Identifier ([spec](https://github.com/ulid/spec)). A 26-character string (e.g. `01ARZ3NDEKTSV4RRFFQ69G5FAV`) that encodes a millisecond timestamp + randomness. Unlike UUIDs, ULIDs sort chronologically. ULID is the implementation choice that satisfies the time-sortable `Identifier` semantics defined in D2.3 — for the spec, it is sufficient that any chosen identifier scheme provides time-ordered, opaque values.
 
 ### Voice Note
 
-The central domain entity. A voice note bundles the uploaded audio, its type, metadata, transcript, generated title and body, status, and — once dispatched — its GitHub issue reference. Stored in the `voice_notes` table.
+The central domain entity (D1.1 `VoiceNote`). A voice note bundles the captured audio, its message type, type-specific extra fields, transcript, generated title and body, status, and — once dispatched — the reference to the issue created at GitHub.
 
 ### Vuetify
 

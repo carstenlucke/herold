@@ -103,7 +103,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 |----|------------|
 | AS-01 | The operator has a GitHub account and can issue a fine-grained PAT for one private repository. |
 | AS-02 | The operator has an OpenAI API key with access to Whisper and a Chat model. |
-| AS-03 | The hosting provider serves HTTPS (required by `MediaRecorder`). |
+| AS-03 | The hosting provider serves HTTPS — required by the browser audio capture used in UC-05. |
 | AS-04 | Voice notes are short enough to fit within OpenAI's per-request audio limit (≤ 25 MB). |
 | AS-05 | Synchronous requests of 10–30 s are not killed by the hosting provider's PHP/Apache timeouts. |
 
@@ -117,4 +117,4 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 | R-02 | GitHub API outage prevents dispatch. | Note remains in status `processed`; user retries `send`. |
 | R-03 | Hosting timeout cuts a synchronous request mid-processing. | Idempotent retry from current status; partial state is recoverable. |
 | R-04 | Prompt-injection content in transcripts leaks into agent context. | `IssueContentSanitizer` separates untrusted input and strips active markup. |
-| R-05 | Loss of API key or TOTP locks the operator out. | File-based recovery flow (`storage/app/private/.herold-recovery`). |
+| R-05 | Loss of API key or TOTP locks the operator out. | Out-of-band recovery flow via `RecoveryToken` (UC-03; see also NFR-14a-02). |

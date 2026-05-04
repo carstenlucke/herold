@@ -102,7 +102,7 @@ The following blocks of the Siedersleben model are deliberately not produced for
 
 ### B2 — Batch
 
-Herold has no batch processing. The processing pipeline is synchronous inside the HTTP request (see ADR-002). The production environment forbids `crontab`, and there is no queue, worker, or scheduler.
+Herold has no batch processing. The processing pipeline is synchronous inside the HTTP request (see ADR-002). The production environment does not permit scheduled jobs, and there is no queue, worker, or scheduler.
 
 ### B3 — Print Output
 
