@@ -53,9 +53,9 @@ The reference description of the building-block model is in [`SIEDERSLEBEN.md`](
 
 | Block | Title | Status | File |
 |-------|-------|--------|------|
-| F1 | Business Processes | 🛠 | `F1-geschaeftsprozesse.md` |
-| F2 | Use Cases | 🛠 | `F2-anwendungsfaelle.md` |
-| F3 | Application Functions | 🛠 | `F3-anwendungsfunktionen.md` |
+| F1 | Business Processes | ✅ | [`F1-geschaeftsprozesse.md`](F1-geschaeftsprozesse.md) |
+| F2 | Use Cases | ✅ | [`F2-anwendungsfaelle.md`](F2-anwendungsfaelle.md) |
+| F3 | Application Functions | ✅ | [`F3-anwendungsfunktionen.md`](F3-anwendungsfunktionen.md) |
 
 ### 3. Data
 
