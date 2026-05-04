@@ -1,0 +1,176 @@
+@startuml d1-information-model
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam packageStyle frame
+skinparam linetype ortho
+
+title Herold — D1 Information Model
+
+' Non-trivial domain data types referenced below (Identifier,
+' OpaqueSecret, NoteStatus, IssueState, MessageTypeId, FieldDT,
+' TypeSpecificData) are defined in D2. Trivial types (Text, Integer,
+' Boolean, Email, URL, Timestamp, Markdown) are used at face value.
+
+' ============================================================
+' Persistent — local persistence (SQLite database + local file store)
+' ============================================================
+package "Persistent" <<Frame>> #E8F4FF {
+
+  enum NoteStatus <<D2>> {
+    recorded
+    processed
+    sent
+    error
+  }
+
+  class VoiceNote {
+    + id : Identifier
+    + type : MessageTypeId
+    + status : NoteStatus
+    + audioPath : Text [0..1]
+    + transcript : Text [0..1]
+    + processedTitle : Text [0..1]
+    + processedBody : Markdown [0..1]
+    + extraFields : TypeSpecificData [0..1]
+    + githubIssueNumber : Integer [0..1]
+    + githubIssueUrl : URL [0..1]
+    + errorMessage : Text [0..1]
+    + createdAt : Timestamp
+    + updatedAt : Timestamp
+  }
+
+  class Operator {
+    + id : Identifier
+    + name : Text
+    + email : Email
+    + apiKeyHash : OpaqueSecret [0..1]
+    + totpSecret : OpaqueSecret [0..1]
+    + totpConfirmedAt : Timestamp [0..1]
+  }
+
+  class RecoveryToken <<file>> {
+    + token : OpaqueSecret
+    + placedAt : Timestamp
+  }
+}
+
+' ============================================================
+' External — lives outside Herold's process boundary
+' ============================================================
+package "External" <<Frame>> #FFF4E0 {
+
+  class GitHubIssue {
+    + number : Integer
+    + url : URL
+    + title : Text
+    + body : Markdown
+    + labels : Set<Text>
+    + state : IssueState
+  }
+
+  class GitHubRepository {
+    + owner : Text
+    + name : Text
+  }
+}
+
+' ============================================================
+' Configuration — read-only typed configuration
+' ============================================================
+package "Configuration" <<Frame>> #EAF7E8 {
+
+  class MessageType {
+    + id : MessageTypeId
+    + label : Text
+    + promptTemplate : Text
+    + githubLabel : Text
+  }
+
+  class FieldSchema {
+    + fields : List<FieldDefinition>
+  }
+
+  class FieldDefinition {
+    + name : Text
+    + fieldType : FieldDT
+    + required : Boolean
+    + label : Text
+  }
+
+  class GitHubTarget {
+    + accessTokenSecret : OpaqueSecret
+  }
+
+  class OpenAIModelReference {
+    + transcriptionModel : Text
+    + completionModel : Text
+  }
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+
+VoiceNote ..>            NoteStatus           : status
+VoiceNote "*" -->  "1"   MessageType          : typed by
+VoiceNote ..>            GitHubIssue          : refers to
+
+GitHubRepository "1" --> "*" GitHubIssue       : contains
+
+MessageType "1" --> "1" FieldSchema            : declares
+FieldSchema "1" --> "*" FieldDefinition        : composed of
+
+GitHubTarget "1" --> "1" GitHubRepository      : targets
+MessageType  ..> GitHubTarget                  : labels routed to
+
+' ============================================================
+' Notes
+' ============================================================
+
+note right of VoiceNote
+  Each voice note is an instance of exactly one
+  **MessageType**. The MessageType declares the
+  schema for **extraFields** and supplies the
+  **githubLabel** that lands on the dispatched issue.
+  When the note reaches **sent**, **githubIssueNumber**
+  and **githubIssueUrl** point to the created issue.
+end note
+
+note right of Operator
+  Single-operator system. At most one Operator
+  instance exists at any time
+  (CON-3a-04 *Single-User System*).
+  **apiKeyHash** is the first-factor verifier:
+  the operator presents the raw API key at sign-in,
+  the system compares its hash in constant time.
+  **totpSecret** + **totpConfirmedAt** form the
+  second factor (RFC 6238 TOTP, UC-02).
+end note
+
+note bottom of RecoveryToken
+  Single transient artefact placed by the operator
+  out-of-band on the host (e.g. via FTP) when
+  locked out. At most one exists at any time.
+  TTL is enforced relative to **placedAt**
+  (NFR-15a-04, 60 minutes).
+  Redemption (UC-03) deletes the artefact, unbinds
+  the bound TOTP, rotates **Operator.apiKeyHash**,
+  and surfaces the new API key to the operator
+  exactly once.
+end note
+
+note bottom of GitHubIssue
+  GitHubIssue lives at GitHub. Herold persists only
+  **VoiceNote.githubIssueNumber** and
+  **VoiceNote.githubIssueUrl**. The attributes shown
+  here describe the **structure Herold writes on
+  dispatch** (UC-08).
+end note
+
+note bottom of MessageType
+  Configured out-of-band on the host (UC-12
+  read-only). Adding a new type is configuration,
+  not a code change.
+end note
+
+@enduml
