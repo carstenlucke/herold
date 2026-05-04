@@ -79,8 +79,6 @@ The Operator and the browser share a single swimlane because the browser has no 
 
 ![F1 Activity Diagram — Voice-to-Issue Dispatch](diagrams-png/f1-activities.png)
 
-> Source: [`diagrams/f1-activities.plantuml`](diagrams/f1-activities.plantuml). Regenerate with `./scripts/generate-diagrams.sh`.
-
 ---
 
 ## F1.2 Role of the Message Type

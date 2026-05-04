@@ -10,8 +10,6 @@ Internal architecture (component decomposition, layering, sequence diagrams, dep
 
 ![System Context — Herold](diagrams-png/p2-system-context.png)
 
-> Source: [`diagrams/p2-system-context.plantuml`](diagrams/p2-system-context.plantuml) (C4 Context, Level 1). Regenerate with `./scripts/generate-diagrams.sh`.
-
 Herold has **one inbound channel** (the operator's browser), one **bidirectional channel** to OpenAI (request/response carries the substantive transcript and generated text), and **one outbound channel** to GitHub (one-way push; the response is only used to record the issue reference). Local agents interact **bidirectionally** with GitHub — reading dispatched tickets, commenting, closing, and potentially opening their own issues — but never with Herold directly.
 
 ---
