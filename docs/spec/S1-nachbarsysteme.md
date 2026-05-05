@@ -4,6 +4,10 @@ S1 details the interface contracts between Herold and the neighbouring systems e
 
 S1 deliberately scopes to the **boundary** between Herold and each neighbour. It does not describe the surrounding pipeline (that is F2), the entities written into Herold's own data store (that is D1), nor the algorithm that prepares dispatched content (that is [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation)).
 
+The system context below (reproduced from [P2.1](P2-architekturueberblick.md#p21-system-context)) places the neighbours detailed in this block at a glance:
+
+![System Context — Herold](diagrams-png/p2-system-context.png)
+
 ---
 
 ## S1.1 Conventions
