@@ -16,12 +16,40 @@ title Herold — D1 Information Model
 ' ============================================================
 package "Herold data" <<Frame>> #E8F4FF {
 
-  enum NoteStatus <<D2>> {
-    recorded
-    processed
-    sent
-    error
+  class Operator {
+    + id : Identifier
+    + name : Text
+    + email : Email
+    + apiKeyHash : OpaqueSecret [0..1]
+    + totpSecret : OpaqueSecret [0..1]
+    + totpConfirmedAt : Timestamp [0..1]
   }
+  note left of Operator
+    Single-operator system. At most one Operator
+    instance exists at any time
+    (CON-3a-04 *Single-User System*).
+    **apiKeyHash** is the first-factor verifier:
+    the operator presents the raw API key at sign-in,
+    the system compares its hash in constant time.
+    **totpSecret** + **totpConfirmedAt** form the
+    second factor (RFC 6238 TOTP, UC-02).
+  end note
+
+  class RecoveryToken <<file>> {
+    + token : OpaqueSecret
+    + placedAt : Timestamp
+  }
+  note left of RecoveryToken
+    Single transient artefact placed by the operator
+    out-of-band on the host (e.g. via FTP) when
+    locked out. At most one exists at any time.
+    TTL is enforced relative to **placedAt**
+    (NFR-15a-04, 60 minutes).
+    Redemption (UC-03) deletes the artefact, unbinds
+    the bound TOTP, rotates **Operator.apiKeyHash**,
+    and surfaces the new API key to the operator
+    exactly once.
+  end note
 
   class VoiceNote {
     + id : Identifier
@@ -47,40 +75,18 @@ package "Herold data" <<Frame>> #E8F4FF {
     and **githubIssueUrl** point to the created issue.
   end note
 
-  class Operator {
-    + id : Identifier
-    + name : Text
-    + email : Email
-    + apiKeyHash : OpaqueSecret [0..1]
-    + totpSecret : OpaqueSecret [0..1]
-    + totpConfirmedAt : Timestamp [0..1]
+  enum NoteStatus <<D2>> {
+    recorded
+    processed
+    sent
+    error
   }
-  note right of Operator
-    Single-operator system. At most one Operator
-    instance exists at any time
-    (CON-3a-04 *Single-User System*).
-    **apiKeyHash** is the first-factor verifier:
-    the operator presents the raw API key at sign-in,
-    the system compares its hash in constant time.
-    **totpSecret** + **totpConfirmedAt** form the
-    second factor (RFC 6238 TOTP, UC-02).
-  end note
 
-  class RecoveryToken <<file>> {
-    + token : OpaqueSecret
-    + placedAt : Timestamp
-  }
-  note right of RecoveryToken
-    Single transient artefact placed by the operator
-    out-of-band on the host (e.g. via FTP) when
-    locked out. At most one exists at any time.
-    TTL is enforced relative to **placedAt**
-    (NFR-15a-04, 60 minutes).
-    Redemption (UC-03) deletes the artefact, unbinds
-    the bound TOTP, rotates **Operator.apiKeyHash**,
-    and surfaces the new API key to the operator
-    exactly once.
-  end note
+  ' Layout hints: Operator top-left, RecoveryToken below Operator,
+  ' VoiceNote to the right of Operator.
+  Operator    -[hidden]down-  RecoveryToken
+  Operator    -[hidden]right- VoiceNote
+  VoiceNote   -[hidden]down-  NoteStatus
 }
 
 ' ============================================================
@@ -161,7 +167,13 @@ GitHubRepository "1" --> "*" GitHubIssue       : contains
 MessageType "1" --> "1" FieldSchema            : declares
 FieldSchema "1" --> "*" FieldDefinition        : composed of
 
-GitHubTarget "1" --> "1" GitHubRepository      : targets
+GitHubTarget "1" -down-> "1" GitHubRepository  : targets
 MessageType  ..> GitHubTarget                  : labels routed to
+
+' Stack the three packages vertically: Herold data on top,
+' Herold config-data in the middle, Ticket data at the bottom.
+NoteStatus   -[hidden]down- MessageType
+GitHubTarget -[hidden]down- GitHubRepository
+FieldSchema  -[hidden]down- GitHubIssue
 
 @enduml
