@@ -23,6 +23,10 @@ Each use case is described with a tabular specification template adopted from Po
 | UC-11 | Delete a voice note | Management | — (cross-cutting) |
 | UC-12 | View settings | Configuration | — (auxiliary) |
 
+![F2 Use Case Diagram — Herold](diagrams-png/f2-use-cases.png)
+
+The diagram shows the operator-facing surface of Herold grouped by the four sections of F2 (*Access*, *Note flow*, *Management*, *Configuration*) and the two external `<<system>>` nodes Herold delegates to within individual scenarios — *OpenAI*, exposing the two `<<api>>` endpoints Herold consumes (Whisper, Chat Completion), and *GitHub Issues*. The few use-case relationships drawn follow directly from the textual specifications below: UC-07 always opens the detail view (`<<include>>` UC-10); UC-06, UC-08 and UC-11 are typically entered from UC-10 (`<<extend>>`); UC-03 is the recovery branch when UC-01 cannot succeed (`<<extend>>`); and UC-02 must precede a successful UC-01, with UC-03 in turn requiring UC-02 to be re-run before normal use resumes (`<<precedes>>`, an informal stereotype used here to denote a temporal precondition that is neither include nor extend). The constraint note attached to the *Herold* boundary records the system-wide precondition that all use cases except UC-01, UC-02 and UC-03 require an authenticated session — captured once instead of being drawn as nine repetitive edges into UC-01. The note doubles as the legend for the per-use-case fill colour, which encodes the same authentication state: the warm tone marks the three use cases reachable without an established session, the cool tone marks every use case that requires one (including UC-04 *Sign out*, which is the only authentication-state use case in F2.2 to require a session). The package backgrounds remain a pure grouping aid for the four F2 sections.
+
 ---
 
 ## F2.2 Access
