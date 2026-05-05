@@ -8,6 +8,13 @@ The system context below (reproduced from [P2.1](P2-architekturueberblick.md#p21
 
 ![System Context — Herold](diagrams-png/p2-system-context.png)
 
+The C4 context diagram is one level coarser than the S1 inventory. The mapping to S1 sections is:
+
+- *Operator* + the inbound HTTPS edge → [S1.2](#s12--nb-01--operator-browser) *Operator browser* (the Person is the actor; the browser is the channel S1 contracts against).
+- *OpenAI API* → split in S1 into [S1.3](#s13--nb-02--openai-whisper-api) *Whisper API* and [S1.4](#s14--nb-03--openai-chat-completion-api) *Chat Completion API*; the edge label "Audio → transcript; prompt → title + body" already foreshadows the split.
+- *GitHub Issues* → [S1.5](#s15--nb-04--github-issues-api).
+- *Local AI agents* → [S1.6](#s16--nb-05--local-ai-agents).
+
 ---
 
 ## S1.1 Conventions
