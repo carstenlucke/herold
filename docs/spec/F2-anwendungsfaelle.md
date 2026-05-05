@@ -8,20 +8,22 @@ Each use case is described with a tabular specification template adopted from Po
 
 ## F2.1 Use Case Index
 
-| ID | Use Case | Group | Maps to F1 activity |
-|----|----------|-------|---------------------|
-| [UC-01](#uc-01--sign-in) | Sign in | Access | — (precondition for A2) |
-| [UC-02](#uc-02--enrol-second-factor) | Enrol second factor | Access | — (one-time setup) |
-| [UC-03](#uc-03--recover-access) | Recover access | Access | — (recovery branch) |
-| [UC-04](#uc-04--sign-out) | Sign out | Access | — (post-process) |
-| [UC-05](#uc-05--capture-voice-note) | Capture voice note | Note flow | A2 + A3 |
-| [UC-06](#uc-06--process-voice-note) | Process voice note | Note flow | A4 (orchestrates A5–A6) |
-| [UC-07](#uc-07--edit-generated-content) | Edit generated content | Note flow | A7 |
-| [UC-08](#uc-08--dispatch-voice-note) | Dispatch voice note | Note flow | A8 |
-| [UC-09](#uc-09--browse-voice-notes) | Browse voice notes | Management | — (cross-cutting) |
-| [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) |
-| [UC-11](#uc-11--delete-a-voice-note) | Delete a voice note | Management | — (cross-cutting) |
-| [UC-12](#uc-12--view-settings) | View settings | Configuration | — (auxiliary) |
+| ID | Use Case | Group | Maps to F1 activity | Status |
+|----|----------|-------|---------------------|--------|
+| [UC-01](#uc-01--sign-in) | Sign in | Access | — (precondition for A2) | ✅ |
+| [UC-02](#uc-02--enrol-second-factor) | Enrol second factor | Access | — (one-time setup) | ✅ |
+| [UC-03](#uc-03--recover-access) | Recover access | Access | — (recovery branch) | ⬜ |
+| [UC-04](#uc-04--sign-out) | Sign out | Access | — (post-process) | ⬜ |
+| [UC-05](#uc-05--capture-voice-note) | Capture voice note | Note flow | A2 + A3 | ✅ |
+| [UC-06](#uc-06--process-voice-note) | Process voice note | Note flow | A4 (orchestrates A5–A6) | 🚧 |
+| [UC-07](#uc-07--edit-generated-content) | Edit generated content | Note flow | A7 | ⬜ |
+| [UC-08](#uc-08--dispatch-voice-note) | Dispatch voice note | Note flow | A8 | ⬜ |
+| [UC-09](#uc-09--browse-voice-notes) | Browse voice notes | Management | — (cross-cutting) | ⬜ |
+| [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) | ⬜ |
+| [UC-11](#uc-11--delete-a-voice-note) | Delete a voice note | Management | — (cross-cutting) | ⬜ |
+| [UC-12](#uc-12--view-settings) | View settings | Configuration | — (auxiliary) | ⬜ |
+
+Status legend: ✅ done · 🚧 in progress · ⬜ unfinished.
 
 ![F2 Use Case Diagram — Herold](diagrams-png/f2-use-cases.png)
 
