@@ -47,12 +47,12 @@ The constraint note attached to the *Herold* boundary records the system-wide pr
 | **Identifier** | UC-01 |
 | **Name** | Sign in |
 | **Description** | Operator authenticates and receives a session valid for any further use case. On the first sign-in, the second factor is enrolled inline as part of this use case (UC-02); on every subsequent sign-in, the previously enrolled second factor is verified. |
-| **Trigger** | Operator opens Herold without an active session, or attempts a protected action after the session has expired. |
+| **Trigger** | Operator opens Herold without an active session. |
 | **Actors** | Operator (primary). |
-| **Precondition** | An API key is bound to the operator account (initial setup). The operator possesses the API key and either has an enrolled authenticator (subsequent sign-in) or is ready to enrol one (first sign-in). |
-| **Postcondition** | Authenticated session active. After a first sign-in, a confirmed TOTP secret is bound to the account. Operator may proceed with any other UC. |
-| **Main scenario** | 1. System presents the sign-in screen.<br>2. Operator presents the API key as the first factor.<br>3. System verifies the API key against `Operator.apiKeyHash`.<br>4. If no confirmed TOTP secret is bound to the account, system runs UC-02 inline as part of this sign-in; otherwise system prompts for the time-based one-time password, operator enters the current code, and system verifies it against `Operator.totpSecret`.<br>5. System establishes an authenticated session.<br>6. Operator is taken to the dashboard. |
-| **Exception scenarios** | *API key is rejected:* operator may retry within the rate limit; no session is established.<br>*TOTP code fails (subsequent sign-in):* operator may retry within the same rate limit, or pivot to UC-03.<br>*Inline enrolment fails (first sign-in):* see UC-02 exceptions; no session is established. |
+| **Precondition** | An API key is bound to the operator account; operator possesses the API key. |
+| **Postcondition** | Authenticated session active. |
+| **Main scenario** | 1. System presents the sign-in screen.<br>2. Operator enters the API key as the first factor.<br>3. System verifies the API key against `Operator.apiKeyHash`.<br>4. If no confirmed TOTP secret is bound to the account, system runs UC-02 inline as part of this sign-in.<br>5. Otherwise, system prompts for the time-based one-time password; operator enters the current code; system verifies it against `Operator.totpSecret`.<br>6. System establishes an authenticated session.<br>7. Operator is taken to the dashboard.<br><br>![UC-01 Sign in — main scenario](diagrams-png/f2-uc01-sign-in.png) |
+| **Exception scenarios** | *API key is rejected:* operator may retry within the rate limit; no session is established.<br>*TOTP code fails (subsequent sign-in):* operator may retry within the same rate limit, or pivot to UC-03.<br>*Inline enrolment fails (first sign-in):* see UC-02 exceptions; the sign-in attempt is aborted and no session is established; operator restarts UC-01 to retry. |
 | **Qualities** | [NFR-15a-01](N1-nichtfunktional.md) *Two-Factor Browser Authentication*; [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout*. |
 
 ### UC-02 — Enrol second factor
