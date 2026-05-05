@@ -256,8 +256,8 @@ The four use cases in this group form the supported segment of the business proc
 |-------|-----------------|
 | [F1](F1-geschaeftsprozesse.md) | Activities A2–A8 are realised by [UC-05](#uc-05--capture-voice-note) to [UC-08](#uc-08--dispatch-voice-note); access UCs bracket the process. |
 | [F3](F3-anwendungsfunktionen.md) | Application functions AF-01 to AF-08 are invoked from the UCs as listed in their main scenarios. |
-| D1 (planned) | Voice note record, status enum (`recorded → processed → sent`), issue reference, message-type metadata are referenced throughout. |
-| [B1] (planned) | Screen designs and dialogue flow for each UC. |
+| [D1](D1-datenmodell.md) | Voice note record, status enum (`recorded → processed → sent`), issue reference, message-type metadata are referenced throughout. |
+| [B1](B1-dialogspezifikation.md) | Screen designs and dialogue flow for each UC. |
 | [N1](N1-nichtfunktional.md) | Latency budget for [UC-06](#uc-06--process-voice-note) and [UC-08](#uc-08--dispatch-voice-note) ([NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*); error handling on retry ([NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*); rate limiting for [UC-01](#uc-01--sign-in), [UC-03](#uc-03--recover-access) ([NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout*); audio upload constraints for [UC-05](#uc-05--capture-voice-note) ([NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*); recovery token expiry for [UC-03](#uc-03--recover-access) ([NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry*); content sanitisation for [UC-08](#uc-08--dispatch-voice-note) ([NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization*). |
 | [N2] (planned) | Authentication and TOTP handling underpin [UC-01](#uc-01--sign-in) to [UC-04](#uc-04--sign-out). |
 | [S1] (planned) | OpenAI and GitHub interface contracts consumed by [UC-06](#uc-06--process-voice-note) and [UC-08](#uc-08--dispatch-voice-note). |
