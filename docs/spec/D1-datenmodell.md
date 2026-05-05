@@ -2,11 +2,11 @@
 
 > **Status: draft.** Block boundaries follow the Siedersleben building plan; details may shift as F2/F3 settle.
 
-D1 captures the *information* Herold orchestrates, irrespective of where that information physically lives. The model spans three regions:
+D1 captures the *information* Herold orchestrates, irrespective of where that information physically lives. The model spans three data stores:
 
-- **Persistent** — information held inside Herold. Most of it lives in the local database; audio recordings live in the local file store and are referenced by `VoiceNote.audioPath`; the `RecoveryToken` lives as a single transient artefact in the local file store and is the only entity placed by the operator out-of-band.
-- **External** — information owned by a neighbouring system (GitHub Issues) that Herold writes to and references back.
-- **Configuration** — typed read-only information supplied by the host operator out-of-band; visible to Herold at runtime and inspected via UC-12.
+- **Herold data** — information held inside Herold. Most of it lives in the local database; audio recordings live in the local file store and are referenced by `VoiceNote.audioPath`; the `RecoveryToken` lives as a single transient artefact in the local file store and is the only entity placed by the operator out-of-band.
+- **Ticket data** — information owned by a neighbouring system (GitHub Issues) that Herold writes to and references back.
+- **Herold config-data** — typed read-only information supplied by the host operator out-of-band; visible to Herold at runtime and inspected via UC-12.
 
 The diagram and tables below show **entity types only**. Non-trivial domain data types referenced as attribute types — e.g., `Identifier`, `OpaqueSecret`, `NoteStatus`, `IssueState`, `MessageTypeId`, `FieldDT`, `TypeSpecificData` — are catalogued in [D2](D2-datentypen.md). Trivial types (`Text`, `Integer`, `Boolean`, `Email`, `URL`, `Timestamp`, `Markdown`) are used at face value and not separately defined. Storage decisions and physical schema live in the architecture layer (`docs/arch/`) and in code, not here.
 
@@ -14,7 +14,7 @@ The diagram and tables below show **entity types only**. Non-trivial domain data
 
 ---
 
-## D1.1 Persistent Region
+## D1.1 Herold data
 
 Information Herold itself owns and persists.
 
@@ -59,7 +59,7 @@ Authentication ([NFR-15a-01](N1-nichtfunktional.md) *Two-Factor Browser Authenti
 
 ### RecoveryToken
 
-A single transient artefact in the local file store, placed by the operator out-of-band when locked out (UC-03 precondition). Modelled as its own entity because, unlike all other Persistent entities, it is *operator-placed* rather than system-created and lives in the file store rather than the database.
+A single transient artefact in the local file store, placed by the operator out-of-band when locked out (UC-03 precondition). Modelled as its own entity because, unlike all other Herold-data entities, it is *operator-placed* rather than system-created and lives in the file store rather than the database.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
@@ -78,7 +78,7 @@ A single transient artefact in the local file store, placed by the operator out-
 
 ---
 
-## D1.2 External Region
+## D1.2 Ticket data
 
 Information owned by a neighbouring system. Herold *writes* it on dispatch and *navigates back* via the persisted reference, but does not maintain its lifecycle (cf. P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle*).
 
@@ -100,11 +100,11 @@ Information owned by a neighbouring system. Herold *writes* it on dispatch and *
 | `owner` | Text | |
 | `name` | Text | |
 
-The repository is fixed at the host level (see `GitHubTarget` in *Configuration*). Issues live within their repository.
+The repository is fixed at the host level (see `GitHubTarget` in *Herold config-data*). Issues live within their repository.
 
 ---
 
-## D1.3 Configuration Region
+## D1.3 Herold config-data
 
 Read-only typed information supplied by the host operator out-of-band. Inspected via UC-12.
 
@@ -171,5 +171,5 @@ Drives prompt selection, extra-field schema, and outbound label.
 | [F3](F3-anwendungsfunktionen.md) | AF-01 populates `transcript`; AF-02/AF-03 populate `processedTitle`/`processedBody`; AF-04 resolves `MessageType`; AF-05 composes the `GitHubIssue`; AF-06 governs `NoteStatus` transitions; AF-08 validates `extraFields` against `FieldSchema`. |
 | [N1](N1-nichtfunktional.md) | Two-factor authentication scheme on `Operator` ([NFR-15a-01](N1-nichtfunktional.md)); audio size limits ([NFR-15a-03](N1-nichtfunktional.md)); content sanitisation for `processedBody` and the dispatched body ([NFR-15b-04](N1-nichtfunktional.md)); time-to-live for `RecoveryToken` ([NFR-15a-04](N1-nichtfunktional.md)). |
 | [P1](P1-constraints.md) | [CON-3a-04](P1-constraints.md) *Single-User System* limits `Operator` to one instance; [NG-03](P1-ziele-rahmenbedingungen.md) excludes GitHub-side lifecycle from this model. |
-| [P2](P2-architekturueberblick.md) | Identifies the storage realms (local DB, audio store, GitHub) the three D1 regions correspond to. |
+| [P2](P2-architekturueberblick.md) | Identifies the storage realms (local DB, audio store, GitHub) the three D1 data stores correspond to. |
 | [E2](E2-glossar.md) | Definitions for *message type*, *fine-grained PAT*, *voice note*. |

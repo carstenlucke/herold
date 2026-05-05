@@ -5,7 +5,7 @@ skinparam classAttributeIconSize 0
 
 title Herold -- Datenmodell (SQLite)
 
-' Strict subset of the D1 Persistent region (see d1-information-model)
+' Strict subset of the D1 Herold-data store (see d1-information-model)
 ' mapped to concrete SQLite columns. Framework tables
 ' (sessions, password_reset_tokens, cache*, jobs*) and framework-only
 ' columns (remember_token, email_verified_at) are intentionally not
