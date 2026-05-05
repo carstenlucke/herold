@@ -18,7 +18,7 @@ Each use case is described with a tabular specification template adopted from Po
 | [UC-06](#uc-06--process-voice-note) | Process voice note | Note flow | A4 (orchestrates A5–A6) | ✅ |
 | [UC-07](#uc-07--edit-generated-content) | Edit generated content | Note flow | A7 | ✅ |
 | [UC-08](#uc-08--dispatch-voice-note) | Dispatch voice note | Note flow | A8 | ✅ |
-| [UC-09](#uc-09--browse-voice-notes) | Browse voice notes | Management | — (cross-cutting) | ⬜ |
+| [UC-09](#uc-09--browse-voice-notes) | Browse voice notes | Management | — (cross-cutting) | ✅ |
 | [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) | ⬜ |
 | [UC-11](#uc-11--delete-a-voice-note) | Delete a voice note | Management | — (cross-cutting) | ⬜ |
 | [UC-12](#uc-12--view-settings) | View settings | Configuration | — (auxiliary) | ⬜ |
@@ -181,13 +181,13 @@ The four use cases in this group form the supported segment of the business proc
 |---------|---------|
 | **Identifier** | UC-09 |
 | **Name** | Browse voice notes |
-| **Description** | Operator gets an overview of past and pending notes, ordered by recency. |
+| **Description** | Operator inspects the collection of voice notes to locate one or get a feel for what is pending. |
 | **Trigger** | Operator wants an overview of past and pending notes. |
 | **Actors** | Operator (primary). |
 | **Precondition** | Authenticated session. |
 | **Postcondition** | No state change. |
-| **Main scenario** | 1. Operator opens the notes list.<br>2. System renders the notes ordered by recency, showing status, message type, timestamp, and a short summary.<br>3. Operator scans the list and may apply filters available on the screen. |
-| **Alternative scenarios** | *Empty list:* an empty-state message is shown. |
+| **Main scenario** | 1. Operator opens the notes list.<br>2. System renders the notes ordered by recency, showing status, message type, timestamp, and a short summary. |
+| **Alternative scenarios** | - *Operator narrows the list (e.g. by status or message type):* the system re-renders accordingly.<br>- *Operator picks a note:* continues with UC-10 *View a voice note*.<br>- *No notes yet:* an empty-state message is shown. |
 
 ### UC-10 — View a voice note
 
