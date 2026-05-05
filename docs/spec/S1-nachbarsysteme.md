@@ -40,9 +40,9 @@ Speech-to-text on the audio document attached to a `VoiceNote` ([D1.1](D1-datenm
 
 | Aspect | Content |
 |--------|---------|
-| **Operation** | `transcribe(audio, languageHint?) → transcript` |
+| **Operation** | `transcribe(audio, model, languageHint?) → transcript` |
 | **Direction** | Bidirectional (request: audio bytes; response: transcript text). |
-| **Inputs** | The audio document referenced by `VoiceNote.audioPath`; an optional language hint. Format and size constraints at the upload boundary are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*. |
+| **Inputs** | The audio document referenced by `VoiceNote.audioPath`; the transcription model identifier supplied by host configuration (per [NFR-14c-01](N1-nichtfunktional.md) *AI Provider Portability*); an optional language hint. Format and size constraints at the upload boundary are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*. |
 | **Outputs** | A plain-text transcript, written into `VoiceNote.transcript` by the calling use case. |
 | **Triggered by** | [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note) Schritt 3. |
 | **Semantics** | The transcript is preserved verbatim; no editorial transformation occurs at the boundary. The caller does not retain audio at the provider beyond the request. |
@@ -56,9 +56,9 @@ Title and Markdown body generation from a transcript, parametrised by message ty
 
 | Aspect | Content |
 |--------|---------|
-| **Operation** | `generate(transcript, prompt, extraFieldSchema?) → { title, body, extras? }` |
+| **Operation** | `generate(transcript, model, prompt, extraFieldSchema?) → { title, body, extras? }` |
 | **Direction** | Bidirectional (request: prompt + transcript; response: structured content). |
-| **Inputs** | The transcript produced by [S1.3](#s13--nb-02--openai-whisper-api); the prompt and optional extra-field schema bound to the note's `MessageTypeDT` ([D2.4](D2-datentypen.md#d24-messagetypedt)). |
+| **Inputs** | The transcript produced by [S1.3](#s13--nb-02--openai-whisper-api); the chat-completion model identifier supplied by host configuration (per [NFR-14c-01](N1-nichtfunktional.md) *AI Provider Portability*); the prompt and optional extra-field schema bound to the note's `MessageTypeDT` ([D2.4](D2-datentypen.md#d24-messagetypedt)). |
 | **Outputs** | Title, Markdown body, and optionally the message-type-specific extras declared by [D2.7](D2-datentypen.md#d27-typespecificdata). The body is **not** sanitised at this stage — [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) must run before persistence and before dispatch. The operator may overwrite any field via [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content). |
 | **Triggered by** | [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note) Schritt 4. |
 | **Semantics** | All message-type knowledge is supplied through the resolution declared in [D2.4](D2-datentypen.md#d24-messagetypedt); message types are never hard-coded at this boundary. |
@@ -106,5 +106,5 @@ Local AI agents (Claude Code, OpenCode, …) are listed in P2.2 for completeness
 | [F3](F3-anwendungsfunktionen.md) | [AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) sanitises content produced by S1.4 before it is dispatched via S1.5. |
 | [D1](D1-datenmodell.md) | S1.3 populates `VoiceNote.transcript`; S1.4 populates `VoiceNote.processedTitle` / `processedBody` / `metadata`; S1.5 populates `VoiceNote.githubIssueNumber` / `githubIssueUrl`. |
 | [D2](D2-datentypen.md) | The prompt and label bound to a `MessageTypeDT` ([D2.4](D2-datentypen.md#d24-messagetypedt)) drive S1.4 and S1.5 respectively; the slot inventory in [D2.7](D2-datentypen.md#d27-typespecificdata) shapes the optional extras returned by S1.4. |
-| [N1](N1-nichtfunktional.md) | [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing* governs blocking semantics; [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling* governs failure propagation; [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation* governs the audio handed to S1.3; [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization* governs the body handed to S1.5. |
+| [N1](N1-nichtfunktional.md) | [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing* governs blocking semantics; [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling* governs failure propagation; [NFR-14c-01](N1-nichtfunktional.md) *AI Provider Portability* requires the model identifier consumed by S1.3 and S1.4 to come from host configuration; [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation* governs the audio handed to S1.3; [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization* governs the body handed to S1.5. |
 | [P1](P1-ziele-rahmenbedingungen.md) | Non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle* fixes S1.5 as one-way push. |
