@@ -1,0 +1,27 @@
+@startuml f2-uc08-dispatch-note
+!theme plain
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam SequenceLifeLineBorderColor #333333
+skinparam SequenceParticipantBorderColor #333333
+skinparam SequenceParticipantBackgroundColor #F5F5F5
+skinparam SequenceReferenceBackgroundColor #F0E8FF
+skinparam SequenceGroupBodyBackgroundColor transparent
+
+title Herold — UC-08 Dispatch voice note (main scenario)
+
+actor       "Operator"           as OP
+participant "Herold"              as SYS
+participant "GitHub Issues API"   as GH <<system>>
+
+OP  ->  SYS : open note detail view //(UC-10)//
+SYS --> OP  : note detail view
+
+OP  ->  SYS : trigger dispatch
+SYS ->  SYS : compose issue from note //(AF-05)//\nresolve label //(AF-04)//\nsanitise content //(AF-03)//
+SYS ->  GH  : create issue
+GH  --> SYS : issue reference (number, URL)
+SYS ->  SYS : persist issue reference,\ntransition to ""sent"" //(AF-06)//
+SYS --> OP  : confirmation
+
+@enduml

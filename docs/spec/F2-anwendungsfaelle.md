@@ -17,7 +17,7 @@ Each use case is described with a tabular specification template adopted from Po
 | [UC-05](#uc-05--capture-voice-note) | Capture voice note | Note flow | A2 + A3 | ✅ |
 | [UC-06](#uc-06--process-voice-note) | Process voice note | Note flow | A4 (orchestrates A5–A6) | ✅ |
 | [UC-07](#uc-07--edit-generated-content) | Edit generated content | Note flow | A7 | ✅ |
-| [UC-08](#uc-08--dispatch-voice-note) | Dispatch voice note | Note flow | A8 | ⬜ |
+| [UC-08](#uc-08--dispatch-voice-note) | Dispatch voice note | Note flow | A8 | ✅ |
 | [UC-09](#uc-09--browse-voice-notes) | Browse voice notes | Management | — (cross-cutting) | ⬜ |
 | [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) | ⬜ |
 | [UC-11](#uc-11--delete-a-voice-note) | Delete a voice note | Management | — (cross-cutting) | ⬜ |
@@ -162,13 +162,13 @@ The four use cases in this group form the supported segment of the business proc
 | **Identifier** | UC-08 |
 | **Name** | Dispatch voice note |
 | **Description** | System composes a GitHub issue from the note and pushes it to the configured repository, then records the issue reference. |
-| **Trigger** | Operator decides the note is ready to leave Herold. |
+| **Trigger** | Operator wants to send the note as a GitHub issue. |
 | **Actors** | Operator (primary); GitHub Issues (supporting). |
 | **Precondition** | Note at status `processed`. |
-| **Postcondition** | Note at status `sent`; issue reference stored. The downstream consumer ecosystem (F1.1.1) takes over. |
-| **Result** | New GitHub issue in the configured repository, labelled per the message type; issue reference (number, URL) persisted with the note. |
-| **Main scenario** | 1. Operator opens the note's detail view (see UC-10).<br>2. Operator triggers dispatch.<br>3. System composes a GitHub issue from the note (AF-05) using the type-resolved label (AF-04) and the sanitised content.<br>4. System pushes the issue to the configured GitHub repository.<br>5. System records the resulting issue reference against the note and transitions it to status `sent` (AF-06). |
-| **Exception scenarios** | *GitHub returns an error:* the note remains `processed`; the operator is informed and may retry per [NFR-12d-01](N1-nichtfunktional.md).<br>*Network error mid-dispatch:* same as above; the system does not assume the issue was created. |
+| **Postcondition** | Note at status `sent`; issue reference stored. |
+| **Main scenario** | 1. Operator opens the note's detail view (see UC-10).<br>2. Operator triggers dispatch.<br>3. System composes a GitHub issue from the note (AF-05) using the type-resolved label (AF-04) and the sanitised content (AF-03).<br>4. System pushes the issue to the configured GitHub repository.<br>5. System records the resulting issue reference against the note and transitions it to status `sent` (AF-06).<br><br>![UC-08 Dispatch voice note — main scenario](diagrams-png/f2-uc08-dispatch-note.png) |
+| **Alternative scenarios** | - *Operator leaves the page during dispatch:* the synchronous request continues; the operator can return and observe the result. |
+| **Exception scenarios** | - *GitHub returns an error:* the note remains `processed`; the operator is informed and may retry per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*.<br>- *Network error mid-dispatch:* same as above; the system does not assume the issue was created. |
 | **Qualities** | [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*; [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*; [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization*. |
 
 ---
