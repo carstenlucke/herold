@@ -19,7 +19,7 @@ Each use case is described with a tabular specification template adopted from Po
 | [UC-07](#uc-07--edit-generated-content) | Edit generated content | Note flow | A7 | ✅ |
 | [UC-08](#uc-08--dispatch-voice-note) | Dispatch voice note | Note flow | A8 | ✅ |
 | [UC-09](#uc-09--browse-voice-notes) | Browse voice notes | Management | — (cross-cutting) | ✅ |
-| [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) | ⬜ |
+| [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) | ✅ |
 | [UC-11](#uc-11--delete-a-voice-note) | Delete a voice note | Management | — (cross-cutting) | ⬜ |
 | [UC-12](#uc-12--view-settings) | View settings | Configuration | — (auxiliary) | ⬜ |
 
@@ -195,12 +195,13 @@ The four use cases in this group form the supported segment of the business proc
 |---------|---------|
 | **Identifier** | UC-10 |
 | **Name** | View a voice note |
-| **Description** | Operator inspects a single note: status, type, timestamps, structured content, issue reference; may stream the audio recording. |
-| **Trigger** | Operator selects a note from the list, or navigates directly to it. |
+| **Description** | Operator inspects a single note: status, type, timestamps, structured content, and (if dispatched) issue reference; may stream the audio recording. |
+| **Trigger** | Operator wants to inspect a single note. |
 | **Actors** | Operator (primary). |
 | **Precondition** | Authenticated session; the selected note exists. |
-| **Postcondition** | No state change. UC-10 is a precondition for UC-07 and a typical entry point for UC-06, UC-08, and UC-11. |
-| **Main scenario** | 1. System renders the note's detail view: status, type, timestamps, structured content (if any), issue reference (if `sent`).<br>2. Operator may stream the audio recording. The audio is retained for the lifetime of the note record and only removed via UC-11. |
+| **Postcondition** | No state change. |
+| **Main scenario** | 1. System renders the note's detail view: status, type, timestamps, structured content (if any), issue reference (if `sent`).<br>2. Operator may stream the audio recording. |
+| **Alternative scenarios** | - *Operator triggers processing:* continues with UC-06 *Process voice note* (status `recorded`).<br>- *Operator edits the content:* continues with UC-07 *Edit generated content* (status `processed`).<br>- *Operator dispatches the note:* continues with UC-08 *Dispatch voice note* (status `processed`).<br>- *Operator triggers delete:* continues with UC-11 *Delete a voice note* (any status). |
 
 ### UC-11 — Delete a voice note
 
