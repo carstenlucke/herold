@@ -123,7 +123,7 @@ Following Siedersleben's warnings (chapter 4.3):
 | [P1](P1-ziele-rahmenbedingungen.md) | Goals G-01, G-02, G-05 — why this process exists. |
 | [P2](P2-architekturueberblick.md) | NB-01 to NB-05 — every actor in F1.1.1 mapped to a neighbouring system. |
 | [F2](F2-anwendungsfaelle.md) | Use cases UC-05 to UC-08 realise activities A2–A8; access UCs (UC-01 to UC-04) bracket the process. |
-| [F3](F3-anwendungsfunktionen.md) | Application functions AF-01 to AF-08 implement the system-internal steps inside A4–A8. |
-| D1 (planned) | Voice note record, status enum, issue reference, message type metadata. |
+| [F3](F3-anwendungsfunktionen.md) | [AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) *Markdown Sanitisation* runs inside A6, A7 and at the dispatch boundary in A8. |
+| [S1](S1-nachbarsysteme.md) | [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) and [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) are invoked inside A5/A6; [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) is invoked at A8. |
+| [D1](D1-datenmodell.md) | Voice note record, audio document lifecycle, issue reference, message-type metadata. Status transitions ([D2.5](D2-datentypen.md#d25-notestatusdt)) are driven by A3, A6, A8. |
 | [N1](N1-nichtfunktional.md) | End-to-end latency budget for A4–A8 ([NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*); mobile-first capture for A3 ([NFR-13a-01](N1-nichtfunktional.md) *Mobile Usage on the Go*); audio upload constraints at A3 ([NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*). |
-| S1 (planned) | OpenAI and GitHub interface contracts that A5, A6, A8 depend on. |

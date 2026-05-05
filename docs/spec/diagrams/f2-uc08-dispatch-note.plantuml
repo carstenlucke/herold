@@ -18,10 +18,10 @@ OP  ->  SYS : open note detail view //(UC-10)//
 SYS --> OP  : note detail view
 
 OP  ->  SYS : trigger dispatch
-SYS ->  SYS : compose issue from note //(AF-05)//\nresolve label //(AF-04)//\nsanitise content //(AF-03)//
-SYS ->  GH  : create issue
+SYS ->  SYS : compose issue from note,\nresolve label //(D2.4)//\nsanitise content //(AF-03)//
+SYS ->  GH  : create issue //(S1.5)//
 GH  --> SYS : issue reference (number, URL)
-SYS ->  SYS : persist issue reference,\ntransition to ""sent"" //(AF-06)//
+SYS ->  SYS : persist issue reference,\ntransition to ""sent"" //(D2.5)//
 SYS --> OP  : confirmation
 
 @enduml

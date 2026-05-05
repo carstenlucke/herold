@@ -19,7 +19,7 @@ SYS --> OP  : note detail view
 OP  ->  SYS : trigger delete
 SYS --> OP  : confirmation prompt
 OP  ->  SYS : confirm
-SYS ->  SYS : remove note record,\nremove audio document //(AF-07)//
+SYS ->  SYS : remove note record,\nremove audio document //(D1.1 invariants)//
 SYS --> OP  : confirmation
 
 @enduml

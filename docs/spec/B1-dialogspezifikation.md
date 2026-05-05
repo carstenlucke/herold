@@ -46,7 +46,7 @@ Each entry in B1.3 follows the same shape:
 | **Inputs** | Operator-supplied fields and controls, with their dialogue-level constraints (mandatory, optional, conditional). |
 | **Actions** | Operator-triggered actions available on the screen and the use case or scenario step each one drives. |
 | **Outcomes** | Resulting screen transitions per action (success, failure, cancel). |
-| **Validation** | Dialogue-level validation rules. Algorithmic validation belongs in F3 (e.g. AF-08); here only what the operator sees and when. |
+| **Validation** | Dialogue-level validation rules. Algorithmic validation lives in [N2](N2-querschnittskonzepte.md) *Validation* (backed by [D2.7](D2-datentypen.md#d27-typespecificdata)); here only what the operator sees and when. |
 | **Empty / loading / error states** | What the screen presents when there is no data, while a synchronous operation runs, or when the last action failed. |
 | **Qualities** | Cross-references into N1 (NFRs), N2 (cross-cutting concepts) where relevant. |
 
@@ -245,7 +245,7 @@ Patterns reused across multiple screens. They are described once here and only r
 - **Synchronous operation feedback.** How the UI represents a request that blocks per [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing* — relevant to UC-06 (process) and UC-08 (dispatch). *TBD.*
 - **Synchronous error handling.** How failed operations surface to the operator per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*, and how retry is offered. *TBD.*
 - **Confirmation modals.** Used for irreversible actions (UC-11 *Delete*). *TBD.*
-- **Form validation feedback.** Where dialogue-level validation messages render and how they relate to algorithmic validation in F3 (AF-08). *TBD.*
+- **Form validation feedback.** Where dialogue-level validation messages render and how they relate to algorithmic validation in [N2](N2-querschnittskonzepte.md) *Validation*. *TBD.*
 - **Empty states.** What an empty notes list (UC-09) and an empty detail view present to the operator. *TBD.*
 - **One-time secret display.** Pattern used in DLG-03 (TOTP secret) and DLG-05 (new API key) for values shown to the operator exactly once. *TBD.*
 - **Mobile usage.** Adaptations required by [NFR-13a-01](N1-nichtfunktional.md) *Mobile Usage on the Go*, especially for DLG-09. *TBD.*
@@ -257,7 +257,7 @@ Patterns reused across multiple screens. They are described once here and only r
 - **Visual design language.** Colours, typography, glow, spacing — fixed centrally in `DESIGN.md`, not duplicated per screen.
 - **Pixel-level layout, component library, or front-end framework.** Those are implementation choices; B1 stays at the level of regions and controls.
 - **Internal screen-to-screen URLs and route names.** Implementation-bound; documented in code and architecture.
-- **Algorithmic validation.** Lives in F3 (AF-08 *Per-Type Input Validation*, AF-03 *Markdown Sanitisation*); B1 only cites where it is surfaced.
+- **Algorithmic validation and sanitisation.** Lives in [N2](N2-querschnittskonzepte.md) *Validation* (per-type input) and [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) *Markdown Sanitisation*; B1 only cites where it is surfaced.
 - **Localisation and translation.** Herold runs in a single language for a single operator; multi-language support is not in scope.
 - **Accessibility conformance levels.** *TBD* — defer to N1 once a conformance target is fixed.
 
@@ -268,8 +268,8 @@ Patterns reused across multiple screens. They are described once here and only r
 | Block | Relevance to B1 |
 |-------|-----------------|
 | [F2](F2-anwendungsfaelle.md) | Every screen in B1.3 realises one or more use cases; the *Realises* line in each per-screen table cites the UC and scenario step. |
-| [F3](F3-anwendungsfunktionen.md) | Validation and sanitisation surfaced in B1 are implemented by F3 functions (notably AF-03, AF-08). |
+| [F3](F3-anwendungsfunktionen.md) | Sanitisation surfaced in B1 is implemented by [AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation). |
 | [N1](N1-nichtfunktional.md) | Synchronous-processing feedback ([NFR-12a-01](N1-nichtfunktional.md)), error handling ([NFR-12d-01](N1-nichtfunktional.md)), rate limiting and lockout ([NFR-15a-02](N1-nichtfunktional.md)), audio upload constraints ([NFR-15a-03](N1-nichtfunktional.md)), recovery token expiry ([NFR-15a-04](N1-nichtfunktional.md)), mobile usability ([NFR-13a-01](N1-nichtfunktional.md)). |
-| N2 (planned) | Authentication, session handling, and notification patterns underpin DLG-01 to DLG-05 and the cross-cutting patterns in B1.4. |
+| [N2](N2-querschnittskonzepte.md) | *Validation* underpins B1 form-validation feedback; authentication and session handling underpin DLG-01 to DLG-05 and the cross-cutting patterns in B1.4. |
 | `DESIGN.md` | Visual identity. B1 deliberately abstracts from it. |
 | [E2](E2-glossar.md) | Definitions for *message type*, *voice note*, *Recovery*. |

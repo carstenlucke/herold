@@ -18,7 +18,7 @@ SYS --> OP  : current title, body, extra fields
 
 OP  ->  OP  : edit title, body, or extra fields
 OP  ->  SYS : save changes
-SYS ->  SYS : sanitise edited markdown //(AF-03)//\nrevalidate extra fields //(AF-08)//
+SYS ->  SYS : sanitise edited markdown //(AF-03)//\nrevalidate extra fields //(D2.7)//
 SYS ->  SYS : persist changes\n(status stays ""processed"")
 SYS --> OP  : confirmation
 

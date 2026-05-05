@@ -17,15 +17,15 @@ OP  ->  SYS : open recording screen
 SYS --> OP  : recording screen
 
 OP  ->  SYS : select message type
-opt type declares extra fields //(per AF-04)//
+opt type declares extra fields //(per D2.4 + D2.7)//
   SYS --> OP  : reveal extra input fields
   OP  ->  SYS : fill required fields
 end
 
 OP  ->  OP  : record audio in the browser
 OP  ->  SYS : submit recording
-SYS ->  SYS : validate input //(AF-08)//\nand audio //(NFR-15a-03)//
-SYS ->  SYS : persist audio + note record,\ntransition to ""recorded"" //(AF-06)//
+SYS ->  SYS : validate input //(D2.7)//\nand audio //(NFR-15a-03)//
+SYS ->  SYS : persist audio + note record,\ntransition to ""recorded"" //(D2.5)//
 SYS --> OP  : confirmation
 
 @enduml

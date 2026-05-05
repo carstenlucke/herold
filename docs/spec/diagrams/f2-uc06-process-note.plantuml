@@ -19,13 +19,13 @@ OP  ->  SYS     : open note detail view //(UC-10)//
 SYS --> OP      : note detail view
 
 OP  ->  SYS     : trigger processing
-SYS ->  WHISPER : transcribe audio //(AF-01)//
+SYS ->  WHISPER : transcribe audio //(S1.3)//
 WHISPER --> SYS : transcript
-SYS ->  SYS     : resolve message type //(AF-04)//
-SYS ->  CHAT    : generate structured content\nfrom transcript //(AF-02)//
+SYS ->  SYS     : resolve message type //(D2.4)//
+SYS ->  CHAT    : generate structured content\nfrom transcript //(S1.4)//
 CHAT --> SYS    : title, body, optional extra fields
 SYS ->  SYS     : sanitise markdown //(AF-03)//\nand persist structured content
-SYS ->  SYS     : transition to ""processed"" //(AF-06)//
+SYS ->  SYS     : transition to ""processed"" //(D2.5)//
 SYS --> OP      : updated note view
 
 @enduml
