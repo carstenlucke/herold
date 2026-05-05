@@ -17,3 +17,17 @@ in full.
   lives in the architecture layer" pointer and the *Out of Scope*
   section) so the path from domain model to concrete schema is
   navigable.
+
+- **Technical concept for per-`MessageTypeDT` configuration in
+  `config/herold.php`.** D2.5 fixes the `MessageTypeDT` enumeration
+  (`general`, `youtube`, `diary`, `obsidian`, `todo`); the per-value
+  prompt, GitHub label, and extra-field shape live in
+  `config/herold.php` as host configuration. Document the concrete
+  shape of that configuration: the array structure per message type,
+  how the prompt template / GitHub label / extra-field declarations are
+  expressed, how `FieldDT` values map to PHP/validation, how the
+  `metadata` JSON shape is derived from the configured slots, and how
+  AF-04 / AF-08 consume the configuration. Should also describe how
+  the spec-level enum is enforced in code (e.g. a PHP enum or
+  validation guard) so config keys cannot drift away from the spec
+  set.

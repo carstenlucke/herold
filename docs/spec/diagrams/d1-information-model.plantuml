@@ -7,7 +7,7 @@ skinparam linetype ortho
 title Herold — D1 Information Model
 
 ' Non-trivial domain data types referenced below (Identifier,
-' OpaqueSecret, NoteStatus, IssueState, MessageTypeId, FieldDT,
+' OpaqueSecret, NoteStatus, IssueState, MessageTypeDT,
 ' TypeSpecificData) are defined in D2. Trivial types (Text, Integer,
 ' Boolean, Email, URL, Timestamp, Markdown) are used at face value.
 
@@ -53,7 +53,7 @@ package "Herold data" <<Frame>> #E8F4FF {
 
   class VoiceNote {
     + id : Identifier
-    + type : MessageTypeId
+    + type : MessageTypeDT
     + status : NoteStatus
     + audioPath : Text [0..1]
     + transcript : Text [0..1]
@@ -67,10 +67,10 @@ package "Herold data" <<Frame>> #E8F4FF {
     + updatedAt : Timestamp
   }
   note right of VoiceNote
-    Each voice note is an instance of exactly one
-    **MessageType**. The MessageType declares the
-    schema for **extraFields** and supplies the
-    **githubLabel** that lands on the dispatched issue.
+    **type** classifies the note (MessageTypeDT enum).
+    The host configures, per type, the prompt, the
+    extra-field shape for **extraFields**, and the
+    label that lands on the dispatched issue.
     When the note reaches **sent**, **githubIssueNumber**
     and **githubIssueUrl** point to the created issue.
   end note
@@ -82,11 +82,20 @@ package "Herold data" <<Frame>> #E8F4FF {
     error
   }
 
+  enum MessageTypeDT <<D2>> {
+    general
+    youtube
+    diary
+    obsidian
+    todo
+  }
+
   ' Layout hints: Operator top-left, RecoveryToken below Operator,
   ' VoiceNote to the right of Operator.
-  Operator    -[hidden]down-  RecoveryToken
-  Operator    -[hidden]right- VoiceNote
-  VoiceNote   -[hidden]down-  NoteStatus
+  Operator       -[hidden]down-  RecoveryToken
+  Operator       -[hidden]right- VoiceNote
+  VoiceNote      -[hidden]down-  NoteStatus
+  NoteStatus     -[hidden]right- MessageTypeDT
 }
 
 ' ============================================================
@@ -104,76 +113,34 @@ package "Ticket data" <<Frame>> #FFF4E0 {
   }
   note right of GitHubIssue
     GitHubIssue lives at GitHub. Herold persists only
-    **VoiceNote.githubIssueNumber** and
-    **VoiceNote.githubIssueUrl**. The attributes shown
-    here describe the **structure Herold writes on
-    dispatch** (UC-08).
+    **VoiceNote.githubIssueNumber** (→ **number**) and
+    **VoiceNote.githubIssueUrl** (→ **url**). The other
+    attributes describe the **structure Herold writes
+    on dispatch** (UC-08).
   end note
 
   class GitHubRepository {
     + owner : Text
     + name : Text
   }
-}
-
-' ============================================================
-' Herold config-data — read-only typed configuration
-' ============================================================
-package "Herold config-data" <<Frame>> #EAF7E8 {
-
-  class MessageType {
-    + id : MessageTypeId
-    + label : Text
-    + promptTemplate : Text
-    + githubLabel : Text
-  }
-  note right of MessageType
-    Configured out-of-band on the host (UC-12
-    read-only). Adding a new type is configuration,
-    not a code change.
+  note right of GitHubRepository
+    Fixed at the host level by configuration.
   end note
-
-  class FieldSchema {
-    + fields : List<FieldDefinition>
-  }
-
-  class FieldDefinition {
-    + name : Text
-    + fieldType : FieldDT
-    + required : Boolean
-    + label : Text
-  }
-
-  class GitHubTarget {
-    + accessTokenSecret : OpaqueSecret
-  }
-
-  class OpenAIModelReference {
-    + transcriptionModel : Text
-    + completionModel : Text
-  }
 }
 
 ' ============================================================
 ' Relationships
 ' ============================================================
 
-VoiceNote ..>            NoteStatus           : status
-VoiceNote "*" -->  "1"   MessageType          : typed by
-VoiceNote ..>            GitHubIssue          : refers to
+VoiceNote ..>            NoteStatus     : status
+VoiceNote ..>            MessageTypeDT  : type
+VoiceNote ..>            GitHubIssue    : refers to via\ngithubIssueNumber / githubIssueUrl
 
-GitHubRepository "1" --> "*" GitHubIssue       : contains
+GitHubRepository "1" --> "*" GitHubIssue : contains
 
-MessageType "1" --> "1" FieldSchema            : declares
-FieldSchema "1" --> "*" FieldDefinition        : composed of
-
-GitHubTarget "1" -down-> "1" GitHubRepository  : targets
-MessageType  ..> GitHubTarget                  : labels routed to
-
-' Stack the three packages vertically: Herold data on top,
-' Herold config-data in the middle, Ticket data at the bottom.
-NoteStatus   -[hidden]down- MessageType
-GitHubTarget -[hidden]down- GitHubRepository
-FieldSchema  -[hidden]down- GitHubIssue
+' Stack the two packages vertically: Herold data on top,
+' Ticket data at the bottom.
+NoteStatus    -[hidden]down- GitHubIssue
+MessageTypeDT -[hidden]down- GitHubRepository
 
 @enduml

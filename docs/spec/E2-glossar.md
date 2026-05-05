@@ -54,7 +54,7 @@ Lightweight markup language using plain-text formatting (`# Heading`, `**bold**`
 
 ### Message Type
 
-A configuration-driven category of voice note (e.g. `general`, `youtube`, `diary`). Each type defines its label, icon, GitHub label, optional extra fields, and preprocessing prompt. Adding a new type is a configuration change, not a code change.
+A category of voice note. The set of categories is fixed by the spec as the `MessageTypeDT` enumeration (see [D2.5](D2-datentypen.md#d25-messagetypedt)): `general`, `youtube`, `diary`, `obsidian`, `todo`. For each value the host configures the human-readable label, icon, GitHub label, optional extra-field shape, and preprocessing prompt; introducing a new category requires both a spec extension (new enum value) and a corresponding host-configuration entry.
 
 ### MIME Type
 

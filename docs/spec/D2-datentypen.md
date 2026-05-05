@@ -17,7 +17,7 @@ Catalogue entries are listed alphabetically; the section numbering follows that 
 | `FieldDT` | Enumeration over field types | [§ D2.2](#d22-fielddt) |
 | `Identifier` | Opaque, time-sortable key | [§ D2.3](#d23-identifier) |
 | `IssueState` | Enumeration | [§ D2.4](#d24-issuestate) |
-| `MessageTypeId` | Configured identifier (open set) | [§ D2.5](#d25-messagetypeid) |
+| `MessageTypeDT` | Enumeration of message types | [§ D2.5](#d25-messagetypedt) |
 | `NoteStatus` | Enumeration | [§ D2.6](#d26-notestatus) |
 | `OpaqueSecret` | Opaque value with security semantics | [§ D2.7](#d27-opaquesecret) |
 | `TypeSpecificData` | Schema-shaped record | [§ D2.8](#d28-typespecificdata) |
@@ -26,7 +26,7 @@ Catalogue entries are listed alphabetically; the section numbering follows that 
 
 ## D2.2 FieldDT
 
-*(FieldDT = field data type.)* Enumeration of permitted attribute types for a `FieldDefinition` ([D1.3](D1-datenmodell.md#fieldschema--fielddefinition)). Used by AF-08 to validate `VoiceNote.extraFields`.
+*(FieldDT = field data type.)* Enumeration of permitted attribute types for entries in `VoiceNote.extraFields` ([D1.1](D1-datenmodell.md#voicenote)). The host configures, per `MessageTypeDT` value, which named extra-field slots exist and which `FieldDT` each one carries; AF-08 validates the supplied data against that configured shape.
 
 | Value | Permits |
 |-------|---------|
@@ -71,15 +71,23 @@ Mirrors the lifecycle state of a `GitHubIssue` ([D1.2](D1-datenmodell.md#githubi
 
 ---
 
-## D2.5 MessageTypeId
+## D2.5 MessageTypeDT
 
-The stable identifier of a configured `MessageType` ([D1.3](D1-datenmodell.md#messagetype)). Drawn from the **open set** declared by the host configuration.
+*(MessageTypeDT = message type data type.)* Enumeration of the message-type categories a `VoiceNote` ([D1.1](D1-datenmodell.md#voicenote)) can be classified as. Each value is a stable lower-case ASCII slug.
 
-**Value form.** Lower-case ASCII slug; stable across configuration changes (renaming a type changes its identifier and therefore is a different type for D1 purposes).
+| Value | Meaning |
+|-------|---------|
+| `general` | Free-form note. |
+| `youtube` | Note tied to a YouTube video. |
+| `diary` | Diary entry, optionally dated. |
+| `obsidian` | Note destined for an Obsidian vault. |
+| `todo` | Task or to-do item, optionally with a deadline. |
 
-**Set membership.** The set is open: new identifiers may appear when the host operator adds a message type. A `VoiceNote.messageTypeId` that no longer resolves to a configured `MessageType` is an error condition surfaced via AF-04.
+**Per-value configuration.** Host configuration supplies, for each value, the prompt used by AF-02, the shape of `VoiceNote.extraFields` enforced by AF-08, and the GitHub label written by AF-05. Resolution is performed by AF-04. The configured properties are visible to the operator via UC-12.
 
-**Equality.** Case-sensitive string equality.
+**Equality & ordering.** Equality only.
+
+**Extensibility.** This set is closed; introducing a new message type is a spec change (extending the enum) accompanied by a configuration entry on the host.
 
 ---
 
@@ -102,7 +110,7 @@ Tracks the position of a `VoiceNote` ([D1.1](D1-datenmodell.md#voicenote)) withi
 
 ## D2.7 OpaqueSecret
 
-A type tag for credential or secret material (`Operator.apiKeyHash`, `Operator.totpSecret`, `RecoveryToken.token`, `GitHubTarget.accessTokenSecret`).
+A type tag for credential or secret material (`Operator.apiKeyHash`, `Operator.totpSecret`, `RecoveryToken.token`, and the host-configured GitHub access token).
 
 **Handling rules.**
 
@@ -119,15 +127,15 @@ A type tag for credential or secret material (`Operator.apiKeyHash`, `Operator.t
 
 ## D2.8 TypeSpecificData
 
-A record whose **shape is declared by the bound `MessageType.fieldSchema`** rather than fixed at the D1 level. Used as the type of `VoiceNote.extraFields`.
+A record whose **shape is declared by host configuration for the bound `MessageTypeDT`** rather than fixed at the D1 level. Used as the type of `VoiceNote.extraFields`.
 
 **Shape rules.**
 
-- Each declared `FieldDefinition` contributes one named slot of the declared `FieldDT`.
-- A slot is required iff `FieldDefinition.required = true`. Optional slots may be absent.
-- No slots beyond those declared by the schema are permitted.
+- Each named slot declared for the bound `MessageTypeDT` carries one value of a declared `FieldDT`.
+- A slot is required iff its declaration marks it as required; optional slots may be absent.
+- No slots beyond those declared for the bound `MessageTypeDT` are permitted.
 
-**Validation.** Performed by AF-08 on capture (UC-05) and on edit (UC-07) against the schema bound by `VoiceNote.messageTypeId`.
+**Validation.** Performed by AF-08 on capture (UC-05) and on edit (UC-07) against the shape configured for `VoiceNote.type`.
 
 **Equality.** Two values are equal iff their declared slots have equal values under the equality of their respective `FieldDT`s.
 
@@ -152,6 +160,6 @@ The following multiplicity and composition notations are used in D1 and D2 attri
 | Block | Relevance to D2 |
 |-------|-----------------|
 | [D1](D1-datenmodell.md) | Every type in this catalogue appears as an attribute type in at least one D1 entity. |
-| [F3](F3-anwendungsfunktionen.md) | AF-06 transitions `NoteStatus`; AF-04 resolves `MessageTypeId` to a `MessageType`; AF-08 validates `TypeSpecificData` against a `FieldSchema` and its `FieldDT`s. |
+| [F3](F3-anwendungsfunktionen.md) | AF-06 transitions `NoteStatus`; AF-04 resolves the configuration bound to a `MessageTypeDT` value; AF-08 validates `TypeSpecificData` against the configured shape (named slots and their `FieldDT`s) for the bound `MessageTypeDT`. |
 | [N1](N1-nichtfunktional.md) | Handling rules for `OpaqueSecret` are reinforced by content-sanitisation and rate-limiting NFRs. |
 | [E2](E2-glossar.md) | Glossary entries for *fine-grained PAT*, *message type*. |
