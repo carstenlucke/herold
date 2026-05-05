@@ -9,7 +9,7 @@ D1 captures the *information* Herold orchestrates, irrespective of where that in
 
 Configuration parameters supplied by the host operator out-of-band (per-type prompt and extra-field shape, GitHub credentials and target repository, OpenAI model identifiers) are **not** modelled as D1 entities. They are spec-level constants of the running system, inspected via UC-12.
 
-The diagram and tables below show **entity types only**. Non-trivial domain data types referenced as attribute types — e.g., `Identifier`, `OpaqueSecret`, `NoteStatusDT`, `IssueState`, `MessageTypeDT`, `TypeSpecificData` — are catalogued in [D2](D2-datentypen.md). Trivial types (`Text`, `Integer`, `Boolean`, `Date`, `Email`, `URL`, `Timestamp`, `Markdown`) are used at face value and not separately defined. Storage decisions and physical schema live in the architecture layer (`docs/arch/`) and in code, not here.
+The diagram and tables below show **entity types only**. Non-trivial domain data types referenced as attribute types — e.g., `Identifier`, `OpaqueSecret`, `NoteStatusDT`, `IssueStateDT`, `MessageTypeDT`, `TypeSpecificData` — are catalogued in [D2](D2-datentypen.md). Trivial types (`Text`, `Integer`, `Boolean`, `Date`, `Email`, `URL`, `Timestamp`, `Markdown`) are used at face value and not separately defined. Storage decisions and physical schema live in the architecture layer (`docs/arch/`) and in code, not here.
 
 ![D1 Information Model](diagrams-png/d1-information-model.png)
 
@@ -91,7 +91,7 @@ Information owned by a neighbouring system. Herold *writes* it on dispatch and *
 | `title` | Text | Composed in UC-08 from `VoiceNote.processedTitle`. |
 | `body` | Markdown | Composed in UC-08 from `VoiceNote.processedBody` (sanitised). |
 | `labels` | Set<Text> | Includes a per-`MessageTypeDT` label declared by host configuration. |
-| `state` | IssueState | `open` \| `closed`. Read-only from Herold's perspective. |
+| `state` | IssueStateDT | See [D2.3](D2-datentypen.md#d23-issuestatedt). Read-only from Herold's perspective. |
 
 ### GitHubRepository
 

@@ -15,7 +15,7 @@ Catalogue entries are listed alphabetically; the section numbering follows that 
 | Type | Kind | Defined in |
 |------|------|-----------|
 | `Identifier` | Opaque, time-sortable key | [§ D2.2](#d22-identifier) |
-| `IssueState` | Enumeration | [§ D2.3](#d23-issuestate) |
+| `IssueStateDT` | Enumeration | [§ D2.3](#d23-issuestatedt) |
 | `MessageTypeDT` | Enumeration of message types | [§ D2.4](#d24-messagetypedt) |
 | `NoteStatusDT` | Enumeration | [§ D2.5](#d25-notestatusdt) |
 | `OpaqueSecret` | Opaque value with security semantics | [§ D2.6](#d26-opaquesecret) |
@@ -39,9 +39,9 @@ Used as the primary key type of every entity in [D1](D1-datenmodell.md): `VoiceN
 
 ---
 
-## D2.3 IssueState
+## D2.3 IssueStateDT
 
-Mirrors the lifecycle state of a `GitHubIssue` ([D1.2](D1-datenmodell.md#githubissue)) at GitHub. Read-only from Herold's perspective — Herold does not transition this value (see P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle*).
+*(IssueStateDT = issue state data type.)* Mirrors the lifecycle state of a `GitHubIssue` ([D1.2](D1-datenmodell.md#githubissue)) at GitHub. Read-only from Herold's perspective — Herold does not transition this value (see P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle*).
 
 | Value | Meaning |
 |-------|---------|

@@ -7,7 +7,7 @@ skinparam linetype ortho
 title Herold — D1 Information Model
 
 ' Non-trivial domain data types referenced below (Identifier,
-' OpaqueSecret, NoteStatusDT, IssueState, MessageTypeDT,
+' OpaqueSecret, NoteStatusDT, IssueStateDT, MessageTypeDT,
 ' TypeSpecificData) are defined in D2. Trivial types (Text, Integer,
 ' Boolean, Date, Email, URL, Timestamp, Markdown) are used at face
 ' value.
@@ -111,7 +111,7 @@ package "Ticket data" <<Frame>> #FFF4E0 {
     + title : Text
     + body : Markdown
     + labels : Set<Text>
-    + state : IssueState
+    + state : IssueStateDT
   }
   note right of GitHubIssue
     GitHubIssue lives at GitHub. Herold persists only
@@ -128,6 +128,13 @@ package "Ticket data" <<Frame>> #FFF4E0 {
   note right of GitHubRepository
     Fixed at the host level by configuration.
   end note
+
+  enum IssueStateDT <<D2>> {
+    open
+    closed
+  }
+
+  GitHubIssue -[hidden]down- IssueStateDT
 }
 
 ' ============================================================
@@ -137,6 +144,7 @@ package "Ticket data" <<Frame>> #FFF4E0 {
 VoiceNote ..>            NoteStatusDT     : status
 VoiceNote ..>            MessageTypeDT  : type
 VoiceNote ..>            GitHubIssue    : refers to
+GitHubIssue ..>          IssueStateDT   : state
 
 GitHubRepository "1" --> "*" GitHubIssue : contains
 
