@@ -25,7 +25,16 @@ Each use case is described with a tabular specification template adopted from Po
 
 ![F2 Use Case Diagram — Herold](diagrams-png/f2-use-cases.png)
 
-The diagram shows the operator-facing surface of Herold grouped by the four sections of F2 (*Access*, *Note flow*, *Management*, *Configuration*) and the two external `<<system>>` nodes Herold delegates to within individual scenarios — *OpenAI*, exposing the two `<<api>>` endpoints Herold consumes (Whisper, Chat Completion), and *GitHub Issues*. The few use-case relationships drawn follow directly from the textual specifications below: UC-06, UC-07, UC-08 and UC-11 are typically entered from the detail view rendered by UC-10 (`<<extend>>`); UC-03 is the recovery branch when UC-01 cannot succeed (`<<extend>>`); UC-01 conditionally includes UC-02 on the first sign-in, when no TOTP secret is yet enrolled (`<<include>>` with the guard shown on the edge); and UC-03 in turn requires UC-02 to be re-run before normal use resumes (`<<precedes>>`, an informal stereotype used here to denote a temporal precondition that is neither include nor extend). The constraint note attached to the *Herold* boundary records the system-wide precondition that all use cases except UC-01, UC-02 and UC-03 require an authenticated session — captured once instead of being drawn as nine repetitive edges into UC-01. The note doubles as the legend for the per-use-case fill colour, which encodes the same authentication state: the warm tone marks the three use cases reachable without an established session, the cool tone marks every use case that requires one (including UC-04 *Sign out*, which is the only authentication-state use case in F2.2 to require a session). The package backgrounds remain a pure grouping aid for the four F2 sections.
+The diagram shows the operator-facing surface of Herold, organised along three orthogonal axes: the four F2 sections (*Access*, *Note flow*, *Management*, *Configuration*) as package backgrounds; the two external `<<system>>` nodes Herold delegates to within individual scenarios — *OpenAI* (exposing the two `<<api>>` endpoints Whisper and Chat Completion) and *GitHub Issues*; and the per-use-case authentication state, encoded as fill colour.
+
+The use-case relationships drawn follow directly from the textual specifications below:
+
+- **`<<extend>>` from UC-10:** UC-06, UC-07, UC-08 and UC-11 are typically entered from the detail view rendered by UC-10.
+- **`<<extend>>` from UC-01:** UC-03 is the recovery branch taken when UC-01 cannot succeed.
+- **`<<include>>` from UC-01 to UC-02:** conditional, guarded by the edge label — runs only on the first sign-in, when no TOTP secret is yet enrolled.
+- **`<<precedes>>` from UC-02 to UC-03:** an informal stereotype used here to denote a temporal precondition (neither include nor extend); after a recovery, UC-02 must be re-run before normal use resumes.
+
+The constraint note attached to the *Herold* boundary records the system-wide precondition that all use cases except UC-01, UC-02 and UC-03 require an authenticated session — captured once instead of being drawn as nine repetitive edges. The same note doubles as the legend for the per-use-case fill colour: the warm tone marks the three use cases reachable without an established session, the cool tone marks every use case that requires one (including UC-04 *Sign out*, the only authentication-state use case in F2.2 to require a session).
 
 ---
 
