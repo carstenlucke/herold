@@ -21,7 +21,7 @@ Each use case is described with a tabular specification template adopted from Po
 | [UC-09](#uc-09--browse-voice-notes) | Browse voice notes | Management | — (cross-cutting) | ✅ |
 | [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) | ✅ |
 | [UC-11](#uc-11--delete-a-voice-note) | Delete a voice note | Management | — (cross-cutting) | ✅ |
-| [UC-12](#uc-12--view-settings) | View settings | Configuration | — (auxiliary) | ⬜ |
+| [UC-12](#uc-12--view-settings) | View settings | Configuration | — (auxiliary) | ✅ |
 
 Status legend: ✅ done · 🚧 in progress · ⬜ unfinished.
 
@@ -234,8 +234,7 @@ The four use cases in this group form the supported segment of the business proc
 | **Precondition** | Authenticated session. |
 | **Postcondition** | No state change. |
 | **Main scenario** | 1. Operator opens the settings screen.<br>2. System renders the active configuration in a read-only form. |
-
-> Settings are read-only in Herold. Configuration changes are made out-of-band on the host (P1 constraints, S3 deployment). If a future revision makes settings writable, a new UC *Update settings* will be added with a clearly defined audit trail.
+| **Qualities** | Settings are read-only; configuration changes happen out-of-band on the host (per P1 constraints and S3 deployment). |
 
 ---
 
