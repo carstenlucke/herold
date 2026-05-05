@@ -77,7 +77,7 @@ Audio transcription, LLM preprocessing, and GitHub issue creation run synchronou
 
 **NFR-12d-01: Synchronous Error Handling**
 
-If an API call (OpenAI, GitHub) fails during synchronous processing, the voice note is set to ERROR status with the error message. The user can manually retry from the UI via the "Process" or "Send" button.
+If an API call (OpenAI, GitHub) fails during synchronous processing, the voice note's status does **not** advance (see [D2.5](D2-datentypen.md#d25-notestatusdt) *NoteStatusDT*); `VoiceNote.errorMessage` is populated with the failure reason. The user can manually retry from the UI via the "Process" or "Send" button; on a successful retry `errorMessage` is cleared and the documented status transition fires.
 
 No automatic retries. Each retry is an explicit user action.
 
@@ -156,7 +156,7 @@ Authentication (API key + TOTP) must be resettable without privileged shell acce
 
 **NFR-14c-01: AI Provider Portability**
 
-The AI integration must allow switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) through host-level configuration, without changing application code. The transcription and content-generation steps (AF-01, AF-02) must remain decoupled from any single provider.
+The AI integration must allow switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) through host-level configuration, without changing application code. The transcription and content-generation neighbours ([S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api)) must remain decoupled from any single provider.
 
 **Fit Criterion:** A different AI provider can be activated by host-level configuration alone; transcription and content generation continue to function without code changes.
 

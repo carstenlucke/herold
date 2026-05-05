@@ -76,7 +76,7 @@ The reference description of the building-block model is in [`SIEDERSLEBEN.md`](
 
 | Block | Title | Status | File |
 |-------|-------|--------|------|
-| S1 | Neighbouring System Interfaces | 🛠 | `S1-nachbarsysteme.md` |
+| S1 | Neighbouring System Interfaces | ✅ | [`S1-nachbarsysteme.md`](S1-nachbarsysteme.md) |
 | S2 | Data Migration | ⛔ | — |
 | S3 | Commissioning / Rollout | 🛠 | `S3-inbetriebnahme.md` |
 
@@ -85,7 +85,7 @@ The reference description of the building-block model is in [`SIEDERSLEBEN.md`](
 | Block | Title | Status | File |
 |-------|-------|--------|------|
 | N1 | Non-functional Requirements | ✅ | [`N1-nichtfunktional.md`](N1-nichtfunktional.md) |
-| N2 | Cross-cutting Concepts | 🛠 | `N2-querschnittskonzepte.md` |
+| N2 | Cross-cutting Concepts | 🛠 | [`N2-querschnittskonzepte.md`](N2-querschnittskonzepte.md) |
 
 ### 7. Supplementary Blocks
 

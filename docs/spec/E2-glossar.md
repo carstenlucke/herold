@@ -70,7 +70,7 @@ A single deployable application that contains all responsibilities (web, domain 
 
 ### Note Status
 
-The lifecycle state of a voice note. Values: `recorded`, `processed`, `sent`, `error`. The four states are sufficient because processing is synchronous (no intermediate background states). See ADR-002.
+The lifecycle state of a voice note. Values: `recorded`, `processed`, `sent`. The three states are sufficient because processing is synchronous (no intermediate background states); failures are captured in the orthogonal `errorMessage` flag rather than as a separate state (see [D2.5](D2-datentypen.md#d25-notestatusdt) and ADR-002).
 
 ### Operator
 

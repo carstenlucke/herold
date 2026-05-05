@@ -113,7 +113,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 
 | ID | Risk | Mitigation |
 |----|------|------------|
-| R-01 | OpenAI API outage or rate limit blocks the entire pipeline. | Status `error` is set; user retries. No silent failures. |
+| R-01 | OpenAI API outage or rate limit blocks the entire pipeline. | Status does not advance; `errorMessage` is populated; user retries (see [NFR-12d-01](N1-nichtfunktional.md)). No silent failures. |
 | R-02 | GitHub API outage prevents dispatch. | Note remains in status `processed`; user retries `send`. |
 | R-03 | Hosting timeout cuts a synchronous request mid-processing. | Idempotent retry from current status; partial state is recoverable. |
 | R-04 | Prompt-injection content in transcripts leaks into agent context. | `IssueContentSanitizer` separates untrusted input and strips active markup. |

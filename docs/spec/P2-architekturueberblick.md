@@ -28,6 +28,7 @@ Complete list of systems Herold communicates with. Detailed interface contracts 
 
 **Notes on the inventory**
 
+- **Operations per neighbour** are catalogued in [S1](S1-nachbarsysteme.md), one section per NB-XX entry above.
 - **No legacy systems.** Herold is greenfield; S2 (data migration) is not applicable.
 - **No peer enterprise systems.** All outbound partners are public third-party APIs accessed over HTTPS with token authentication.
 - **Agents (NB-05) are intentionally not direct neighbours.** They appear here for completeness; the only system Herold pushes to is GitHub.

@@ -64,7 +64,15 @@ Used as the primary key type of every entity in [D1](D1-datenmodell.md): `VoiceN
 | `obsidian` | Note destined for an Obsidian vault. |
 | `todo` | Task or to-do item, optionally with a deadline. |
 
-**Per-value bindings.** The slot inventory for `VoiceNote.metadata` is fixed by [D2.7](#d27-typespecificdata) per value. Host configuration supplies, for each value, the prompt used by AF-02 and the GitHub label written by AF-05; resolution is performed by AF-04. The configured properties are visible to the operator via UC-12.
+**Per-value bindings.** Each `MessageTypeDT` value carries three pieces of behaviour:
+
+| Binding | Source | Consumed by |
+|---------|--------|-------------|
+| Slot inventory for `VoiceNote.metadata` | Spec ([D2.7](#d27-typespecificdata)) | [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) (capture form), [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content) (validation on save) |
+| Generation prompt | Host configuration (out-of-band) | [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) *Chat Completion API* |
+| GitHub label | Host configuration (out-of-band) | [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) *Issues API* |
+
+**Resolution rule.** All consumers obtain these bindings through this single catalogue; message types are never hard-coded outside it. Unknown identifiers are rejected at the boundary that observes them. The configured prompt and label are visible to the operator via [UC-12](F2-anwendungsfaelle.md#uc-12--view-settings). The cross-cutting strategy for type-driven behaviour is documented in [N2](N2-querschnittskonzepte.md) *Type-driven configuration*.
 
 **Equality & ordering.** Equality only.
 
@@ -81,11 +89,22 @@ Used as the primary key type of every entity in [D1](D1-datenmodell.md): `VoiceN
 | `recorded` | Audio captured, awaiting processing. |
 | `processed` | Structured content generated, awaiting review and dispatch. |
 | `sent` | Dispatched to GitHub; `VoiceNote.githubIssueNumber` and `VoiceNote.githubIssueUrl` populated. |
-| `error` | The last attempted transition failed; `VoiceNote.errorMessage` is populated. |
 
 **Equality & ordering.** Equality only; values are not ordered.
 
-**Reachable transitions.** Defined in F3.AF-06. The set above is closed; new values require a spec change.
+**Reachable transitions.** The set above is closed; new values require a spec change.
+
+| From       | To         | Trigger                                                                  |
+|------------|------------|--------------------------------------------------------------------------|
+| (none)     | `recorded` | Capture submission ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) Schritt 7). |
+| `recorded` | `processed`| Successful transcription + content generation ([UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note) Schritt 6). |
+| `processed`| `sent`     | Successful dispatch to GitHub ([UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note) Schritt 5). |
+
+No other transitions are reachable; in particular there are no regressions and no skipping of intermediate states. The status is never advanced speculatively — each transition is the consequence of a successful operation at the corresponding boundary (transcript + content populated for `processed`; issue reference populated for `sent`).
+
+**Failure handling (orthogonal to status).** Transition triggers may fail. On failure the status **does not advance**; instead `VoiceNote.errorMessage` is populated with the failure reason per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*. The operator may retry by re-invoking the same use case; on success `errorMessage` is cleared and the documented transition fires. `errorMessage` is therefore an orthogonal failure flag on `VoiceNote`, not a separate state.
+
+![D2.5 NoteStatusDT — state diagram](diagrams-png/d2-notestatus-states.png)
 
 ---
 
@@ -122,13 +141,19 @@ A structured record of named typed slots whose **slot inventory is fixed at spec
 |-----------------|------|------|----------|---------|
 | `general` | — | — | — | No slots. |
 | `youtube` | `youtubeUrl` | `URL` | yes | YouTube video the note refers to. |
-| `diary` | `entryDate` | `Date` | no | Calendar date the entry is associated with; resolved from speech where possible (AF-02). |
-| `obsidian` | `vault` | `Text` | no | Target Obsidian vault name; resolved from speech where possible (AF-02). |
-| `todo` | `deadline` | `Date` | no | Due date for the task; resolved from speech where possible (AF-02). |
+| `diary` | `entryDate` | `Date` | no | Calendar date the entry is associated with; resolved from speech where possible by [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api). |
+| `obsidian` | `vault` | `Text` | no | Target Obsidian vault name; resolved from speech where possible by [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api). |
+| `todo` | `deadline` | `Date` | no | Due date for the task; resolved from speech where possible by [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api). |
 
 This inventory is closed; introducing or removing a slot is a spec change. Wire and storage representation of the record (column type, serialization format) is an implementation concern and not described here.
 
-**Validation.** Performed by AF-08 on capture (UC-05) and on edit (UC-07) against the inventory above for the bound `VoiceNote.type`.
+**Validation rules.**
+
+- Strict: missing required slots, slots whose value is not of the declared type, and slot names not declared for the bound `MessageTypeDT` all fail.
+- The audio recording itself is not validated here beyond presence; format and size checks at the upload boundary are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation* and apply at [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api).
+- A failed validation surfaces the offending fields to the operator; no `VoiceNote` row is created or updated until the input is accepted.
+
+**When validation runs.** On capture submission ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) Schritt 6) and on edit save ([UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content) Schritt 4), in both cases against the slot inventory above for the bound `VoiceNote.type`. The cross-cutting strategy for input validation is documented in [N2](N2-querschnittskonzepte.md) *Validation*.
 
 **Equality.** Two values are equal [iff](E2-glossar.md#iff) their declared slots have equal values under the equality of their respective slot types.
 
@@ -153,6 +178,8 @@ The following multiplicity and composition notations are used in D1 and D2 attri
 | Block | Relevance to D2 |
 |-------|-----------------|
 | [D1](D1-datenmodell.md) | Every type in this catalogue appears as an attribute type in at least one D1 entity. |
-| [F3](F3-anwendungsfunktionen.md) | AF-06 transitions `NoteStatusDT`; AF-04 resolves the host bindings (prompt, GitHub label) for a `MessageTypeDT` value; AF-08 validates `TypeSpecificData` against the spec-declared slot inventory ([D2.7](#d27-typespecificdata)) for the bound `MessageTypeDT`. |
-| [N1](N1-nichtfunktional.md) | Handling rules for `OpaqueSecret` are reinforced by content-sanitisation and rate-limiting NFRs. |
+| [F2](F2-anwendungsfaelle.md) | Status transitions in [D2.5](#d25-notestatusdt) are driven by [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note), [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note), [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note); the slot inventory in [D2.7](#d27-typespecificdata) is validated at [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) and [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content). |
+| [S1](S1-nachbarsysteme.md) | Per-`MessageTypeDT` bindings drive [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) (prompt) and [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) (label). |
+| [N1](N1-nichtfunktional.md) | Handling rules for `OpaqueSecret` are reinforced by content-sanitisation and rate-limiting NFRs; failure handling in [D2.5](#d25-notestatusdt) defers to [NFR-12d-01](N1-nichtfunktional.md). |
+| [N2](N2-querschnittskonzepte.md) | *Type-driven configuration* operationalises the resolution rule in [D2.4](#d24-messagetypedt); *Validation* operationalises the rules in [D2.7](#d27-typespecificdata). |
 | [E2](E2-glossar.md) | Glossary entries for *fine-grained PAT*, *message type*. |

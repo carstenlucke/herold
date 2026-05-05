@@ -1,0 +1,37 @@
+@startuml d2-notestatus-states
+!theme plain
+skinparam shadowing false
+skinparam state {
+  BackgroundColor #E8F4FF
+  BorderColor #2E5C8A
+  FontStyle bold
+  ArrowColor #2E5C8A
+}
+
+title Herold — D2.5 NoteStatusDT (state machine)
+
+[*] --> recorded   : UC-05 Capture\n(submission accepted)
+recorded --> processed : UC-06 Process\n(transcript + content generated)
+processed --> sent : UC-08 Dispatch\n(GitHub issue created)
+
+state recorded
+state processed
+state sent
+
+note right of recorded
+  On UC-06 failure the status does **not** advance.
+  **errorMessage** is populated; the operator may retry.
+end note
+
+note right of processed
+  On UC-08 failure the status does **not** advance.
+  **errorMessage** is populated; the operator may retry.
+end note
+
+note bottom of sent
+  Terminal status. No regression.
+  **githubIssueNumber** and **githubIssueUrl**
+  are populated; **errorMessage** is cleared.
+end note
+
+@enduml

@@ -81,7 +81,6 @@ package "Herold data" <<Frame>> #E8F4FF {
     recorded
     processed
     sent
-    error
   }
 
   enum MessageTypeDT <<D2>> {

@@ -29,10 +29,10 @@ The central entity. One row per captured voice note from recording through dispa
 | `type` | MessageTypeDT | The bound message type. See [D2.4](D2-datentypen.md#d24-messagetypedt). |
 | `status` | NoteStatusDT | See [D2.5](D2-datentypen.md#d25-notestatusdt). |
 | `audioPath` | Text [0..1] | Locator into the local audio store. Set on capture; cleared together with the row by UC-11. Subject to [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*. |
-| `transcript` | Text [0..1] | Set after AF-01 succeeds. |
-| `processedTitle` | Text [0..1] | Set after AF-02; editable in UC-07. |
-| `processedBody` | Markdown [0..1] | Set after AF-02; editable in UC-07; sanitised per [NFR-15b-04](N1-nichtfunktional.md). |
-| `metadata` | TypeSpecificData [0..1] | Per-`MessageTypeDT` named-slot record. Slot inventory and slot types are declared at spec level — see [D2.7](D2-datentypen.md#d27-typespecificdata). Validated by AF-08. |
+| `transcript` | Text [0..1] | Set after [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) returns. |
+| `processedTitle` | Text [0..1] | Set after [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) returns; editable in [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content). |
+| `processedBody` | Markdown [0..1] | Set after [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) returns; editable in [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content); sanitised per [NFR-15b-04](N1-nichtfunktional.md). |
+| `metadata` | TypeSpecificData [0..1] | Per-`MessageTypeDT` named-slot record. Slot inventory and slot types are declared at spec level — see [D2.7](D2-datentypen.md#d27-typespecificdata). Validated at [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) and [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content) per [N2](N2-querschnittskonzepte.md) *Validation*. |
 | `githubIssueNumber` | Integer [0..1] | Refers to `GitHubIssue.number`. Repository-scoped. Populated together with `githubIssueUrl` when the note reaches `sent`. |
 | `githubIssueUrl` | URL [0..1] | Refers to `GitHubIssue.url`. Stable navigable URL of the dispatched issue. |
 | `errorMessage` | Text [0..1] | Last failure reason; cleared on successful retry. |
@@ -41,6 +41,17 @@ The central entity. One row per captured voice note from recording through dispa
 
 **Associations:**
 - `..> GitHubIssue` — `githubIssueNumber` (→ `number`) and `githubIssueUrl` (→ `url`) reference an issue at GitHub once the note has been dispatched.
+
+**Status invariants.** Allowed status values and their reachable transitions are defined in [D2.5](D2-datentypen.md#d25-notestatusdt) *NoteStatusDT*. The status is advanced only on successful completion of the corresponding [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) / [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note) / [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note) action; failures populate `errorMessage` and leave the status unchanged.
+
+**Audio document invariants.**
+
+- `audioPath` is set on capture ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note)) and bound to the row for its entire lifetime; the audio is streamable for that whole lifetime ([UC-10](F2-anwendungsfaelle.md#uc-10--view-a-voice-note)).
+- There is no scheduled pruning, no retention timer, and no `processed`-triggered cleanup. Format and size constraints at the upload boundary are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*.
+- The audio is removed together with the row by [UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note); removal is irreversible.
+- The audio never exists without its owning `VoiceNote`. A `VoiceNote` row without an audio document exists only transiently during deletion.
+
+![D1 Audio document — lifecycle](diagrams-png/d1-audio-lifecycle-states.png)
 
 ### Operator
 
@@ -120,7 +131,9 @@ The repository is fixed at the host level by configuration. Issues live within t
 |-------|-----------------|
 | [F1](F1-geschaeftsprozesse.md) | Activities A3, A6, A7, A8 write to `VoiceNote`; A8 populates `githubIssueNumber` / `githubIssueUrl` and creates the `GitHubIssue`. |
 | [F2](F2-anwendungsfaelle.md) | Every UC reads or writes one or more entities here. UC-11 is the only deleter. |
-| [F3](F3-anwendungsfunktionen.md) | AF-01 populates `transcript`; AF-02/AF-03 populate `processedTitle`/`processedBody`; AF-04 resolves the configuration bound to a `MessageTypeDT`; AF-05 composes the `GitHubIssue`; AF-06 governs `NoteStatusDT` transitions; AF-08 validates `metadata` against the [D2.7](D2-datentypen.md#d27-typespecificdata) slot inventory for the bound `MessageTypeDT`. |
+| [F3](F3-anwendungsfunktionen.md) | [AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) sanitises `processedBody` before persistence and before dispatch. |
+| [S1](S1-nachbarsysteme.md) | [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) populates `transcript`; [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) populates `processedTitle` / `processedBody` / `metadata`; [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) populates `githubIssueNumber` / `githubIssueUrl`. |
+| [N2](N2-querschnittskonzepte.md) | *Type-driven configuration* governs the message-type bindings consumed by `VoiceNote`; *Validation* governs how `metadata` is checked at the boundaries that write it. |
 | [N1](N1-nichtfunktional.md) | Two-factor authentication scheme on `Operator` ([NFR-15a-01](N1-nichtfunktional.md)); audio size limits ([NFR-15a-03](N1-nichtfunktional.md)); content sanitisation for `processedBody` and the dispatched body ([NFR-15b-04](N1-nichtfunktional.md)); time-to-live for `RecoveryToken` ([NFR-15a-04](N1-nichtfunktional.md)). |
 | [P1](P1-constraints.md) | [CON-3a-04](P1-constraints.md) *Single-User System* limits `Operator` to one instance; [NG-03](P1-ziele-rahmenbedingungen.md) excludes GitHub-side lifecycle from this model. |
 | [P2](P2-architekturueberblick.md) | Identifies the storage realms (local DB, audio store, GitHub) the two D1 data stores correspond to. |
