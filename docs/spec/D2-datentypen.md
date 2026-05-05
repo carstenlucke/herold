@@ -18,7 +18,7 @@ Catalogue entries are listed alphabetically; the section numbering follows that 
 | `Identifier` | Opaque, time-sortable key | [§ D2.3](#d23-identifier) |
 | `IssueState` | Enumeration | [§ D2.4](#d24-issuestate) |
 | `MessageTypeDT` | Enumeration of message types | [§ D2.5](#d25-messagetypedt) |
-| `NoteStatus` | Enumeration | [§ D2.6](#d26-notestatus) |
+| `NoteStatusDT` | Enumeration | [§ D2.6](#d26-notestatusdt) |
 | `OpaqueSecret` | Opaque value with security semantics | [§ D2.7](#d27-opaquesecret) |
 | `TypeSpecificData` | Schema-shaped record | [§ D2.8](#d28-typespecificdata) |
 
@@ -91,9 +91,9 @@ Mirrors the lifecycle state of a `GitHubIssue` ([D1.2](D1-datenmodell.md#githubi
 
 ---
 
-## D2.6 NoteStatus
+## D2.6 NoteStatusDT
 
-Tracks the position of a `VoiceNote` ([D1.1](D1-datenmodell.md#voicenote)) within the synchronous capture–process–dispatch pipeline.
+*(NoteStatusDT = note status data type.)* Tracks the position of a `VoiceNote` ([D1.1](D1-datenmodell.md#voicenote)) within the synchronous capture–process–dispatch pipeline.
 
 | Value | Meaning |
 |-------|---------|
@@ -160,6 +160,6 @@ The following multiplicity and composition notations are used in D1 and D2 attri
 | Block | Relevance to D2 |
 |-------|-----------------|
 | [D1](D1-datenmodell.md) | Every type in this catalogue appears as an attribute type in at least one D1 entity. |
-| [F3](F3-anwendungsfunktionen.md) | AF-06 transitions `NoteStatus`; AF-04 resolves the configuration bound to a `MessageTypeDT` value; AF-08 validates `TypeSpecificData` against the configured shape (named slots and their `FieldDT`s) for the bound `MessageTypeDT`. |
+| [F3](F3-anwendungsfunktionen.md) | AF-06 transitions `NoteStatusDT`; AF-04 resolves the configuration bound to a `MessageTypeDT` value; AF-08 validates `TypeSpecificData` against the configured shape (named slots and their `FieldDT`s) for the bound `MessageTypeDT`. |
 | [N1](N1-nichtfunktional.md) | Handling rules for `OpaqueSecret` are reinforced by content-sanitisation and rate-limiting NFRs. |
 | [E2](E2-glossar.md) | Glossary entries for *fine-grained PAT*, *message type*. |

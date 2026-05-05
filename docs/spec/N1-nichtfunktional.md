@@ -207,9 +207,9 @@ All external API credentials (OpenAI, GitHub PAT) are held server-side only. The
 
 **NFR-15b-02: No Preprocessing Prompts Surfaced to the Browser**
 
-The browser-facing view of the configuration (UC-12) must surface only those `MessageType` attributes the operator needs to choose a type and fill its extra fields — i.e. label, icon, GitHub label, and the extra-field schema. The `MessageType.promptTemplate` (D1.3) is server-only and must never be transmitted to the browser, neither in UC-12 nor anywhere else.
+The browser-facing view of the configuration (UC-12) must surface only those per-`MessageTypeDT` properties the operator needs to choose a type and fill its extra fields — i.e. the human-readable label, icon, GitHub label, and the extra-field schema. The configured preprocessing prompt for any `MessageTypeDT` value is server-only and must never be transmitted to the browser, neither in UC-12 nor anywhere else.
 
-**Fit Criterion:** No payload reaching the browser contains the contents of any configured `MessageType.promptTemplate`.
+**Fit Criterion:** No payload reaching the browser contains the contents of any configured preprocessing prompt.
 
 **NFR-15b-03: Secret Redaction in Logs**
 
@@ -223,7 +223,7 @@ Voice note content (transcript, generated title, generated body) is untrusted in
 
 - Render any active markup (e.g. embedded HTML, script-bearing URIs) inert in the issue body.
 - Visually delimit operator-derived content from application-generated structure inside the issue body, so a downstream reader can tell which is which.
-- Exclude any prompt-engineering material (e.g. `MessageType.promptTemplate`) from the issue body.
+- Exclude any prompt-engineering material (e.g. configured preprocessing prompts) from the issue body.
 
 **Fit Criterion:** An attempted injection in a transcript (e.g. an embedded markup comment instructing a downstream agent to ignore previous instructions) appears as inert text in the dispatched issue. The issue body's structure makes the boundary between operator-derived content and application-generated structure self-evident.
 

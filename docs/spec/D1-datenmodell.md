@@ -9,7 +9,7 @@ D1 captures the *information* Herold orchestrates, irrespective of where that in
 
 Configuration parameters supplied by the host operator out-of-band (per-type prompt and extra-field shape, GitHub credentials and target repository, OpenAI model identifiers) are **not** modelled as D1 entities. They are spec-level constants of the running system, inspected via UC-12.
 
-The diagram and tables below show **entity types only**. Non-trivial domain data types referenced as attribute types — e.g., `Identifier`, `OpaqueSecret`, `NoteStatus`, `IssueState`, `MessageTypeDT`, `TypeSpecificData` — are catalogued in [D2](D2-datentypen.md). Trivial types (`Text`, `Integer`, `Boolean`, `Email`, `URL`, `Timestamp`, `Markdown`) are used at face value and not separately defined. Storage decisions and physical schema live in the architecture layer (`docs/arch/`) and in code, not here.
+The diagram and tables below show **entity types only**. Non-trivial domain data types referenced as attribute types — e.g., `Identifier`, `OpaqueSecret`, `NoteStatusDT`, `IssueState`, `MessageTypeDT`, `TypeSpecificData` — are catalogued in [D2](D2-datentypen.md). Trivial types (`Text`, `Integer`, `Boolean`, `Email`, `URL`, `Timestamp`, `Markdown`) are used at face value and not separately defined. Storage decisions and physical schema live in the architecture layer (`docs/arch/`) and in code, not here.
 
 ![D1 Information Model](diagrams-png/d1-information-model.png)
 
@@ -27,7 +27,7 @@ The central entity. One row per captured voice note from recording through dispa
 |-----------|------|-------|
 | `id` | Identifier | Stable, time-sortable. |
 | `type` | MessageTypeDT | The bound message type. See [D2.5](D2-datentypen.md#d25-messagetypedt). |
-| `status` | NoteStatus | See [D2.6](D2-datentypen.md#d26-notestatus). |
+| `status` | NoteStatusDT | See [D2.6](D2-datentypen.md#d26-notestatusdt). |
 | `audioPath` | Text [0..1] | Locator into the local audio store. Set on capture; cleared together with the row by UC-11. Subject to [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*. |
 | `transcript` | Text [0..1] | Set after AF-01 succeeds. |
 | `processedTitle` | Text [0..1] | Set after AF-02; editable in UC-07. |
@@ -120,7 +120,7 @@ The repository is fixed at the host level by configuration. Issues live within t
 |-------|-----------------|
 | [F1](F1-geschaeftsprozesse.md) | Activities A3, A6, A7, A8 write to `VoiceNote`; A8 populates `githubIssueNumber` / `githubIssueUrl` and creates the `GitHubIssue`. |
 | [F2](F2-anwendungsfaelle.md) | Every UC reads or writes one or more entities here. UC-11 is the only deleter. |
-| [F3](F3-anwendungsfunktionen.md) | AF-01 populates `transcript`; AF-02/AF-03 populate `processedTitle`/`processedBody`; AF-04 resolves the configuration bound to a `MessageTypeDT`; AF-05 composes the `GitHubIssue`; AF-06 governs `NoteStatus` transitions; AF-08 validates `extraFields` against the host-configured shape for the bound `MessageTypeDT`. |
+| [F3](F3-anwendungsfunktionen.md) | AF-01 populates `transcript`; AF-02/AF-03 populate `processedTitle`/`processedBody`; AF-04 resolves the configuration bound to a `MessageTypeDT`; AF-05 composes the `GitHubIssue`; AF-06 governs `NoteStatusDT` transitions; AF-08 validates `extraFields` against the host-configured shape for the bound `MessageTypeDT`. |
 | [N1](N1-nichtfunktional.md) | Two-factor authentication scheme on `Operator` ([NFR-15a-01](N1-nichtfunktional.md)); audio size limits ([NFR-15a-03](N1-nichtfunktional.md)); content sanitisation for `processedBody` and the dispatched body ([NFR-15b-04](N1-nichtfunktional.md)); time-to-live for `RecoveryToken` ([NFR-15a-04](N1-nichtfunktional.md)). |
 | [P1](P1-constraints.md) | [CON-3a-04](P1-constraints.md) *Single-User System* limits `Operator` to one instance; [NG-03](P1-ziele-rahmenbedingungen.md) excludes GitHub-side lifecycle from this model. |
 | [P2](P2-architekturueberblick.md) | Identifies the storage realms (local DB, audio store, GitHub) the two D1 data stores correspond to. |

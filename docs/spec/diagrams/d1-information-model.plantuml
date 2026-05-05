@@ -7,7 +7,7 @@ skinparam linetype ortho
 title Herold — D1 Information Model
 
 ' Non-trivial domain data types referenced below (Identifier,
-' OpaqueSecret, NoteStatus, IssueState, MessageTypeDT,
+' OpaqueSecret, NoteStatusDT, IssueState, MessageTypeDT,
 ' TypeSpecificData) are defined in D2. Trivial types (Text, Integer,
 ' Boolean, Email, URL, Timestamp, Markdown) are used at face value.
 
@@ -54,7 +54,7 @@ package "Herold data" <<Frame>> #E8F4FF {
   class VoiceNote {
     + id : Identifier
     + type : MessageTypeDT
-    + status : NoteStatus
+    + status : NoteStatusDT
     + audioPath : Text [0..1]
     + transcript : Text [0..1]
     + processedTitle : Text [0..1]
@@ -75,7 +75,7 @@ package "Herold data" <<Frame>> #E8F4FF {
     and **githubIssueUrl** point to the created issue.
   end note
 
-  enum NoteStatus <<D2>> {
+  enum NoteStatusDT <<D2>> {
     recorded
     processed
     sent
@@ -94,8 +94,8 @@ package "Herold data" <<Frame>> #E8F4FF {
   ' VoiceNote to the right of Operator.
   Operator       -[hidden]down-  RecoveryToken
   Operator       -[hidden]right- VoiceNote
-  VoiceNote      -[hidden]down-  NoteStatus
-  NoteStatus     -[hidden]right- MessageTypeDT
+  VoiceNote      -[hidden]down-  NoteStatusDT
+  NoteStatusDT     -[hidden]right- MessageTypeDT
 }
 
 ' ============================================================
@@ -132,15 +132,15 @@ package "Ticket data" <<Frame>> #FFF4E0 {
 ' Relationships
 ' ============================================================
 
-VoiceNote ..>            NoteStatus     : status
+VoiceNote ..>            NoteStatusDT     : status
 VoiceNote ..>            MessageTypeDT  : type
-VoiceNote ..>            GitHubIssue    : refers to via\ngithubIssueNumber / githubIssueUrl
+VoiceNote ..>            GitHubIssue    : refers to
 
 GitHubRepository "1" --> "*" GitHubIssue : contains
 
 ' Stack the two packages vertically: Herold data on top,
 ' Ticket data at the bottom.
-NoteStatus    -[hidden]down- GitHubIssue
+NoteStatusDT    -[hidden]down- GitHubIssue
 MessageTypeDT -[hidden]down- GitHubRepository
 
 @enduml
