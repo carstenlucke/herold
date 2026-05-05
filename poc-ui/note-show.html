@@ -59,7 +59,20 @@
       font-weight: 500;
       color: var(--c-text);
     }
-  </style>
+
+    .field.error {
+      border-bottom-color: var(--c-error);
+      box-shadow: 0 2px 8px rgba(var(--c-error-rgb), 0.18);
+    }
+    .field-helper {
+      font-family: var(--font-label);
+      font-size: 0.7rem;
+      color: var(--c-text-muted);
+      margin: 4px 0 0 0;
+      letter-spacing: 0.02em;
+    }
+    .field-helper.error { color: var(--c-error); }
+</style>
 </head>
 <body>
   <div class="app-shell">
@@ -113,11 +126,12 @@
         <!-- Variant selector (poc-only) -->
         <div class="variant-label">Mockup Variant (POC only)</div>
         <div class="variant-bar">
-          <button class="variant-btn active" onclick="showVariant('recorded')">Recorded</button>
-          <button class="variant-btn" onclick="showVariant('processing')">Processing</button>
-          <button class="variant-btn" onclick="showVariant('processed')">Processed</button>
-          <button class="variant-btn" onclick="showVariant('sent')">Sent</button>
-          <button class="variant-btn" onclick="showVariant('error')">Error</button>
+          <button class="variant-btn active" data-variant="recorded" onclick="showVariant('recorded')">Recorded</button>
+          <button class="variant-btn" data-variant="processing" onclick="showVariant('processing')">Processing</button>
+          <button class="variant-btn" data-variant="processed" onclick="showVariant('processed')">Processed</button>
+          <button class="variant-btn" data-variant="editing" onclick="showVariant('editing')">Editing</button>
+          <button class="variant-btn" data-variant="sent" onclick="showVariant('sent')">Sent</button>
+          <button class="variant-btn" data-variant="error" onclick="showVariant('error')">Error</button>
         </div>
 
         <!-- ============================================================
@@ -299,7 +313,7 @@ Changes needed:
 
               <!-- Edit action -->
               <div class="d-flex ga-2 mt-3">
-                <button class="btn btn-tonal-secondary btn-sm">
+                <button class="btn btn-tonal-secondary btn-sm" onclick="showVariant('editing')">
                   <span class="mdi mdi-pencil"></span>
                   Edit
                 </button>
@@ -313,6 +327,117 @@ Changes needed:
                 <span class="step-title">Sent to GitHub</span>
               </div>
               <button class="btn btn-outlined mt-2">
+                <span class="mdi mdi-send"></span>
+                Create Ticket
+              </button>
+            </div>
+
+          </div>
+
+          <div class="d-flex justify-end mt-8">
+            <button class="btn btn-tonal-error btn-sm">
+              <span class="mdi mdi-delete"></span>
+              Delete Note
+            </button>
+          </div>
+        </div>
+
+
+        <!-- ============================================================
+             VARIANT: EDITING (UC-07)
+             Operator refines generated content. Status stays "processed".
+             ============================================================ -->
+        <div class="variant" id="v-editing">
+
+          <div class="mb-6">
+            <h1 class="text-h5 mb-2">Vue 3.5 reactivity deep dive</h1>
+            <div class="d-flex align-center ga-2" style="flex-wrap: wrap;">
+              <span class="status-chip status-chip-processed"><span class="mdi mdi-check-circle"></span> processed</span>
+              <span class="type-chip"><span class="mdi mdi-youtube"></span> YouTube Transcription</span>
+              <span class="meta-time" style="font-family: var(--font-label); font-size: 0.75rem; color: var(--c-text-muted);">05 Apr 2026, 17:42</span>
+            </div>
+          </div>
+
+          <div class="d-flex flex-column ga-4">
+
+            <!-- Step 1 -->
+            <div class="card neon-border-secondary pa-4">
+              <div class="step-header">
+                <div class="icon-avatar icon-avatar-28 icon-avatar-warning">1</div>
+                <span class="step-title">Recorded</span>
+                <span class="mdi mdi-check text-warning"></span>
+              </div>
+              <div class="audio-inline">
+                <button class="audio-inline-btn"><span class="mdi mdi-play"></span></button>
+                <span class="text-body-2 text-muted">Audio file recorded</span>
+              </div>
+            </div>
+
+            <!-- Step 2: Processed (in edit mode) -->
+            <div class="card neon-border-secondary pa-4">
+              <div class="step-header">
+                <div class="icon-avatar icon-avatar-28 icon-avatar-secondary">2</div>
+                <span class="step-title">Processed</span>
+                <span class="status-chip status-chip-processed" style="margin-left: auto;"><span class="mdi mdi-pencil"></span> editing</span>
+              </div>
+
+              <!-- Transcript (read-only reference) -->
+              <div class="mb-3">
+                <div class="transcript-label">Transcript</div>
+                <div class="transcript-block">In Vue 3.5 the reactivity system got a major overhaul. They introduced a signal-based approach internally that should make ref tracking faster and more memory efficient. The public API stays the same so existing code keeps working.</div>
+              </div>
+
+              <!-- Title (editable) -->
+              <div class="field">
+                <span class="field-label">Title</span>
+                <input type="text" value="Vue 3.5 reactivity deep dive">
+              </div>
+
+              <!-- Body (editable) -->
+              <div class="field">
+                <span class="field-label">Body</span>
+                <textarea rows="7">In Vue 3.5 the reactivity system got a major overhaul.
+
+Key changes:
+- Signal-based tracking internally
+- Faster ref dependency tracking
+- Lower memory footprint for large reactive graphs
+- Public API unchanged — existing code keeps working
+
+Worth reviewing for any custom composables that rely on internals.</textarea>
+              </div>
+
+              <!-- Extra fields (per AF-04 schema, here: youtube type) -->
+              <div class="variant-label" style="margin-top: var(--sp-4); margin-bottom: var(--sp-2);">Extra fields</div>
+
+              <div class="field error" style="margin-bottom: 4px;">
+                <span class="field-label">YouTube URL</span>
+                <input type="url" value="htps://youtu.be/abc123" aria-invalid="true">
+              </div>
+              <p class="field-helper error" style="margin-bottom: var(--sp-3);">
+                <span class="mdi mdi-alert-circle"></span>
+                Must be a valid http(s) URL.
+              </p>
+
+              <!-- Actions: Save / Cancel -->
+              <div class="d-flex ga-2 mt-4" style="flex-wrap: wrap;">
+                <button class="btn btn-tonal-secondary btn-sm" onclick="showVariant('processed')">
+                  <span class="mdi mdi-content-save"></span>
+                  Save
+                </button>
+                <button class="btn btn-text btn-text-secondary btn-sm" onclick="showVariant('processed')">
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 3 (still pending — status stays 'processed') -->
+            <div class="card neon-border-primary pa-4">
+              <div class="step-header">
+                <div class="icon-avatar icon-avatar-28 icon-avatar-grey">3</div>
+                <span class="step-title">Sent to GitHub</span>
+              </div>
+              <button class="btn btn-outlined mt-2" disabled>
                 <span class="mdi mdi-send"></span>
                 Create Ticket
               </button>
@@ -524,7 +649,9 @@ Changes needed:
       document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('v-' + name).classList.add('active');
-      event.target.classList.add('active');
+      const btn = document.querySelector('.variant-btn[data-variant="' + name + '"]');
+      if (btn) btn.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   </script>
 </body>
