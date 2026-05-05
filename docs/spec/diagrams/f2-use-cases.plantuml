@@ -87,9 +87,10 @@ UC11 ..> UC10 : <<extend>>\n(from detail view)
 ' Recovery is the pivot when UC-01 cannot succeed (UC-01 exception).
 UC03 ..> UC01 : <<extend>>\n(authentication lost)
 
-' Enrolment is the one-time setup that lets UC-01 succeed,
-' and is required again after UC-03 (UC-02 precondition / UC-03 postcondition).
-UC02 ..> UC01 : <<precedes>>
+' Enrolment runs inline inside UC-01 on the first sign-in (UC-01 main
+' scenario step 4) and is required again after a recovery (UC-03
+' postcondition).
+UC01 ..> UC02 : <<include>>\n[first sign-in,\nTOTP not enrolled]
 UC03 ..> UC02 : <<precedes>>
 
 ' Layout hint: stack OpenAI above GitHub Issues so the two external
