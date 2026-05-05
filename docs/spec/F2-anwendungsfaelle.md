@@ -16,7 +16,7 @@ Each use case is described with a tabular specification template adopted from Po
 | [UC-04](#uc-04--sign-out) | Sign out | Access | — (post-process) | ⬜ |
 | [UC-05](#uc-05--capture-voice-note) | Capture voice note | Note flow | A2 + A3 | ✅ |
 | [UC-06](#uc-06--process-voice-note) | Process voice note | Note flow | A4 (orchestrates A5–A6) | 🚧 |
-| [UC-07](#uc-07--edit-generated-content) | Edit generated content | Note flow | A7 | ⬜ |
+| [UC-07](#uc-07--edit-generated-content) | Edit generated content | Note flow | A7 | ✅ |
 | [UC-08](#uc-08--dispatch-voice-note) | Dispatch voice note | Note flow | A8 | ⬜ |
 | [UC-09](#uc-09--browse-voice-notes) | Browse voice notes | Management | — (cross-cutting) | ⬜ |
 | [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) | ⬜ |
@@ -146,13 +146,13 @@ The four use cases in this group form the supported segment of the business proc
 | **Identifier** | UC-07 |
 | **Name** | Edit generated content |
 | **Description** | Operator refines or corrects the system-generated content of a processed note before dispatching it. |
-| **Trigger** | Operator wants to refine or correct the system-generated content before dispatching, or simply revise it without dispatching now. |
+| **Trigger** | Operator wants to refine or correct the system-generated content. |
 | **Actors** | Operator (primary). |
 | **Precondition** | Note at status `processed`. |
-| **Postcondition** | Note still at status `processed`; content reflects the edits. UC-07 can be repeated. |
-| **Main scenario** | 1. Operator opens the note's detail view (see UC-10).<br>2. Operator edits the title, body, or extra fields.<br>3. Operator saves.<br>4. System sanitises the edited markdown (AF-03) per [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization*, revalidates the extra fields against the type schema (AF-08), and persists the changes. |
-| **Alternative scenarios** | *Operator leaves without saving:* changes are discarded. |
-| **Exception scenarios** | *Validation fails:* operator is shown the offending fields and corrects them. |
+| **Postcondition** | Note still at status `processed`; content reflects the edits. |
+| **Main scenario** | 1. Operator opens the note's detail view (see UC-10).<br>2. Operator edits the title, body, or extra fields.<br>3. Operator saves.<br>4. System sanitises the edited markdown (AF-03) per [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization*, revalidates the extra fields against the type schema (AF-08), and persists the changes.<br><br>![UC-07 Edit generated content — main scenario](diagrams-png/f2-uc07-edit-content.png) |
+| **Alternative scenarios** | - *Operator leaves without saving:* changes are discarded. |
+| **Exception scenarios** | - *Validation fails:* operator is shown the offending fields and corrects them. |
 | **Qualities** | [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization*. |
 
 ### UC-08 — Dispatch voice note
