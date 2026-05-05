@@ -54,7 +54,7 @@ Lightweight markup language using plain-text formatting (`# Heading`, `**bold**`
 
 ### Message Type
 
-A category of voice note. The set of categories is fixed by the spec as the `MessageTypeDT` enumeration (see [D2.5](D2-datentypen.md#d25-messagetypedt)): `general`, `youtube`, `diary`, `obsidian`, `todo`. For each value the host configures the human-readable label, icon, GitHub label, optional extra-field shape, and preprocessing prompt; introducing a new category requires both a spec extension (new enum value) and a corresponding host-configuration entry.
+A category of voice note. The set of categories is fixed by the spec as the `MessageTypeDT` enumeration (see [D2.4](D2-datentypen.md#d24-messagetypedt)): `general`, `youtube`, `diary`, `obsidian`, `todo`. The metadata slot inventory per category is also spec-level (see [D2.7](D2-datentypen.md#d27-typespecificdata)). For each value the host configures the human-readable label, icon, GitHub label, and preprocessing prompt; introducing a new category requires both a spec extension (new enum value, new slot row) and a corresponding host-configuration entry.
 
 ### MIME Type
 
@@ -102,7 +102,7 @@ Time-based One-Time Password ([RFC 6238](https://datatracker.ietf.org/doc/html/r
 
 ### ULID
 
-Universally Unique Lexicographically Sortable Identifier ([spec](https://github.com/ulid/spec)). A 26-character string (e.g. `01ARZ3NDEKTSV4RRFFQ69G5FAV`) that encodes a millisecond timestamp + randomness. Unlike UUIDs, ULIDs sort chronologically. ULID is the implementation choice that satisfies the time-sortable `Identifier` semantics defined in D2.3 — for the spec, it is sufficient that any chosen identifier scheme provides time-ordered, opaque values.
+Universally Unique Lexicographically Sortable Identifier ([spec](https://github.com/ulid/spec)). A 26-character string (e.g. `01ARZ3NDEKTSV4RRFFQ69G5FAV`) that encodes a millisecond timestamp + randomness. Unlike UUIDs, ULIDs sort chronologically. ULID is the implementation choice that satisfies the time-sortable `Identifier` semantics defined in D2.2 — for the spec, it is sufficient that any chosen identifier scheme provides time-ordered, opaque values.
 
 ### Voice Note
 

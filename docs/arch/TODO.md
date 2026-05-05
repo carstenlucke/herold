@@ -19,15 +19,16 @@ in full.
   navigable.
 
 - **Technical concept for per-`MessageTypeDT` configuration in
-  `config/herold.php`.** D2.5 fixes the `MessageTypeDT` enumeration
-  (`general`, `youtube`, `diary`, `obsidian`, `todo`); the per-value
-  prompt, GitHub label, and extra-field shape live in
-  `config/herold.php` as host configuration. Document the concrete
+  `config/herold.php`.** D2.4 fixes the `MessageTypeDT` enumeration
+  (`general`, `youtube`, `diary`, `obsidian`, `todo`) and D2.7 fixes
+  the per-value `metadata` slot inventory; only the per-value prompt
+  and GitHub label remain host-configurable. Document the concrete
   shape of that configuration: the array structure per message type,
-  how the prompt template / GitHub label / extra-field declarations are
-  expressed, how `FieldDT` values map to PHP/validation, how the
-  `metadata` JSON shape is derived from the configured slots, and how
-  AF-04 / AF-08 consume the configuration. Should also describe how
-  the spec-level enum is enforced in code (e.g. a PHP enum or
-  validation guard) so config keys cannot drift away from the spec
-  set.
+  how the prompt template and GitHub label are expressed, how the slot
+  types from D2.7 (`URL`, `Date`, `Text`) map to PHP / validation, how
+  the JSON shape persisted in `voice_notes.metadata` is derived from
+  the spec-declared slots (camelCase ↔ snake_case at the storage
+  boundary), and how AF-04 / AF-08 consume the configuration. Should
+  also describe how the spec-level enums and slot inventory are
+  enforced in code (e.g. PHP enums or validation guards) so neither
+  config keys nor stored payloads can drift away from the spec.

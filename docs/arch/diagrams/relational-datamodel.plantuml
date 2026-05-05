@@ -53,11 +53,11 @@ voice_notes ..> NoteStatus : status
 
 note right of voice_notes
   Maps D1 **VoiceNote**.
-  **type**: closed enum **MessageTypeDT** (D2.5):
+  **type**: closed enum **MessageTypeDT** (D2.4):
   general | youtube | diary | obsidian | todo.
   Per-type host bindings (prompt, GitHub label) live
   in ""config/herold.php""; the slot inventory of
-  **metadata** is spec-declared (D2.8).
+  **metadata** is spec-declared (D2.7).
 
   Column-to-D1 mapping:
   - ""metadata"" persists D1 **VoiceNote.metadata**
@@ -67,7 +67,7 @@ note right of voice_notes
     persist D1 **VoiceNote.githubIssueNumber/Url**
 
   ""metadata"" JSON keys per type (snake_case at the
-  storage layer; camelCase in D2.8):
+  storage layer; camelCase in D2.7):
   - youtube:  { youtube_url }
   - diary:    { entry_date }
   - obsidian: { vault }

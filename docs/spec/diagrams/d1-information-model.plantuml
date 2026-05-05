@@ -9,7 +9,8 @@ title Herold — D1 Information Model
 ' Non-trivial domain data types referenced below (Identifier,
 ' OpaqueSecret, NoteStatusDT, IssueState, MessageTypeDT,
 ' TypeSpecificData) are defined in D2. Trivial types (Text, Integer,
-' Boolean, Email, URL, Timestamp, Markdown) are used at face value.
+' Boolean, Date, Email, URL, Timestamp, Markdown) are used at face
+' value.
 
 ' ============================================================
 ' Herold data — local persistence (SQLite database + local file store)
@@ -69,7 +70,7 @@ package "Herold data" <<Frame>> #E8F4FF {
   note right of VoiceNote
     **type** classifies the note (MessageTypeDT enum).
     The slot inventory of **metadata** is fixed per
-    type at spec level (see D2.8). The host configures,
+    type at spec level (see D2.7). The host configures,
     per type, the prompt and the GitHub label written
     on dispatch.
     When the note reaches **sent**, **githubIssueNumber**
