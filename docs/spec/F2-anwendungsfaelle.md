@@ -130,14 +130,13 @@ The four use cases in this group form the supported segment of the business proc
 | **Identifier** | UC-06 |
 | **Name** | Process voice note |
 | **Description** | System turns a recorded audio note into structured content (title, body, optional extra fields) within a single synchronous request. |
-| **Trigger** | Operator triggers processing on the note. |
+| **Trigger** | Operator wants the recorded audio turned into structured note content. |
 | **Actors** | Operator (primary); OpenAI Whisper API (supporting); OpenAI Chat Completion API (supporting). |
 | **Precondition** | A voice note exists at status `recorded`. |
-| **Postcondition** | Note at status `processed` with structured content (title, body, optional extra fields) attached. |
-| **Result** | Persisted structured content attached to the note. The transcript itself is not retained. |
-| **Main scenario** | 1. Operator triggers processing. The whole scenario runs synchronously inside the HTTP request per [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*.<br>2. System transcribes the audio (AF-01).<br>3. System resolves the message type (AF-04) and generates structured content from the transcript (AF-02).<br>4. System sanitises the generated markdown (AF-03) and persists the structured content.<br>5. System transitions the note to status `processed` (AF-06). |
+| **Postcondition** | Note at status `processed` with structured content (title, body, optional extra fields) attached; transcript not retained. |
+| **Main scenario** | 1. Operator triggers processing.<br>2. System transcribes the audio (AF-01).<br>3. System resolves the message type (AF-04) and generates structured content from the transcript (AF-02).<br>4. System sanitises the generated markdown (AF-03) and persists the structured content.<br>5. System transitions the note to status `processed` (AF-06).<br><br>![UC-06 Process voice note — main scenario](diagrams-png/f2-uc06-process-note.png) |
 | **Alternative scenarios** | *Operator leaves the page during processing:* the synchronous request continues; the operator can return and observe the result. |
-| **Exception scenarios** | *Transcription fails:* the note remains `recorded`; the operator is informed and may retry per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*.<br>*Content generation fails:* same as above. |
+| **Exception scenarios** | - *Transcription fails:* the note remains `recorded`; the operator is informed and may retry per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*.<br>- *Content generation fails:* same as above. |
 | **Qualities** | [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*; [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*. |
 
 ### UC-07 — Edit generated content
