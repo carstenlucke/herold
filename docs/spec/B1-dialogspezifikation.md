@@ -23,7 +23,11 @@ Each screen realises one or more use cases from F2; conversely, every operator-m
 
 The system-wide chrome (application header, navigation, sign-out control) is described in B1.4 rather than as a standalone dialogue, since it is composed onto every authenticated screen and carries no goal of its own.
 
-> *Diagram placeholder.* A navigation map covering the transitions between DLG-01 to DLG-10 (and the reachability constraint imposed by the authenticated-session precondition) will be added under `diagrams/b1-navigation.plantuml`.
+![B1 Dialogue Navigation Map — Herold](diagrams-png/b1-navigation.png)
+
+The navigation map shows how the operator moves between dialogues. The two cluster backgrounds separate the unauthenticated *Access* dialogues from those reached through an *Authenticated session*. Per-dialogue fill colour mirrors the encoding used in F2: warm tones for dialogues reachable without an established session, cool tone for dialogues that require one (DLG-05 sits in between — the recovery has succeeded, but no session has yet been established).
+
+Within the authenticated cluster the persistent navigation chrome (side nav on desktop, bottom nav on mobile) is rendered once as a fan-in choice node rather than as N×N edges, since every authenticated screen offers the same four targets — *Dashboard*, *Record*, *Notes*, *Settings* — plus the *Sign out* control that leaves the cluster entirely (see B1.4).
 
 ---
 
