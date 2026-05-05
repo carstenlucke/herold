@@ -13,24 +13,30 @@
     <nav class="side-nav">
       <a href="dashboard.html" class="side-nav-brand">
         <img src="../icons/herold-icon-l-256.png" alt="Herold">
-        Herold
+        <div>
+          <div class="brand-text">Herold</div>
+          <div class="brand-subtitle">VOICE DISPATCH SYSTEM</div>
+        </div>
       </a>
-      <a href="dashboard.html" class="nav-item">
-        <span class="mdi mdi-view-dashboard-outline"></span>
-        Dashboard
-      </a>
-      <a href="recording.html" class="nav-item nav-record">
-        <span class="mdi mdi-microphone"></span>
-        Record
-      </a>
-      <a href="notes.html" class="nav-item active">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
-        Notes
-      </a>
-      <a href="settings.html" class="nav-item">
-        <span class="mdi mdi-cog-outline"></span>
-        Settings
-      </a>
+      <div class="side-nav-divider"></div>
+      <div class="side-nav-list">
+        <a href="dashboard.html" class="nav-item">
+          <span class="mdi mdi-view-dashboard"></span>
+          Dashboard
+        </a>
+        <a href="recording.html" class="nav-item">
+          <span class="mdi mdi-microphone"></span>
+          Record
+        </a>
+        <a href="notes.html" class="nav-item active">
+          <span class="mdi mdi-format-list-bulleted"></span>
+          Notes
+        </a>
+        <a href="settings.html" class="nav-item">
+          <span class="mdi mdi-cog"></span>
+          Settings
+        </a>
+      </div>
       <div class="side-nav-footer">
         <a href="login.html" class="nav-item">
           <span class="mdi mdi-logout"></span>
@@ -41,138 +47,170 @@
 
     <!-- Main Content -->
     <main class="app-main">
+      <div class="content-container">
 
-      <div class="page-header">
-        <h1>Notes</h1>
-        <p>All your voice notes</p>
+        <div class="page-header">
+          <h1>Notes</h1>
+          <p>All your voice notes in one place.</p>
+        </div>
+
+        <!-- Filter bar (Vuetify v-select filled, density compact) -->
+        <div class="d-flex ga-3 mb-4">
+          <div class="field" style="flex: 1; min-height: 48px;">
+            <span class="field-label">Type</span>
+            <select>
+              <option>All</option>
+              <option>General</option>
+              <option>YouTube Transcription</option>
+              <option>Diary</option>
+            </select>
+            <span class="field-suffix mdi mdi-menu-down"></span>
+          </div>
+          <div class="field" style="flex: 1; min-height: 48px;">
+            <span class="field-label">Status</span>
+            <select>
+              <option>All</option>
+              <option>Recorded</option>
+              <option>Processed</option>
+              <option>Sent</option>
+              <option>Error</option>
+            </select>
+            <span class="field-suffix mdi mdi-menu-down"></span>
+          </div>
+        </div>
+
+        <!-- Notes list -->
+        <div class="d-flex flex-column ga-3">
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-message-text"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Refactor authentication middleware</div>
+                <div class="note-card-snippet">Move the API key validation into a dedicated middleware class and add rate limiting per IP address.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-processed"><span class="mdi mdi-check-circle"></span> processed</span>
+                  <span class="meta-time">09 Apr 2026, 14:32</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-youtube"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Transcribe Laravel 13 keynote</div>
+                <div class="note-card-snippet">YouTube video covering new features in Laravel 13, especially the first-party AI SDK integration.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <a href="#" class="github-link-inline" onclick="event.stopPropagation();"><span class="mdi mdi-github"></span>#42</a>
+                  <span class="meta-time">09 Apr 2026, 13:10</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-book-open-variant"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Daily standup notes</div>
+                <div class="note-card-snippet">Finished the data model documentation, started working on the PlantUML diagrams, reviewed the ADRs for consistency.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <a href="#" class="github-link-inline" onclick="event.stopPropagation();"><span class="mdi mdi-github"></span>#41</a>
+                  <span class="meta-time">08 Apr 2026, 09:05</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-message-text"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Voice memo — quick idea</div>
+                <div class="note-card-snippet">Just a quick thought about the recovery mechanism that I want to capture before I forget.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-recorded"><span class="mdi mdi-microphone"></span> recorded</span>
+                  <span class="meta-time">07 Apr 2026, 18:24</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-error"><span class="mdi mdi-message-text"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Fix deployment pipeline</div>
+                <div class="note-card-snippet">The FTP upload script is missing the public/build directory, need to add it to the sync list.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-error"><span class="mdi mdi-alert-circle"></span> error</span>
+                  <span class="meta-time">06 Apr 2026, 11:50</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-youtube"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Vue 3.5 reactivity deep dive</div>
+                <div class="note-card-snippet">Video tutorial about the new reactivity improvements in Vue 3.5, signal-based approach.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <a href="#" class="github-link-inline" onclick="event.stopPropagation();"><span class="mdi mdi-github"></span>#39</a>
+                  <span class="meta-time">05 Apr 2026, 17:42</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-book-open-variant"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Weekly reflection</div>
+                <div class="note-card-snippet">Productive week overall, managed to set up the full Docker development environment and get the spec consolidated.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <a href="#" class="github-link-inline" onclick="event.stopPropagation();"><span class="mdi mdi-github"></span>#37</a>
+                  <span class="meta-time">04 Apr 2026, 22:11</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-center mt-6">
+          <div class="pagination">
+            <button class="pagination-page"><span class="mdi mdi-chevron-left"></span></button>
+            <button class="pagination-page active">1</button>
+            <button class="pagination-page">2</button>
+            <button class="pagination-page">3</button>
+            <button class="pagination-page"><span class="mdi mdi-chevron-right"></span></button>
+          </div>
+        </div>
+
       </div>
-
-      <!-- Filter Bar -->
-      <div class="filter-bar">
-        <select>
-          <option>All Types</option>
-          <option>General</option>
-          <option>YouTube Transcription</option>
-          <option>Diary</option>
-        </select>
-        <select>
-          <option>All Status</option>
-          <option>Recorded</option>
-          <option>Processed</option>
-          <option>Sent</option>
-          <option>Error</option>
-        </select>
-      </div>
-
-      <!-- Note List -->
-      <div class="stack-sm">
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-message-text"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Refactor authentication middleware</div>
-              <div class="note-card-snippet">We need to move the API key validation into a dedicated middleware class and add rate limiting per IP address...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-processed"><span class="mdi mdi-check-circle"></span> Processed</span>
-                <span>2 min ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-youtube" style="color: #ff4444;"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Transcribe Laravel 13 keynote</div>
-              <div class="note-card-snippet">YouTube video covering new features in Laravel 13, especially the first-party AI SDK and Inertia 3 improvements...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                <span>1 hour ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-book-open-variant"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Daily standup notes</div>
-              <div class="note-card-snippet">Finished the data model documentation, started working on the PlantUML diagrams, reviewed the ADRs for consistency...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                <span>Yesterday</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-message-text"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Voice memo — quick idea</div>
-              <div class="note-card-snippet">Just a quick thought about the recovery mechanism that I want to capture before I forget...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-recorded"><span class="mdi mdi-microphone"></span> Recorded</span>
-                <span>Yesterday</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-message-text"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Fix deployment pipeline</div>
-              <div class="note-card-snippet">The FTP upload script is missing the public/build directory, need to add it to the sync list...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-error"><span class="mdi mdi-alert-circle"></span> Error</span>
-                <span>2 days ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-youtube" style="color: #ff4444;"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Vue 3.5 reactivity deep dive</div>
-              <div class="note-card-snippet">Video tutorial about the new reactivity improvements in Vue 3.5, signal-based approach...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                <span>3 days ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-book-open-variant"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Weekly reflection</div>
-              <div class="note-card-snippet">Productive week overall, managed to set up the full Docker development environment and get the spec consolidated...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                <span>4 days ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-      </div>
-
     </main>
 
     <!-- Bottom Navigation (mobile) -->
     <nav class="bottom-nav">
       <a href="dashboard.html" class="nav-item">
-        <span class="mdi mdi-view-dashboard-outline"></span>
+        <span class="mdi mdi-view-dashboard"></span>
         Dashboard
       </a>
       <a href="recording.html" class="nav-item nav-record">
@@ -180,11 +218,11 @@
         Record
       </a>
       <a href="notes.html" class="nav-item active">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
+        <span class="mdi mdi-format-list-bulleted"></span>
         Notes
       </a>
       <a href="settings.html" class="nav-item">
-        <span class="mdi mdi-cog-outline"></span>
+        <span class="mdi mdi-cog"></span>
         Settings
       </a>
     </nav>

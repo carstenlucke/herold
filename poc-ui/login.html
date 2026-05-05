@@ -6,174 +6,154 @@
   <title>Herold — Login</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .login-container {
+    .login-card {
       width: 100%;
       max-width: 380px;
-    }
-
-    .login-brand {
-      text-align: center;
-      margin-bottom: var(--sp-10);
-    }
-
-    .login-brand h1 {
-      font-size: 2rem;
-      letter-spacing: 0.02em;
-    }
-
-    .login-brand .subtitle {
-      font-family: var(--font-label);
-      font-size: 0.75rem;
-      color: var(--c-text-dim);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-top: var(--sp-2);
-    }
-
-    .login-card {
-      background: var(--c-surface-1);
-      border: 1px solid rgba(var(--c-primary-rgb), 0.1);
-      border-radius: var(--radius-lg);
       padding: var(--sp-8);
+      background: var(--c-surface-1);
+      border-radius: var(--radius-xl);
     }
 
-    .login-step {
-      display: none;
-    }
+    .login-step { display: none; }
+    .login-step.active { display: block; }
 
-    .login-step.active {
-      display: block;
-    }
-
-    .step-indicator {
+    .variant-bar {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--sp-3);
-      margin-bottom: var(--sp-6);
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-4);
+      padding: var(--sp-2);
+      background: var(--c-surface-1);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-md);
+      flex-wrap: wrap;
     }
-
-    .step-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--c-surface-3);
+    .variant-btn {
+      padding: var(--sp-1) var(--sp-3);
+      font-family: var(--font-label);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--c-text-dim);
+      background: none;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
       transition: all var(--duration-fast) var(--ease-out);
     }
-
-    .step-dot.active {
-      background: var(--c-primary);
-      box-shadow: 0 0 8px rgba(var(--c-primary-rgb), 0.5);
+    .variant-btn.active {
+      color: var(--c-primary);
+      border-color: rgba(var(--c-primary-rgb), 0.5);
+      background: rgba(var(--c-primary-rgb), 0.06);
     }
-
-    .step-dot.completed {
-      background: var(--c-secondary);
-    }
-
-    .step-line {
-      width: 32px;
-      height: 1px;
-      background: var(--c-border);
-    }
-
-    .totp-input {
-      font-size: 1.75rem;
-      text-align: center;
-      letter-spacing: 0.3em;
+    .variant-label {
       font-family: var(--font-label);
-      font-weight: 600;
-    }
-
-    .login-footer {
-      text-align: center;
-      margin-top: var(--sp-6);
-      font-size: 0.75rem;
+      font-size: 0.6rem;
       color: var(--c-text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: var(--sp-2);
     }
   </style>
 </head>
 <body>
   <div class="layout-fullscreen">
-    <div class="login-container">
+    <div style="width: 100%; max-width: 380px;">
 
-      <!-- Brand -->
-      <div class="login-brand">
-        <img src="../icons/herold-icon-l-256.png" alt="Herold" style="height: 48px; width: auto; display: block; margin: 0 auto var(--sp-4);">
-        <h1 class="text-glow-primary">Herold</h1>
-        <div class="subtitle">Voice Task Dispatcher</div>
+      <!-- Variant selector (poc-only) -->
+      <div class="variant-label">Mockup Variant (POC only)</div>
+      <div class="variant-bar">
+        <button class="variant-btn active" data-step="key">Key</button>
+        <button class="variant-btn" data-step="totp">TOTP</button>
+        <button class="variant-btn" data-step="totp_setup">TOTP Setup</button>
       </div>
 
-      <!-- Login Card -->
-      <div class="login-card">
-        <!-- Step indicator -->
-        <div class="step-indicator">
+      <div class="login-card neon-border-primary">
+
+        <!-- Brand header -->
+        <div class="text-center mb-8">
+          <img src="../icons/herold-icon-l-256.png" alt="Herold" style="height: 48px; width: auto; margin: 0 auto var(--sp-4); display: block;">
+          <div class="brand-text text-h4 mb-1">Herold</div>
+          <div class="brand-subtitle">VOICE DISPATCH SYSTEM</div>
+        </div>
+
+        <!-- Step dots -->
+        <div class="step-dots mb-6">
           <div class="step-dot active" id="dot1"></div>
-          <div class="step-line"></div>
           <div class="step-dot" id="dot2"></div>
         </div>
 
         <!-- Step 1: API Key -->
-        <div class="login-step active" id="step1">
-          <div class="form-group">
-            <label for="apikey">API Key</label>
-            <input type="password" id="apikey" placeholder="Enter your API key" autocomplete="off">
+        <div class="login-step active" id="step-key">
+          <div class="field with-icon focused">
+            <span class="field-icon mdi mdi-key"></span>
+            <span class="field-label">API Key</span>
+            <input type="password" placeholder="" autocomplete="current-password">
           </div>
-          <button class="btn btn-primary btn-block btn-lg" onclick="showStep2()">
-            <span class="mdi mdi-arrow-right"></span>
-            Continue
-          </button>
+
+          <button class="btn btn-outlined btn-block btn-lg mt-4">Verify</button>
         </div>
 
         <!-- Step 2: TOTP -->
-        <div class="login-step" id="step2">
-          <div class="form-group">
-            <label for="totp">Authenticator Code</label>
-            <input type="text" id="totp" class="totp-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+        <div class="login-step" id="step-totp">
+          <p class="text-body-2 text-center mb-4 text-muted">
+            Enter the 6-digit code from your authenticator app.
+          </p>
+
+          <div class="field with-icon">
+            <span class="field-icon mdi mdi-shield-lock"></span>
+            <span class="field-label">TOTP Code</span>
+            <input type="text" inputmode="numeric" maxlength="6" placeholder="">
           </div>
-          <button class="btn btn-primary btn-block btn-lg">
-            <span class="mdi mdi-login"></span>
-            Login
-          </button>
-          <div class="mt-4">
-            <button class="btn btn-ghost btn-block" onclick="showStep1()">
-              <span class="mdi mdi-arrow-left"></span>
-              Back
-            </button>
-          </div>
+
+          <button class="btn btn-outlined btn-block btn-lg mt-4">Login</button>
+          <button class="btn btn-text btn-text-secondary btn-block mt-3 btn-sm">Back</button>
         </div>
 
-        <!-- Error message (hidden by default, toggle for demo) -->
-        <div class="alert alert-error mt-4" id="loginError" style="display: none;">
-          <span class="mdi mdi-alert-circle"></span>
-          <span>Invalid API key. Please try again.</span>
+        <!-- Step 2b: TOTP Setup -->
+        <div class="login-step" id="step-totp_setup">
+          <p class="text-body-2 text-center mb-4 text-muted">
+            Scan this QR code with your authenticator app, then enter the code below.
+          </p>
+
+          <div class="d-flex justify-center mb-4">
+            <div style="background: #fff; padding: var(--sp-3); border-radius: var(--radius-md);">
+              <!-- Stand-in QR placeholder -->
+              <div style="width: 200px; height: 200px; background:
+                conic-gradient(from 0deg, #000 0 25%, #fff 25% 50%, #000 50% 75%, #fff 75% 100%);
+                background-size: 14px 14px;
+                background-repeat: repeat;"></div>
+            </div>
+          </div>
+
+          <div class="field with-icon">
+            <span class="field-icon mdi mdi-shield-check"></span>
+            <span class="field-label">Verification Code</span>
+            <input type="text" inputmode="numeric" maxlength="6">
+          </div>
+
+          <button class="btn btn-outlined btn-block btn-lg mt-4">Verify &amp; Login</button>
+          <button class="btn btn-text btn-text-secondary btn-block mt-3 btn-sm">Back</button>
         </div>
-      </div>
 
-      <div class="login-footer">
-        Secured with API Key + TOTP two-factor authentication
       </div>
-
     </div>
   </div>
 
   <script>
-    function showStep2() {
-      document.getElementById('step1').classList.remove('active');
-      document.getElementById('step2').classList.add('active');
-      document.getElementById('dot1').classList.remove('active');
-      document.getElementById('dot1').classList.add('completed');
-      document.getElementById('dot2').classList.add('active');
-      document.getElementById('totp').focus();
-    }
-
-    function showStep1() {
-      document.getElementById('step2').classList.remove('active');
-      document.getElementById('step1').classList.add('active');
-      document.getElementById('dot2').classList.remove('active');
-      document.getElementById('dot1').classList.remove('completed');
-      document.getElementById('dot1').classList.add('active');
-      document.getElementById('apikey').focus();
-    }
+    const variants = document.querySelectorAll('.variant-btn');
+    variants.forEach(btn => {
+      btn.addEventListener('click', () => {
+        variants.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.dataset.step;
+        document.querySelectorAll('.login-step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step-' + target).classList.add('active');
+        // Step dots
+        document.getElementById('dot1').classList.toggle('active', target === 'key' || target === 'totp' || target === 'totp_setup');
+        document.getElementById('dot2').classList.toggle('active', target === 'totp' || target === 'totp_setup');
+      });
+    });
   </script>
 </body>
 </html>

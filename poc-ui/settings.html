@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Herold — Settings</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+    }
+
+    .settings-key {
+      font-family: var(--font-label);
+      font-size: 0.75rem;
+      color: var(--c-text-muted);
+      min-width: 60px;
+    }
+
+    .settings-card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-3);
+    }
+
+    .settings-card-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--c-text);
+    }
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -13,24 +40,30 @@
     <nav class="side-nav">
       <a href="dashboard.html" class="side-nav-brand">
         <img src="../icons/herold-icon-l-256.png" alt="Herold">
-        Herold
+        <div>
+          <div class="brand-text">Herold</div>
+          <div class="brand-subtitle">VOICE DISPATCH SYSTEM</div>
+        </div>
       </a>
-      <a href="dashboard.html" class="nav-item">
-        <span class="mdi mdi-view-dashboard-outline"></span>
-        Dashboard
-      </a>
-      <a href="recording.html" class="nav-item nav-record">
-        <span class="mdi mdi-microphone"></span>
-        Record
-      </a>
-      <a href="notes.html" class="nav-item">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
-        Notes
-      </a>
-      <a href="settings.html" class="nav-item active">
-        <span class="mdi mdi-cog-outline"></span>
-        Settings
-      </a>
+      <div class="side-nav-divider"></div>
+      <div class="side-nav-list">
+        <a href="dashboard.html" class="nav-item">
+          <span class="mdi mdi-view-dashboard"></span>
+          Dashboard
+        </a>
+        <a href="recording.html" class="nav-item">
+          <span class="mdi mdi-microphone"></span>
+          Record
+        </a>
+        <a href="notes.html" class="nav-item">
+          <span class="mdi mdi-format-list-bulleted"></span>
+          Notes
+        </a>
+        <a href="settings.html" class="nav-item active">
+          <span class="mdi mdi-cog"></span>
+          Settings
+        </a>
+      </div>
       <div class="side-nav-footer">
         <a href="login.html" class="nav-item">
           <span class="mdi mdi-logout"></span>
@@ -41,98 +74,75 @@
 
     <!-- Main Content -->
     <main class="app-main">
+      <div class="content-container">
 
-      <div class="page-header">
-        <h1>Settings</h1>
-        <p>Configuration and system information</p>
-      </div>
-
-      <!-- GitHub -->
-      <div class="section">
-        <div class="section-title">GitHub Connection</div>
-        <div class="card">
-          <div class="info-row">
-            <span class="info-key">Repository</span>
-            <span class="info-value">
-              <span class="mdi mdi-github" style="margin-right: 4px;"></span>
-              carsten/herold-tasks
-            </span>
-          </div>
-          <div class="info-row">
-            <span class="info-key">PAT Status</span>
-            <span class="info-value">
-              <span class="text-secondary" style="font-size: 0.75rem;">
-                <span class="mdi mdi-check-circle"></span> Configured
-              </span>
-            </span>
-          </div>
-          <div class="info-row">
-            <span class="info-key">PAT Token</span>
-            <span class="info-value masked">ghp_••••••••••••••••</span>
-          </div>
-          <div class="info-row">
-            <span class="info-key">PAT Scope</span>
-            <span class="info-value">Issues: Read & Write</span>
-          </div>
+        <div class="page-header">
+          <h1>Settings</h1>
+          <p>Configuration and account management.</p>
         </div>
-      </div>
 
-      <!-- Authentication -->
-      <div class="section">
-        <div class="section-title">Authentication</div>
-        <div class="card">
-          <div class="info-row">
-            <span class="info-key">TOTP Status</span>
-            <span class="info-value">
-              <span class="text-secondary" style="font-size: 0.75rem;">
-                <span class="mdi mdi-shield-check"></span> Enabled
-              </span>
-            </span>
+        <div class="d-flex flex-column ga-4">
+
+          <!-- GitHub -->
+          <div class="card neon-border-primary pa-4">
+            <div class="settings-card-header">
+              <span class="mdi mdi-github text-secondary" style="font-size: 1.375rem;"></span>
+              <span class="settings-card-title">GitHub</span>
+            </div>
+            <div class="d-flex flex-column ga-2">
+              <div class="settings-row">
+                <span class="settings-key">Owner:</span>
+                <code>ca********e</code>
+              </div>
+              <div class="settings-row">
+                <span class="settings-key">Repo:</span>
+                <code>he*******ks</code>
+              </div>
+            </div>
           </div>
-          <div class="info-row">
-            <span class="info-key">API Key</span>
-            <span class="info-value masked">••••••••••••••••</span>
+
+          <!-- Authentication -->
+          <div class="card neon-border-primary pa-4">
+            <div class="settings-card-header">
+              <span class="mdi mdi-shield-lock text-primary" style="font-size: 1.375rem;"></span>
+              <span class="settings-card-title">Authentication</span>
+            </div>
+            <div class="d-flex flex-column ga-2">
+              <div class="settings-row">
+                <span class="mdi mdi-check-circle text-secondary"></span>
+                <span class="text-body-2">TOTP Confirmed</span>
+              </div>
+              <div class="settings-row">
+                <span class="mdi mdi-check-circle text-secondary"></span>
+                <span class="text-body-2">API Key Active</span>
+              </div>
+            </div>
           </div>
-          <div class="info-row">
-            <span class="info-key">Session</span>
-            <span class="info-value">Active (expires in 2h)</span>
+
+          <!-- About -->
+          <div class="card neon-border-primary pa-4">
+            <div class="settings-card-header">
+              <span class="mdi mdi-information text-warning" style="font-size: 1.375rem;"></span>
+              <span class="settings-card-title">About</span>
+            </div>
+            <div class="text-body-2 text-muted">Herold &mdash; Voice Dispatch System</div>
+            <div class="text-caption text-muted mt-1">Version 1.0.0</div>
           </div>
+
+          <!-- Logout -->
+          <button class="btn btn-tonal-error btn-block btn-lg">
+            <span class="mdi mdi-logout"></span>
+            Logout
+          </button>
         </div>
-      </div>
 
-      <!-- About -->
-      <div class="section">
-        <div class="section-title">About</div>
-        <div class="card">
-          <div class="info-row">
-            <span class="info-key">Version</span>
-            <span class="info-value mono">0.1.0-dev</span>
-          </div>
-          <div class="info-row">
-            <span class="info-key">Stack</span>
-            <span class="info-value mono" style="font-size: 0.75rem;">Laravel 13 · Vue 3.5 · Vuetify 4</span>
-          </div>
-          <div class="info-row">
-            <span class="info-key">Processing</span>
-            <span class="info-value">Synchronous</span>
-          </div>
-        </div>
       </div>
-
-      <!-- Logout -->
-      <div class="mt-8">
-        <a href="login.html" class="btn btn-danger btn-block">
-          <span class="mdi mdi-logout"></span>
-          Logout
-        </a>
-      </div>
-
     </main>
 
     <!-- Bottom Navigation (mobile) -->
     <nav class="bottom-nav">
       <a href="dashboard.html" class="nav-item">
-        <span class="mdi mdi-view-dashboard-outline"></span>
+        <span class="mdi mdi-view-dashboard"></span>
         Dashboard
       </a>
       <a href="recording.html" class="nav-item nav-record">
@@ -140,11 +150,11 @@
         Record
       </a>
       <a href="notes.html" class="nav-item">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
+        <span class="mdi mdi-format-list-bulleted"></span>
         Notes
       </a>
       <a href="settings.html" class="nav-item active">
-        <span class="mdi mdi-cog-outline"></span>
+        <span class="mdi mdi-cog"></span>
         Settings
       </a>
     </nav>

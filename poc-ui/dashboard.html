@@ -13,24 +13,30 @@
     <nav class="side-nav">
       <a href="dashboard.html" class="side-nav-brand">
         <img src="../icons/herold-icon-l-256.png" alt="Herold">
-        Herold
+        <div>
+          <div class="brand-text">Herold</div>
+          <div class="brand-subtitle">VOICE DISPATCH SYSTEM</div>
+        </div>
       </a>
-      <a href="dashboard.html" class="nav-item active">
-        <span class="mdi mdi-view-dashboard-outline"></span>
-        Dashboard
-      </a>
-      <a href="recording.html" class="nav-item nav-record">
-        <span class="mdi mdi-microphone"></span>
-        Record
-      </a>
-      <a href="notes.html" class="nav-item">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
-        Notes
-      </a>
-      <a href="settings.html" class="nav-item">
-        <span class="mdi mdi-cog-outline"></span>
-        Settings
-      </a>
+      <div class="side-nav-divider"></div>
+      <div class="side-nav-list">
+        <a href="dashboard.html" class="nav-item active">
+          <span class="mdi mdi-view-dashboard"></span>
+          Dashboard
+        </a>
+        <a href="recording.html" class="nav-item">
+          <span class="mdi mdi-microphone"></span>
+          Record
+        </a>
+        <a href="notes.html" class="nav-item">
+          <span class="mdi mdi-format-list-bulleted"></span>
+          Notes
+        </a>
+        <a href="settings.html" class="nav-item">
+          <span class="mdi mdi-cog"></span>
+          Settings
+        </a>
+      </div>
       <div class="side-nav-footer">
         <a href="login.html" class="nav-item">
           <span class="mdi mdi-logout"></span>
@@ -41,115 +47,159 @@
 
     <!-- Main Content -->
     <main class="app-main">
+      <div class="content-container">
 
-      <!-- Page Header -->
-      <div class="page-header">
-        <h1>Dashboard</h1>
-        <p>Overview of your voice notes and tickets</p>
-      </div>
-
-      <!-- Stats -->
-      <div class="grid-stats mb-6">
-        <div class="card stat-card">
-          <div class="stat-value text-tertiary">3</div>
-          <div class="stat-label">Open Notes</div>
+        <!-- Page Header -->
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Overview of your voice notes and processing status.</p>
         </div>
-        <div class="card stat-card">
-          <div class="stat-value text-glow-secondary">12</div>
-          <div class="stat-label">Sent Tickets</div>
+
+        <!-- Stats grid -->
+        <div class="stat-grid mb-6">
+          <div class="card neon-border-primary pa-4">
+            <div class="stat-row">
+              <div class="icon-avatar icon-avatar-44 icon-avatar-primary"><span class="mdi mdi-note-multiple"></span></div>
+              <div>
+                <div class="stat-value text-primary">17</div>
+                <div class="stat-label">Total Notes</div>
+              </div>
+            </div>
+          </div>
+          <div class="card neon-border-primary pa-4">
+            <div class="stat-row">
+              <div class="icon-avatar icon-avatar-44 icon-avatar-warning"><span class="mdi mdi-microphone"></span></div>
+              <div>
+                <div class="stat-value text-warning">2</div>
+                <div class="stat-label">Recorded</div>
+              </div>
+            </div>
+          </div>
+          <div class="card neon-border-primary pa-4">
+            <div class="stat-row">
+              <div class="icon-avatar icon-avatar-44 icon-avatar-secondary"><span class="mdi mdi-check-circle"></span></div>
+              <div>
+                <div class="stat-value text-secondary">3</div>
+                <div class="stat-label">Processed</div>
+              </div>
+            </div>
+          </div>
+          <div class="card neon-border-primary pa-4">
+            <div class="stat-row">
+              <div class="icon-avatar icon-avatar-44 icon-avatar-primary"><span class="mdi mdi-send-check"></span></div>
+              <div>
+                <div class="stat-value text-primary">11</div>
+                <div class="stat-label">Sent</div>
+              </div>
+            </div>
+          </div>
+          <div class="card neon-border-primary pa-4">
+            <div class="stat-row">
+              <div class="icon-avatar icon-avatar-44 icon-avatar-error"><span class="mdi mdi-alert-circle"></span></div>
+              <div>
+                <div class="stat-value text-error">1</div>
+                <div class="stat-label">Errors</div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Quick Action -->
-      <a href="recording.html" class="btn btn-primary btn-block btn-lg mb-6">
-        <span class="mdi mdi-microphone"></span>
-        New Recording
-      </a>
+        <!-- Quick action -->
+        <button class="btn btn-outlined btn-block btn-lg mb-8" onclick="location.href='recording.html'">
+          <span class="mdi mdi-microphone"></span>
+          New Recording
+        </button>
 
-      <!-- Recent Notes -->
-      <div class="section">
-        <div class="section-title">Recent Notes</div>
-        <div class="stack-sm">
+        <!-- Recent notes -->
+        <h2 class="section-h2">Recent Notes</h2>
+        <div class="d-flex flex-column ga-3">
 
-          <a href="note-show.html" class="card card-interactive">
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
             <div class="note-card">
-              <div class="note-card-icon"><span class="mdi mdi-message-text"></span></div>
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-message-text"></span></div>
               <div class="note-card-body">
                 <div class="note-card-title">Refactor authentication middleware</div>
-                <div class="note-card-snippet">We need to move the API key validation into a dedicated middleware class and add rate limiting...</div>
+                <div class="note-card-snippet">Move the API key validation into a dedicated middleware class and add rate limiting per IP address.</div>
                 <div class="note-card-meta">
-                  <span class="badge badge-processed"><span class="mdi mdi-check-circle"></span> Processed</span>
-                  <span>2 min ago</span>
+                  <span class="status-chip status-chip-processed"><span class="mdi mdi-check-circle"></span> processed</span>
+                  <span class="meta-time">09 Apr 2026, 14:32</span>
                 </div>
               </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
             </div>
           </a>
 
-          <a href="note-show.html" class="card card-interactive">
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
             <div class="note-card">
-              <div class="note-card-icon"><span class="mdi mdi-youtube" style="color: #ff4444;"></span></div>
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-youtube"></span></div>
               <div class="note-card-body">
                 <div class="note-card-title">Transcribe Laravel 13 keynote</div>
-                <div class="note-card-snippet">YouTube video about new features in Laravel 13, especially the AI SDK integration...</div>
+                <div class="note-card-snippet">YouTube video covering new features in Laravel 13, especially the first-party AI SDK integration.</div>
                 <div class="note-card-meta">
-                  <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                  <span>1 hour ago</span>
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <a href="#" class="github-link-inline" onclick="event.stopPropagation();"><span class="mdi mdi-github"></span>#42</a>
+                  <span class="meta-time">09 Apr 2026, 13:10</span>
                 </div>
               </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
             </div>
           </a>
 
-          <a href="note-show.html" class="card card-interactive">
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
             <div class="note-card">
-              <div class="note-card-icon"><span class="mdi mdi-book-open-variant"></span></div>
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-book-open-variant"></span></div>
               <div class="note-card-body">
                 <div class="note-card-title">Daily standup notes</div>
-                <div class="note-card-snippet">Finished the data model documentation, started working on the PlantUML diagrams...</div>
+                <div class="note-card-snippet">Finished the data model documentation, started working on the PlantUML diagrams, reviewed the ADRs.</div>
                 <div class="note-card-meta">
-                  <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                  <span>Yesterday</span>
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <a href="#" class="github-link-inline" onclick="event.stopPropagation();"><span class="mdi mdi-github"></span>#41</a>
+                  <span class="meta-time">08 Apr 2026, 09:05</span>
                 </div>
               </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
             </div>
           </a>
 
-          <a href="note-show.html" class="card card-interactive">
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
             <div class="note-card">
-              <div class="note-card-icon"><span class="mdi mdi-message-text"></span></div>
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-message-text"></span></div>
               <div class="note-card-body">
                 <div class="note-card-title">Voice memo — quick idea</div>
-                <div class="note-card-snippet">Just recorded, not yet processed...</div>
+                <div class="note-card-snippet">Just a quick thought about the recovery mechanism that I want to capture before I forget.</div>
                 <div class="note-card-meta">
-                  <span class="badge badge-recorded"><span class="mdi mdi-microphone"></span> Recorded</span>
-                  <span>Yesterday</span>
+                  <span class="status-chip status-chip-recorded"><span class="mdi mdi-microphone"></span> recorded</span>
+                  <span class="meta-time">07 Apr 2026, 18:24</span>
                 </div>
               </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
             </div>
           </a>
 
-          <a href="note-show.html" class="card card-interactive">
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
             <div class="note-card">
-              <div class="note-card-icon"><span class="mdi mdi-message-text"></span></div>
+              <div class="icon-avatar icon-avatar-40 icon-avatar-error"><span class="mdi mdi-message-text"></span></div>
               <div class="note-card-body">
                 <div class="note-card-title">Fix deployment pipeline</div>
-                <div class="note-card-snippet">The FTP upload script is missing the public/build directory...</div>
+                <div class="note-card-snippet">The FTP upload script is missing the public/build directory, need to add it to the sync list.</div>
                 <div class="note-card-meta">
-                  <span class="badge badge-error"><span class="mdi mdi-alert-circle"></span> Error</span>
-                  <span>2 days ago</span>
+                  <span class="status-chip status-chip-error"><span class="mdi mdi-alert-circle"></span> error</span>
+                  <span class="meta-time">06 Apr 2026, 11:50</span>
                 </div>
               </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
             </div>
           </a>
 
         </div>
-      </div>
 
+      </div>
     </main>
 
     <!-- Bottom Navigation (mobile) -->
     <nav class="bottom-nav">
       <a href="dashboard.html" class="nav-item active">
-        <span class="mdi mdi-view-dashboard-outline"></span>
+        <span class="mdi mdi-view-dashboard"></span>
         Dashboard
       </a>
       <a href="recording.html" class="nav-item nav-record">
@@ -157,11 +207,11 @@
         Record
       </a>
       <a href="notes.html" class="nav-item">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
+        <span class="mdi mdi-format-list-bulleted"></span>
         Notes
       </a>
       <a href="settings.html" class="nav-item">
-        <span class="mdi mdi-cog-outline"></span>
+        <span class="mdi mdi-cog"></span>
         Settings
       </a>
     </nav>
