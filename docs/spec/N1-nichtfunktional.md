@@ -187,9 +187,9 @@ Both factors of the sign-in flow (UC-01) and the recovery channel (UC-03) must e
 Audio uploads (UC-05) must be validated server-side:
 - Maximum file size: 25 MB.
 - Accepted formats: the common audio container/codec combinations produced by browser audio capture.
-- Rate limit: max 10 uploads per hour.
+- Rate limit: max 20 uploads per hour.
 
-**Fit Criterion:** An upload exceeding 25 MB or in an unaccepted format is rejected before the note is persisted. The 11th upload within one hour from the same operator is rejected.
+**Fit Criterion:** An upload exceeding 25 MB or in an unaccepted format is rejected before the note is persisted. The 21st upload within one hour from the same operator is rejected.
 
 **NFR-15a-04: Recovery Token Expiry**
 
