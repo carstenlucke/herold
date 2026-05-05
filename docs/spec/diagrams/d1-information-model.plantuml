@@ -59,7 +59,7 @@ package "Herold data" <<Frame>> #E8F4FF {
     + transcript : Text [0..1]
     + processedTitle : Text [0..1]
     + processedBody : Markdown [0..1]
-    + extraFields : TypeSpecificData [0..1]
+    + metadata : TypeSpecificData [0..1]
     + githubIssueNumber : Integer [0..1]
     + githubIssueUrl : URL [0..1]
     + errorMessage : Text [0..1]
@@ -68,9 +68,10 @@ package "Herold data" <<Frame>> #E8F4FF {
   }
   note right of VoiceNote
     **type** classifies the note (MessageTypeDT enum).
-    The host configures, per type, the prompt, the
-    extra-field shape for **extraFields**, and the
-    label that lands on the dispatched issue.
+    The slot inventory of **metadata** is fixed per
+    type at spec level (see D2.8). The host configures,
+    per type, the prompt and the GitHub label written
+    on dispatch.
     When the note reaches **sent**, **githubIssueNumber**
     and **githubIssueUrl** point to the created issue.
   end note

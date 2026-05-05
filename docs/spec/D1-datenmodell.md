@@ -32,7 +32,7 @@ The central entity. One row per captured voice note from recording through dispa
 | `transcript` | Text [0..1] | Set after AF-01 succeeds. |
 | `processedTitle` | Text [0..1] | Set after AF-02; editable in UC-07. |
 | `processedBody` | Markdown [0..1] | Set after AF-02; editable in UC-07; sanitised per [NFR-15b-04](N1-nichtfunktional.md). |
-| `extraFields` | TypeSpecificData [0..1] | Shape declared per `MessageTypeDT` value by host configuration; validated by AF-08. |
+| `metadata` | TypeSpecificData [0..1] | Per-`MessageTypeDT` named-slot record. Slot inventory and slot types are declared at spec level — see [D2.8](D2-datentypen.md#d28-typespecificdata). Validated by AF-08. |
 | `githubIssueNumber` | Integer [0..1] | Refers to `GitHubIssue.number`. Repository-scoped. Populated together with `githubIssueUrl` when the note reaches `sent`. |
 | `githubIssueUrl` | URL [0..1] | Refers to `GitHubIssue.url`. Stable navigable URL of the dispatched issue. |
 | `errorMessage` | Text [0..1] | Last failure reason; cleared on successful retry. |
@@ -120,7 +120,7 @@ The repository is fixed at the host level by configuration. Issues live within t
 |-------|-----------------|
 | [F1](F1-geschaeftsprozesse.md) | Activities A3, A6, A7, A8 write to `VoiceNote`; A8 populates `githubIssueNumber` / `githubIssueUrl` and creates the `GitHubIssue`. |
 | [F2](F2-anwendungsfaelle.md) | Every UC reads or writes one or more entities here. UC-11 is the only deleter. |
-| [F3](F3-anwendungsfunktionen.md) | AF-01 populates `transcript`; AF-02/AF-03 populate `processedTitle`/`processedBody`; AF-04 resolves the configuration bound to a `MessageTypeDT`; AF-05 composes the `GitHubIssue`; AF-06 governs `NoteStatusDT` transitions; AF-08 validates `extraFields` against the host-configured shape for the bound `MessageTypeDT`. |
+| [F3](F3-anwendungsfunktionen.md) | AF-01 populates `transcript`; AF-02/AF-03 populate `processedTitle`/`processedBody`; AF-04 resolves the configuration bound to a `MessageTypeDT`; AF-05 composes the `GitHubIssue`; AF-06 governs `NoteStatusDT` transitions; AF-08 validates `metadata` against the [D2.8](D2-datentypen.md#d28-typespecificdata) slot inventory for the bound `MessageTypeDT`. |
 | [N1](N1-nichtfunktional.md) | Two-factor authentication scheme on `Operator` ([NFR-15a-01](N1-nichtfunktional.md)); audio size limits ([NFR-15a-03](N1-nichtfunktional.md)); content sanitisation for `processedBody` and the dispatched body ([NFR-15b-04](N1-nichtfunktional.md)); time-to-live for `RecoveryToken` ([NFR-15a-04](N1-nichtfunktional.md)). |
 | [P1](P1-constraints.md) | [CON-3a-04](P1-constraints.md) *Single-User System* limits `Operator` to one instance; [NG-03](P1-ziele-rahmenbedingungen.md) excludes GitHub-side lifecycle from this model. |
 | [P2](P2-architekturueberblick.md) | Identifies the storage realms (local DB, audio store, GitHub) the two D1 data stores correspond to. |

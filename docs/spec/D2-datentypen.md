@@ -26,7 +26,7 @@ Catalogue entries are listed alphabetically; the section numbering follows that 
 
 ## D2.2 FieldDT
 
-*(FieldDT = field data type.)* Enumeration of permitted attribute types for entries in `VoiceNote.extraFields` ([D1.1](D1-datenmodell.md#voicenote)). The host configures, per `MessageTypeDT` value, which named extra-field slots exist and which `FieldDT` each one carries; AF-08 validates the supplied data against that configured shape.
+*(FieldDT = field data type.)* Enumeration of permitted slot types for entries in `VoiceNote.metadata` ([D1.1](D1-datenmodell.md#voicenote)). The slot inventory per `MessageTypeDT` value is declared in [D2.8](#d28-typespecificdata); each slot is typed by one `FieldDT`. AF-08 validates the supplied data against that inventory.
 
 | Value | Permits |
 |-------|---------|
@@ -83,7 +83,7 @@ Mirrors the lifecycle state of a `GitHubIssue` ([D1.2](D1-datenmodell.md#githubi
 | `obsidian` | Note destined for an Obsidian vault. |
 | `todo` | Task or to-do item, optionally with a deadline. |
 
-**Per-value configuration.** Host configuration supplies, for each value, the prompt used by AF-02, the shape of `VoiceNote.extraFields` enforced by AF-08, and the GitHub label written by AF-05. Resolution is performed by AF-04. The configured properties are visible to the operator via UC-12.
+**Per-value bindings.** The slot inventory for `VoiceNote.metadata` is fixed by [D2.8](#d28-typespecificdata) per value. Host configuration supplies, for each value, the prompt used by AF-02 and the GitHub label written by AF-05; resolution is performed by AF-04. The configured properties are visible to the operator via UC-12.
 
 **Equality & ordering.** Equality only.
 
@@ -127,15 +127,27 @@ A type tag for credential or secret material (`Operator.apiKeyHash`, `Operator.t
 
 ## D2.8 TypeSpecificData
 
-A record whose **shape is declared by host configuration for the bound `MessageTypeDT`** rather than fixed at the D1 level. Used as the type of `VoiceNote.extraFields`.
+A structured record of named typed slots whose **slot inventory is fixed at spec level per `MessageTypeDT`** ([D2.5](#d25-messagetypedt)). Used as the type of `VoiceNote.metadata` ([D1.1](D1-datenmodell.md#voicenote)).
 
 **Shape rules.**
 
-- Each named slot declared for the bound `MessageTypeDT` carries one value of a declared `FieldDT`.
-- A slot is required iff its declaration marks it as required; optional slots may be absent.
+- Each declared slot for the bound `MessageTypeDT` carries one value of a declared `FieldDT`.
+- A slot is *required* iff marked so in the inventory; *optional* slots may be absent.
 - No slots beyond those declared for the bound `MessageTypeDT` are permitted.
 
-**Validation.** Performed by AF-08 on capture (UC-05) and on edit (UC-07) against the shape configured for `VoiceNote.type`.
+**Slot inventory per `MessageTypeDT`.**
+
+| `MessageTypeDT` | Slot | `FieldDT` | Required | Meaning |
+|-----------------|------|-----------|----------|---------|
+| `general` | — | — | — | No slots. |
+| `youtube` | `youtubeUrl` | `url` | yes | YouTube video the note refers to. |
+| `diary` | `entryDate` | `date` | no | Calendar date the entry is associated with; resolved from speech where possible (AF-02). |
+| `obsidian` | `vault` | `text` | no | Target Obsidian vault name; resolved from speech where possible (AF-02). |
+| `todo` | `deadline` | `date` | no | Due date for the task; resolved from speech where possible (AF-02). |
+
+This inventory is closed; introducing or removing a slot is a spec change. Wire and storage representation of the record (column type, serialization format) is an implementation concern and not described here.
+
+**Validation.** Performed by AF-08 on capture (UC-05) and on edit (UC-07) against the inventory above for the bound `VoiceNote.type`.
 
 **Equality.** Two values are equal iff their declared slots have equal values under the equality of their respective `FieldDT`s.
 
@@ -160,6 +172,6 @@ The following multiplicity and composition notations are used in D1 and D2 attri
 | Block | Relevance to D2 |
 |-------|-----------------|
 | [D1](D1-datenmodell.md) | Every type in this catalogue appears as an attribute type in at least one D1 entity. |
-| [F3](F3-anwendungsfunktionen.md) | AF-06 transitions `NoteStatusDT`; AF-04 resolves the configuration bound to a `MessageTypeDT` value; AF-08 validates `TypeSpecificData` against the configured shape (named slots and their `FieldDT`s) for the bound `MessageTypeDT`. |
+| [F3](F3-anwendungsfunktionen.md) | AF-06 transitions `NoteStatusDT`; AF-04 resolves the host bindings (prompt, GitHub label) for a `MessageTypeDT` value; AF-08 validates `TypeSpecificData` against the spec-declared slot inventory ([D2.8](#d28-typespecificdata)) for the bound `MessageTypeDT`. |
 | [N1](N1-nichtfunktional.md) | Handling rules for `OpaqueSecret` are reinforced by content-sanitisation and rate-limiting NFRs. |
 | [E2](E2-glossar.md) | Glossary entries for *fine-grained PAT*, *message type*. |
