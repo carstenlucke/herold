@@ -201,7 +201,7 @@ The four use cases in this group form the supported segment of the business proc
 | **Precondition** | Authenticated session; the selected note exists. |
 | **Postcondition** | No state change. |
 | **Main scenario** | 1. System renders the note's detail view: status, type, timestamps, structured content (if any), issue reference (if `sent`).<br>2. Operator may stream the audio recording. |
-| **Alternative scenarios** | - *Operator triggers processing:* continues with UC-06 *Process voice note* (status `recorded`).<br>- *Operator edits the content:* continues with UC-07 *Edit generated content* (status `processed`).<br>- *Operator dispatches the note:* continues with UC-08 *Dispatch voice note* (status `processed`).<br>- *Operator triggers delete:* continues with UC-11 *Delete a voice note* (any status). |
+| **Alternative scenarios** | - *Operator triggers processing:* continues with [UC-06](#uc-06--process-voice-note) *Process voice note* (status `recorded`).<br>- *Operator edits the content:* continues with [UC-07](#uc-07--edit-generated-content) *Edit generated content* (status `processed`).<br>- *Operator dispatches the note:* continues with [UC-08](#uc-08--dispatch-voice-note) *Dispatch voice note* (status `processed`).<br>- *Operator triggers delete:* continues with [UC-11](#uc-11--delete-a-voice-note) *Delete a voice note* (any status). |
 
 ### UC-11 — Delete a voice note
 
