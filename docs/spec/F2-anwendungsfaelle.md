@@ -68,7 +68,7 @@ The constraint note attached to the *Herold* boundary records the system-wide pr
 | **Postcondition** | A confirmed TOTP secret is bound to the account (`Operator.totpSecret` and `Operator.totpConfirmedAt` populated). |
 | **Result** | Fresh TOTP secret bound to the account, captured by the operator in an authenticator app of their choice. |
 | **Main scenario** | 1. System generates a fresh TOTP secret and binds it provisionally to the account.<br>2. System displays the secret in a form an authenticator app can capture (scannable provisioning information and the raw secret as fallback).<br>3. Operator registers the secret in their authenticator app.<br>4. Operator enters a confirmation code produced by the authenticator from the new secret.<br>5. System verifies the confirmation code and marks the secret confirmed.<br><br>![UC-02 Enrol second factor — main scenario](diagrams-png/f2-uc02-enrol-totp.png) |
-| **Exception scenarios** | *Confirmation code wrong:* operator retries; the secret remains provisional and no confirmed TOTP secret is bound.<br>*Operator abandons setup before confirming:* the unconfirmed secret is replaced on the next enrolment attempt; no confirmed TOTP secret is bound until step 5 succeeds. |
+| **Exception scenarios** | - *Confirmation code wrong:* operator retries; the secret remains provisional and no confirmed TOTP secret is bound.<br>- *Operator abandons setup before confirming:* the unconfirmed secret is replaced on the next enrolment attempt; no confirmed TOTP secret is bound until step 5 succeeds. |
 | **Qualities** | No backup codes are issued. The recovery path for a lost authenticator is UC-03 (out-of-band file token), not a stored backup-code list. |
 
 ### UC-03 — Recover access
