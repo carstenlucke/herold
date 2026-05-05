@@ -61,8 +61,8 @@ The reference description of the building-block model is in [`SIEDERSLEBEN.md`](
 
 | Block | Title | Status | File |
 |-------|-------|--------|------|
-| D1 | Data Model | 🛠 | `D1-datenmodell.md` |
-| D2 | Data Type Catalogue | 🛠 | `D2-datentypen.md` |
+| D1 | Data Model | ✅ | [`D1-datenmodell.md`](D1-datenmodell.md) |
+| D2 | Data Type Catalogue | ✅ | [`D2-datentypen.md`](D2-datentypen.md) |
 
 ### 4. User Interface
 
