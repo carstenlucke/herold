@@ -101,11 +101,15 @@ OPENAI -[hidden]down- GH
 
 ' System-wide precondition (cheaper than drawing 9 <<precedes>> edges
 ' from UC-01 into the Note flow, Management and Configuration sections).
-note bottom of HEROLD
+' Rendered as a positioned legend so it lands in the empty top-left
+' corner of the canvas, next to the OpenAI/GitHub Issues column, rather
+' than as a `note ... of HEROLD` whose connector line would wrap around
+' the diagram.
+legend top left
   **Authentication state (use-case fill colour)**
   <back:#FFB07C>   </back> reachable without an established session — UC-01, UC-02, UC-03
   <back:#99D9C0>   </back> requires an authenticated session — all other use cases
   (the authenticated session is the postcondition of UC-01).
-end note
+end legend
 
 @enduml
