@@ -1,0 +1,31 @@
+@startuml f2-uc05-capture-note
+!theme plain
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam SequenceLifeLineBorderColor #333333
+skinparam SequenceParticipantBorderColor #333333
+skinparam SequenceParticipantBackgroundColor #F5F5F5
+skinparam SequenceReferenceBackgroundColor #F0E8FF
+skinparam SequenceGroupBodyBackgroundColor transparent
+
+title Herold — UC-05 Capture voice note (main scenario)
+
+actor    "Operator" as OP
+participant "Herold"  as SYS
+
+OP  ->  SYS : open recording screen
+SYS --> OP  : recording screen
+
+OP  ->  SYS : select message type
+opt type declares extra fields //(per AF-04)//
+  SYS --> OP  : reveal extra input fields
+  OP  ->  SYS : fill required fields
+end
+
+OP  ->  OP  : record audio in the browser
+OP  ->  SYS : submit recording
+SYS ->  SYS : validate input //(AF-08)//\nand audio //(NFR-15a-03)//
+SYS ->  SYS : persist audio + note record,\ntransition to ""recorded"" //(AF-06)//
+SYS --> OP  : confirmation
+
+@enduml
