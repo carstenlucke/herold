@@ -113,7 +113,7 @@ A structured record of named typed slots whose **slot inventory is fixed at spec
 **Shape rules.**
 
 - Each declared slot for the bound `MessageTypeDT` carries one value of its declared type.
-- A slot is *required* iff marked so in the inventory; *optional* slots may be absent.
+- A slot is *required* [iff](E2-glossar.md#iff) marked so in the inventory; *optional* slots may be absent.
 - No slots beyond those declared for the bound `MessageTypeDT` are permitted.
 
 **Slot inventory per `MessageTypeDT`.** Slot types are trivial standard types from D2's preamble.
@@ -130,7 +130,7 @@ This inventory is closed; introducing or removing a slot is a spec change. Wire 
 
 **Validation.** Performed by AF-08 on capture (UC-05) and on edit (UC-07) against the inventory above for the bound `VoiceNote.type`.
 
-**Equality.** Two values are equal iff their declared slots have equal values under the equality of their respective slot types.
+**Equality.** Two values are equal [iff](E2-glossar.md#iff) their declared slots have equal values under the equality of their respective slot types.
 
 ---
 

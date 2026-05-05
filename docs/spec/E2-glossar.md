@@ -32,6 +32,10 @@ The external artefact produced by Herold's pipeline. The sole ticket store; Hero
 
 This project. A single-user, voice-to-issue dispatcher built as a Laravel monolith with an Inertia + Vue UI.
 
+### iff
+
+Mathematical shorthand for *if and only if* — a biconditional. "*A* iff *B*" means *A* implies *B* and *B* implies *A*. Used in D2 to state slot-presence conditions (e.g. "a slot is required iff marked required") so the rule is symmetric: the property holds in exactly those cases, not merely in those cases.
+
 ### Inertia.js
 
 A protocol that connects a server-side framework (Laravel) with a client-side SPA framework (Vue). Renders Vue components as "pages" but uses Laravel routing and controllers — no separate API layer needed for the browser UI. See ADR-001.
