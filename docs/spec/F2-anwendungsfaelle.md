@@ -61,14 +61,14 @@ The constraint note attached to the *Herold* boundary records the system-wide pr
 |---------|---------|
 | **Identifier** | UC-02 |
 | **Name** | Enrol second factor |
-| **Description** | Operator binds a TOTP secret to the account so that subsequent sign-ins (UC-01) can succeed. |
-| **Trigger** | Initial setup, or follow-up to UC-03 after a recovery. |
+| **Description** | Operator binds a confirmed TOTP secret to the account, so the second factor is available to UC-01 from this point on (including the in-flight first sign-in, if UC-02 was reached as part of it). |
+| **Trigger** | UC-01 step 4 found no confirmed TOTP secret bound to the account (first sign-in), or UC-03 has just completed and the second factor must be re-enrolled before normal use resumes. |
 | **Actors** | Operator (primary). |
-| **Precondition** | Operator has presented the first factor (API key) successfully; no TOTP secret is currently bound to the account, or a recovery flow has invalidated the previous one. |
-| **Postcondition** | TOTP is enrolled (`Operator.totpSecret` and `Operator.totpConfirmedAt` populated); UC-01 can succeed. |
+| **Precondition** | The operator has been authenticated by the calling use case (first factor verified within an in-flight UC-01, or UC-03 has just established a session) and no confirmed TOTP secret is currently bound to the account. |
+| **Postcondition** | A confirmed TOTP secret is bound to the account (`Operator.totpSecret` and `Operator.totpConfirmedAt` populated). |
 | **Result** | Fresh TOTP secret bound to the account, captured by the operator in an authenticator app of their choice. |
-| **Main scenario** | 1. System generates a fresh TOTP secret and binds it provisionally to the account.<br>2. System displays the secret in a form an authenticator app can capture (scannable provisioning information and the raw secret as fallback).<br>3. Operator registers the secret in their authenticator app.<br>4. Operator enters a confirmation code produced by the authenticator from the new secret.<br>5. System verifies the confirmation code and marks the secret confirmed; from this point on UC-01 succeeds with the second factor. |
-| **Exception scenarios** | *Confirmation code wrong:* operator retries; the secret remains provisional and is not yet usable in UC-01.<br>*Operator abandons setup before confirming:* the unconfirmed secret is replaced on the next attempt; UC-01 cannot succeed until a confirmation code completes step 5. |
+| **Main scenario** | 1. System generates a fresh TOTP secret and binds it provisionally to the account.<br>2. System displays the secret in a form an authenticator app can capture (scannable provisioning information and the raw secret as fallback).<br>3. Operator registers the secret in their authenticator app.<br>4. Operator enters a confirmation code produced by the authenticator from the new secret.<br>5. System verifies the confirmation code and marks the secret confirmed.<br><br>![UC-02 Enrol second factor — main scenario](diagrams-png/f2-uc02-enrol-totp.png) |
+| **Exception scenarios** | *Confirmation code wrong:* operator retries; the secret remains provisional and no confirmed TOTP secret is bound.<br>*Operator abandons setup before confirming:* the unconfirmed secret is replaced on the next enrolment attempt; no confirmed TOTP secret is bound until step 5 succeeds. |
 | **Qualities** | No backup codes are issued. The recovery path for a lost authenticator is UC-03 (out-of-band file token), not a stored backup-code list. |
 
 ### UC-03 — Recover access

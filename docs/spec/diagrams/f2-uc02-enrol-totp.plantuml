@@ -1,0 +1,23 @@
+@startuml f2-uc02-enrol-totp
+!theme plain
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam SequenceLifeLineBorderColor #333333
+skinparam SequenceParticipantBorderColor #333333
+skinparam SequenceParticipantBackgroundColor #F5F5F5
+skinparam SequenceReferenceBackgroundColor #F0E8FF
+skinparam SequenceGroupBodyBackgroundColor transparent
+
+title Herold — UC-02 Enrol second factor (main scenario)
+
+actor    "Operator" as OP
+participant "Herold"  as SYS
+
+SYS ->  SYS : generate fresh TOTP secret\nand bind provisionally to ""Operator.totpSecret""
+SYS --> OP  : show provisioning info\n//(scannable + raw secret fallback)//
+
+OP  ->  OP  : register secret in authenticator app
+OP  ->  SYS : enter confirmation code\nproduced by the authenticator
+SYS ->  SYS : verify code and mark secret confirmed\n(set ""Operator.totpConfirmedAt"")
+
+@enduml
