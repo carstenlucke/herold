@@ -228,12 +228,13 @@ The four use cases in this group form the supported segment of the business proc
 |---------|---------|
 | **Identifier** | UC-12 |
 | **Name** | View settings |
-| **Description** | Operator inspects the active read-only configuration (configured message types, target GitHub repository, active OpenAI model identifier). |
+| **Description** | Operator inspects the active read-only system information: the GitHub dispatch target (owner and repository), the operator's authentication state (second factor confirmed, API key active), and the product identification (name, version). |
 | **Trigger** | Operator wants to inspect the active configuration. |
 | **Actors** | Operator (primary). |
 | **Precondition** | Authenticated session. |
 | **Postcondition** | No state change. |
 | **Main scenario** | 1. Operator opens the settings screen.<br>2. System renders the active configuration in a read-only form. |
+| **Alternative scenarios** | - *Operator triggers logout:* continues with [UC-04](#uc-04--sign-out) *Sign out*. |
 | **Qualities** | Settings are read-only; configuration changes happen out-of-band on the host (per P1 constraints and S3 deployment). |
 
 ---
