@@ -1,0 +1,25 @@
+@startuml f2-uc11-delete-note
+!theme plain
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam SequenceLifeLineBorderColor #333333
+skinparam SequenceParticipantBorderColor #333333
+skinparam SequenceParticipantBackgroundColor #F5F5F5
+skinparam SequenceReferenceBackgroundColor #F0E8FF
+skinparam SequenceGroupBodyBackgroundColor transparent
+
+title Herold — UC-11 Delete a voice note (main scenario)
+
+actor    "Operator" as OP
+participant "Herold"  as SYS
+
+OP  ->  SYS : open note detail view //(UC-10)//
+SYS --> OP  : note detail view
+
+OP  ->  SYS : trigger delete
+SYS --> OP  : confirmation prompt
+OP  ->  SYS : confirm
+SYS ->  SYS : remove note record,\nremove audio document //(AF-07)//
+SYS --> OP  : confirmation
+
+@enduml

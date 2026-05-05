@@ -20,7 +20,7 @@ Each use case is described with a tabular specification template adopted from Po
 | [UC-08](#uc-08--dispatch-voice-note) | Dispatch voice note | Note flow | A8 | ✅ |
 | [UC-09](#uc-09--browse-voice-notes) | Browse voice notes | Management | — (cross-cutting) | ✅ |
 | [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) | ✅ |
-| [UC-11](#uc-11--delete-a-voice-note) | Delete a voice note | Management | — (cross-cutting) | ⬜ |
+| [UC-11](#uc-11--delete-a-voice-note) | Delete a voice note | Management | — (cross-cutting) | ✅ |
 | [UC-12](#uc-12--view-settings) | View settings | Configuration | — (auxiliary) | ⬜ |
 
 Status legend: ✅ done · 🚧 in progress · ⬜ unfinished.
@@ -213,9 +213,10 @@ The four use cases in this group form the supported segment of the business proc
 | **Trigger** | Operator wants the note gone. |
 | **Actors** | Operator (primary). |
 | **Precondition** | Authenticated session; the selected note exists, in any status. |
-| **Postcondition** | Note and its audio document are gone. The dispatched GitHub issue (if any) is **not** removed — that is outside Herold's scope (F1.3; P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle*). |
-| **Main scenario** | 1. Operator triggers delete from the detail view.<br>2. System asks the operator to confirm, since the action is irreversible.<br>3. Operator confirms.<br>4. System removes the note record and any retained audio document. |
-| **Alternative scenarios** | *Operator cancels at the confirmation step:* nothing changes. |
+| **Postcondition** | Note and its audio document are gone. The dispatched GitHub issue (if any) remains in place. |
+| **Main scenario** | 1. Operator opens the note's detail view (see [UC-10](#uc-10--view-a-voice-note)).<br>2. Operator triggers delete.<br>3. System asks the operator to confirm, since the action is irreversible.<br>4. Operator confirms.<br>5. System removes the note record and its audio document (AF-07).<br><br>![UC-11 Delete a voice note — main scenario](diagrams-png/f2-uc11-delete-note.png) |
+| **Alternative scenarios** | - *Operator cancels at the confirmation step:* nothing changes. |
+| **Qualities** | Deletion is one-way and local-only — Herold does not touch the GitHub issue (F1.3; P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle*). |
 
 ---
 
