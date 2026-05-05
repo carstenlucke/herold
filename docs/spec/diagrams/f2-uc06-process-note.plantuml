@@ -15,6 +15,9 @@ participant "Herold"               as SYS
 participant "Whisper API"          as WHISPER <<system>>
 participant "Chat Completion API"  as CHAT    <<system>>
 
+OP  ->  SYS     : open note detail view //(UC-10)//
+SYS --> OP      : note detail view
+
 OP  ->  SYS     : trigger processing
 SYS ->  WHISPER : transcribe audio //(AF-01)//
 WHISPER --> SYS : transcript
