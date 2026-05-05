@@ -77,11 +77,10 @@ UC06 -- CHAT
 UC08 -- GH
 
 ' Use-case relationships extracted from F2.
-' UC-07 always opens the detail view first (UC-10 step 1 in UC-07).
-UC07 ..> UC10 : <<include>>
-
-' UC-10 is the typical entry point for these (UC-10 postcondition).
+' UC-10 is the typical entry point for these (UC-10 postcondition);
+' UC-07 step 1 explicitly opens the detail view, the others enter from it.
 UC06 ..> UC10 : <<extend>>\n(from detail view)
+UC07 ..> UC10 : <<extend>>\n(from detail view)
 UC08 ..> UC10 : <<extend>>\n(from detail view)
 UC11 ..> UC10 : <<extend>>\n(from detail view)
 
