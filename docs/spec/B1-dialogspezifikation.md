@@ -10,16 +10,16 @@ Each screen realises one or more use cases from F2; conversely, every operator-m
 
 | ID | Screen | Group | Realises UC | Auth required |
 |----|--------|-------|-------------|---------------|
-| [DLG-01](#dlg-01--sign-in-first-factor) | Sign-in (first factor) | Access | UC-01 (steps 1–3) | no |
-| [DLG-02](#dlg-02--second-factor-verification) | Second-factor verification | Access | UC-01 (step 5) | no (mid-flow) |
-| [DLG-03](#dlg-03--second-factor-enrolment) | Second-factor enrolment | Access | UC-02 | no (mid-flow) |
-| [DLG-04](#dlg-04--recovery) | Recovery | Access | UC-03 (steps 1–4) | no |
-| [DLG-05](#dlg-05--recovery-result) | Recovery result | Access | UC-03 (step 6) | yes (post-recovery) |
+| [DLG-01](#dlg-01--sign-in-first-factor) | Sign-in (first factor) | Access | [UC-01](F2-anwendungsfaelle.md#uc-01--sign-in) (steps 1–3) | no |
+| [DLG-02](#dlg-02--second-factor-verification) | Second-factor verification | Access | [UC-01](F2-anwendungsfaelle.md#uc-01--sign-in) (step 5) | no (mid-flow) |
+| [DLG-03](#dlg-03--second-factor-enrolment) | Second-factor enrolment | Access | [UC-02](F2-anwendungsfaelle.md#uc-02--enrol-second-factor) | no (mid-flow) |
+| [DLG-04](#dlg-04--recovery) | Recovery | Access | [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access) (steps 1–4) | no |
+| [DLG-05](#dlg-05--recovery-result) | Recovery result | Access | [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access) (step 6) | yes (post-recovery) |
 | [DLG-06](#dlg-06--dashboard) | Dashboard | Common | — (entry hub) | yes |
-| [DLG-07](#dlg-07--notes-list) | Notes list | Management | UC-09 | yes |
-| [DLG-08](#dlg-08--note-detail) | Note detail | Management / Note flow | UC-10 (host); UC-06, UC-07, UC-08, UC-11 (entered from here) | yes |
-| [DLG-09](#dlg-09--capture-voice-note) | Capture voice note | Note flow | UC-05 | yes |
-| [DLG-10](#dlg-10--settings) | Settings | Configuration | UC-12 | yes |
+| [DLG-07](#dlg-07--notes-list) | Notes list | Management | [UC-09](F2-anwendungsfaelle.md#uc-09--browse-voice-notes) | yes |
+| [DLG-08](#dlg-08--note-detail) | Note detail | Management / Note flow | [UC-10](F2-anwendungsfaelle.md#uc-10--view-a-voice-note) (host); [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note), [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content), [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note), [UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note) (entered from here) | yes |
+| [DLG-09](#dlg-09--capture-voice-note) | Capture voice note | Note flow | [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) | yes |
+| [DLG-10](#dlg-10--settings) | Settings | Configuration | [UC-12](F2-anwendungsfaelle.md#uc-12--view-settings) | yes |
 
 The system-wide chrome (application header, navigation, sign-out control) is described in B1.4 rather than as a standalone dialogue, since it is composed onto every authenticated screen and carries no goal of its own.
 
@@ -189,7 +189,7 @@ The screenshots embedded in this section are rendered from the static mockups in
 | **Outcomes** | *Confirmation succeeds:* authenticated session established; route to [DLG-06](#dlg-06--dashboard).<br>*Confirmation fails:* remains on [DLG-03](#dlg-03--second-factor-enrolment); the secret stays provisional; retry. |
 | **Validation** | Dialogue-level: code field is required and accepts exactly six numeric digits. |
 | **Empty / loading / error states** | *One-time secret display* ([§B1.4.8](#b148-one-time-secret-display)) — the raw secret is rendered on this screen only and is not retrievable later; if the operator abandons setup before confirming, [UC-02](F2-anwendungsfaelle.md#uc-02--enrol-second-factor) is repeated and a new secret is generated. *Loading* and *error* per [§B1.4.3](#b143-synchronous-operation-feedback) and [§B1.4.4](#b144-synchronous-error-handling). |
-| **Qualities** | [NFR-15a-01](N1-nichtfunktional.md) *Two-Factor Browser Authentication*. No backup-code list is offered; the recovery path for a lost authenticator is [DLG-04](#dlg-04--recovery) (UC-03). |
+| **Qualities** | [NFR-15a-01](N1-nichtfunktional.md) *Two-Factor Browser Authentication*. No backup-code list is offered; the recovery path for a lost authenticator is [DLG-04](#dlg-04--recovery) ([UC-03](F2-anwendungsfaelle.md#uc-03--recover-access)). |
 
 ##### GUI Statik
 
@@ -229,7 +229,7 @@ The screenshots embedded in this section are rendered from the static mockups in
 | **Layout regions** | Brand header; instruction text describing the out-of-band precondition (operator must have placed a recovery token on the host); single-column form region with the recovery-secret field; primary action; back link to [DLG-01](#dlg-01--sign-in-first-factor). |
 | **Outcomes** | *Redemption succeeds:* authenticated session established by the system; the bound second factor is unbound, a fresh API key is generated, and the screen transitions to [DLG-05](#dlg-05--recovery-result) to display it.<br>*Redemption fails (no token present, token expired, or entered string does not match):* remains on [DLG-04](#dlg-04--recovery) with a single generic rejection that does not disclose which condition was hit; rate-limited and logged. |
 | **Validation** | Dialogue-level: secret field must not be empty. The token's existence, age, and content are checked server-side and surface here as one undifferentiated rejection per [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access) exception scenarios. |
-| **Empty / loading / error states** | *Loading* per *Synchronous operation feedback* ([§B1.4.3](#b143-synchronous-operation-feedback)); *error* per *Synchronous error handling*, but with the generic-rejection wording stipulated by UC-03. |
+| **Empty / loading / error states** | *Loading* per *Synchronous operation feedback* ([§B1.4.3](#b143-synchronous-operation-feedback)); *error* per *Synchronous error handling*, but with the generic-rejection wording stipulated by [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access). |
 | **Qualities** | [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout* (recovery branch); [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry*. |
 
 ##### GUI Statik
@@ -306,7 +306,7 @@ The screenshots embedded in this section are rendered from the static mockups in
 | **Name** | Dashboard |
 | **Realises** | — (entry hub after sign-in; no F2 use case of its own). |
 | **Purpose** | Give the operator an at-a-glance view of their voice-note activity by status, surface the most recent notes, and offer the most common forward action — capturing a new note. |
-| **Entry points** | Default destination after a successful sign-in (UC-01); *Dashboard* item in the persistent navigation chrome ([§B1.4.1](#b141-application-chrome)). |
+| **Entry points** | Default destination after a successful sign-in ([UC-01](F2-anwendungsfaelle.md#uc-01--sign-in)); *Dashboard* item in the persistent navigation chrome ([§B1.4.1](#b141-application-chrome)). |
 | **Layout regions** | Persistent navigation chrome; page header; status-overview tiles (one per processing state, with counts); primary capture entry point; recent-notes region listing the last few notes with title, summary, status, message-type indicator, issue reference (if dispatched), and timestamp. |
 | **Outcomes** | Navigational only; the dashboard itself does not change state. |
 | **Validation** | Not applicable. |
@@ -544,23 +544,23 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 
 [DLG-08](#dlg-08--note-detail) hosts [UC-10](F2-anwendungsfaelle.md#uc-10--view-a-voice-note) and is the entry point for [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note), [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content), [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note), and [UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note). The screen renders the note's three lifecycle stages (`recorded`, `processed`, `sent` per [D2.5](D2-datentypen.md#d25-notestatusdt)) as a vertical timeline; the affordances offered in each stage depend on the note's current status.
 
-*Status `recorded` — only audio playback is available; the next forward action is *Process Note* (UC-06):*
+*Status `recorded` — only audio playback is available; the next forward action is *Process Note* ([UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note)):*
 
 ![DLG-08 (recorded)](screenshots/dlg-08-note-detail-recorded.png)
 
-*Processing — synchronous loading state during UC-06 (per [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*):*
+*Processing — synchronous loading state during [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note) (per [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*):*
 
 ![DLG-08 (processing)](screenshots/dlg-08-note-detail-processing.png)
 
-*Status `processed` — structured content is visible read-only; *Edit* (UC-07) and *Create Ticket* (UC-08) are offered:*
+*Status `processed` — structured content is visible read-only; *Edit* ([UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content)) and *Create Ticket* ([UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note)) are offered:*
 
 ![DLG-08 (processed)](screenshots/dlg-08-note-detail-processed.png)
 
-*Editing variant of the `processed` stage (UC-07) — title, body, and type-specific extra fields are editable:*
+*Editing variant of the `processed` stage ([UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content)) — title, body, and type-specific extra fields are editable:*
 
 ![DLG-08 (editing)](screenshots/dlg-08-note-detail-editing.png)
 
-*Status `sent` — the issue reference produced by UC-08 is displayed; no further forward actions:*
+*Status `sent` — the issue reference produced by [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note) is displayed; no further forward actions:*
 
 ![DLG-08 (sent)](screenshots/dlg-08-note-detail-sent.png)
 
