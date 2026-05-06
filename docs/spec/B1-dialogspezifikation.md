@@ -71,7 +71,15 @@ A list enumerating every action-triggering control of the dialogue. Each action 
 
 ### B1.2.4 Multi-state dialogues
 
-Where a dialogue carries genuinely different fields and actions across its lifecycle states (DLG-08 across `recorded` / `processed` / *editing* / `sent`; DLG-09 across `idle` / *recording* / *review*), the *GUI Statik* and *GUI Dynamik* subsections are split per state with a heading naming the state. Cross-cutting loading and error appearances (e.g. DLG-08 *processing* and *error*) are not separate states; they are governed by [§B1.4.3](#b143-synchronous-operation-feedback) and [§B1.4.4](#b144-synchronous-error-handling) and are referenced from the per-state entries rather than re-tabulated.
+Where a dialogue carries genuinely different fields and actions across its lifecycle states (DLG-08 across `recorded` / `processed` / *editing* / `sent`; DLG-09 across *idle* / *recording* / *review*), the *GUI Statik* and *GUI Dynamik* subsections are split per state with a heading naming the state. Cross-cutting loading and error appearances (e.g. DLG-08 *processing* and *error*) are not separate states; they are governed by [§B1.4.3](#b143-synchronous-operation-feedback) and [§B1.4.4](#b144-synchronous-error-handling) and are referenced from the per-state entries rather than re-tabulated.
+
+> [!NOTE]
+> **Notation for state names.** State names are typeset in two distinct styles to reflect what kind of state they denote:
+>
+> - **Backticks** — persisted enumeration values from [D2.5 NoteStatusDT](D2-datentypen.md#d25-notestatusdt) (`recorded`, `processed`, `sent`). These are the actual values stored in `VoiceNote.status` and visible across the system; a state change is a persisted transition in the data model.
+> - *Italics* — ephemeral UI states of the dialogue itself, not persisted and not part of [D1](D1-datenmodell.md)/[D2](D2-datentypen.md). They live only within the current rendering of the screen. *editing* in DLG-08 is a UI overlay while the underlying note remains in `processed`; *idle*, *recording*, and *review* in DLG-09 are client-side states before any persistence has occurred.
+>
+> This distinction matters because per-state subsections describe two different things depending on the style: backtick states partition the dialogue by data status (the same screen presents differently for different stored values), while italic states partition it by interaction phase (the same stored value is presented differently as the operator progresses through the dialogue).
 
 ---
 
