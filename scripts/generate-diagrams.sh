@@ -53,8 +53,11 @@ for f in "${files[@]}"; do
     fi
     out_dir="$(out_dir_for "$f")"
     mkdir -p "$out_dir"
+    # PlantUML's -o is interpreted relative to the source file's directory,
+    # not the current working directory, so resolve to an absolute path.
+    abs_out_dir="$(cd "$out_dir" && pwd)"
     echo "Generating: $out_dir/$(basename "${f%.plantuml}").png"
-    java -jar "$PLANTUML_JAR" -tpng -o "$out_dir" "$f"
+    java -jar "$PLANTUML_JAR" -tpng -o "$abs_out_dir" "$f"
 done
 
 echo "Done."
