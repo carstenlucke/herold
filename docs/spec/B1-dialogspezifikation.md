@@ -4,6 +4,43 @@ Dialogue specification in the sense of Siedersleben (chapter 4.5): the operator-
 
 Each screen realises one or more use cases from F2; conversely, every operator-meaningful step in F2 is rendered by exactly one screen in B1. The mapping is recorded in B1.1 and re-stated per screen in B1.3. Numbering of dialogue identifiers (`DLG-xx`) is stable; once referenced from another block, an ID is not renumbered.
 
+**Contents**
+
+- [B1.1 Dialogue Index](#b11-dialogue-index)
+- [B1.2 Per-Screen Specification Template](#b12-per-screen-specification-template)
+  - [B1.2.1 Summary table](#b121-summary-table)
+  - [B1.2.2 GUI Statik](#b122-gui-statik)
+  - [B1.2.3 GUI Dynamik](#b123-gui-dynamik)
+  - [B1.2.4 Multi-state dialogues](#b124-multi-state-dialogues)
+- [B1.3 Dialogue Specifications](#b13-dialogue-specifications)
+  - [B1.3.1 Access](#b131-access)
+    - [DLG-01 — Sign-in (first factor)](#dlg-01--sign-in-first-factor)
+    - [DLG-02 — Second-factor verification](#dlg-02--second-factor-verification)
+    - [DLG-03 — Second-factor enrolment](#dlg-03--second-factor-enrolment)
+    - [DLG-04 — Recovery](#dlg-04--recovery)
+    - [DLG-05 — Recovery result](#dlg-05--recovery-result)
+  - [B1.3.2 Common](#b132-common)
+    - [DLG-06 — Dashboard](#dlg-06--dashboard)
+  - [B1.3.3 Note Flow](#b133-note-flow)
+    - [DLG-09 — Capture voice note](#dlg-09--capture-voice-note)
+  - [B1.3.4 Management](#b134-management)
+    - [DLG-07 — Notes list](#dlg-07--notes-list)
+    - [DLG-08 — Note detail](#dlg-08--note-detail)
+  - [B1.3.5 Configuration](#b135-configuration)
+    - [DLG-10 — Settings](#dlg-10--settings)
+- [B1.4 Cross-cutting Dialogue Patterns](#b14-cross-cutting-dialogue-patterns)
+  - [B1.4.1 Application chrome](#b141-application-chrome)
+  - [B1.4.2 Unauthenticated redirect](#b142-unauthenticated-redirect)
+  - [B1.4.3 Synchronous operation feedback](#b143-synchronous-operation-feedback)
+  - [B1.4.4 Synchronous error handling](#b144-synchronous-error-handling)
+  - [B1.4.5 Confirmation modals](#b145-confirmation-modals)
+  - [B1.4.6 Form validation feedback](#b146-form-validation-feedback)
+  - [B1.4.7 Empty states](#b147-empty-states)
+  - [B1.4.8 One-time secret display](#b148-one-time-secret-display)
+  - [B1.4.9 Mobile usage](#b149-mobile-usage)
+- [B1.5 Out of Scope for B1](#b15-out-of-scope-for-b1)
+- [B1.6 Cross-references](#b16-cross-references)
+
 ---
 
 ## B1.1 Dialogue Index
