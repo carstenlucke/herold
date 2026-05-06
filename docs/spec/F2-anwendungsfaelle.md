@@ -22,6 +22,7 @@ Each use case is described with a tabular specification template adopted from Po
 | [UC-10](#uc-10--view-a-voice-note) | View a voice note | Management | — (cross-cutting) | ✅ |
 | [UC-11](#uc-11--delete-a-voice-note) | Delete a voice note | Management | — (cross-cutting) | ✅ |
 | [UC-12](#uc-12--view-settings) | View settings | Configuration | — (auxiliary) | ✅ |
+| [UC-13](#uc-13--view-dashboard) | View dashboard | Management | — (entry hub) | ✅ |
 
 Status legend: ✅ done · 🚧 in progress · ⬜ unfinished.
 
@@ -36,7 +37,7 @@ The use-case relationships drawn follow directly from the textual specifications
 - **`<<include>>` from [UC-01](#uc-01--sign-in) to [UC-02](#uc-02--enrol-second-factor):** conditional, guarded by the edge label — runs only on the first sign-in, when no TOTP secret is yet enrolled.
 - **`<<precedes>>` from [UC-02](#uc-02--enrol-second-factor) to [UC-03](#uc-03--recover-access):** an informal stereotype used here to denote a temporal precondition (neither include nor extend); after a recovery, [UC-02](#uc-02--enrol-second-factor) must be re-run before normal use resumes.
 
-The constraint note attached to the *Herold* boundary records the system-wide precondition that all use cases except [UC-01](#uc-01--sign-in), [UC-02](#uc-02--enrol-second-factor) and [UC-03](#uc-03--recover-access) require an authenticated session — captured once instead of being drawn as nine repetitive edges. The same note doubles as the legend for the per-use-case fill colour: the warm tone marks the three use cases reachable without an established session, the cool tone marks every use case that requires one (including [UC-04](#uc-04--sign-out) *Sign out*, the only authentication-state use case in F2.2 to require a session).
+The constraint note attached to the *Herold* boundary records the system-wide precondition that all use cases except [UC-01](#uc-01--sign-in), [UC-02](#uc-02--enrol-second-factor) and [UC-03](#uc-03--recover-access) require an authenticated session — captured once instead of being drawn as ten repetitive edges. The same note doubles as the legend for the per-use-case fill colour: the warm tone marks the three use cases reachable without an established session, the cool tone marks every use case that requires one (including [UC-04](#uc-04--sign-out) *Sign out*, the only authentication-state use case in F2.2 to require a session).
 
 ---
 
@@ -218,6 +219,20 @@ The four use cases in this group form the supported segment of the business proc
 | **Main scenario** | 1. Operator opens the note's detail view (see [UC-10](#uc-10--view-a-voice-note)).<br>2. Operator triggers delete.<br>3. System asks the operator to confirm, since the action is irreversible.<br>4. Operator confirms.<br>5. System removes the note record and its audio document (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)).<br><br>![UC-11 Delete a voice note — main scenario](diagrams-png/f2-uc11-delete-note.png) |
 | **Alternative scenarios** | - *Operator cancels at the confirmation step:* nothing changes. |
 | **Qualities** | Deletion is one-way and local-only — Herold does not touch the GitHub issue (F1.3; P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle*). |
+
+### UC-13 — View dashboard
+
+| Section | Content |
+|---------|---------|
+| **Identifier** | UC-13 |
+| **Name** | View dashboard |
+| **Description** | Operator inspects an at-a-glance overview of voice-note activity: aggregate counts per processing status (with an orthogonal error count) and the most recent notes. The dashboard is the default destination after sign-in and the entry hub from which the most common forward action — capturing a new note — is reached. |
+| **Trigger** | Operator wants a quick orientation on outstanding and recent voice-note activity, or has just signed in. |
+| **Actors** | Operator (primary). |
+| **Precondition** | Authenticated session. |
+| **Postcondition** | No state change. |
+| **Main scenario** | 1. Operator opens the dashboard.<br>2. System renders aggregate counts per `VoiceNote.status` (per [D2.5](D2-datentypen.md#d25-notestatusdt), with an orthogonal error count) and the most recent notes with status, message type, timestamp, and a short summary. |
+| **Alternative scenarios** | - *Operator picks a recent note:* continues with [UC-10](#uc-10--view-a-voice-note) *View a voice note*.<br>- *Operator triggers a new recording:* continues with [UC-05](#uc-05--capture-voice-note) *Capture voice note*.<br>- *No notes yet:* the recent-notes region shows an empty-state message together with the entry point to capture the first note. |
 
 ---
 

@@ -19,7 +19,7 @@ rectangle "Herold" as HEROLD {
 
   ' Per-use-case fill colour encodes the authentication state:
   '   #FFB07C — reachable without an established session (UC-01..UC-03)
-  '   #99D9C0 — requires an authenticated session (UC-04..UC-12)
+  '   #99D9C0 — requires an authenticated session (UC-04..UC-13)
   ' Package backgrounds keep encoding the F2 grouping.
 
   package "Access" as ACCESS #E8F4FF {
@@ -40,6 +40,7 @@ rectangle "Herold" as HEROLD {
     usecase "UC-09\nBrowse voice notes"                                            as UC09 #99D9C0
     usecase "UC-10\nView a voice note\n--\nextension points:\nfrom detail view"    as UC10 #99D9C0
     usecase "UC-11\nDelete a voice note"                                           as UC11 #99D9C0
+    usecase "UC-13\nView dashboard"                                                as UC13 #99D9C0
   }
 
   package "Configuration" as CONFIG #F0E8FF {
@@ -70,6 +71,7 @@ OP -- UC09
 OP -- UC10
 OP -- UC11
 OP -- UC12
+OP -- UC13
 
 ' Supporting external systems.
 UC06 -- WHISPER

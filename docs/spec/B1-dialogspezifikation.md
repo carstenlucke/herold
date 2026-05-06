@@ -19,14 +19,13 @@ Each screen realises one or more use cases from F2; conversely, every operator-m
     - [DLG-03 — Second-factor enrolment](#dlg-03--second-factor-enrolment)
     - [DLG-04 — Recovery](#dlg-04--recovery)
     - [DLG-05 — Recovery result](#dlg-05--recovery-result)
-  - [B1.3.2 Common](#b132-common)
-    - [DLG-06 — Dashboard](#dlg-06--dashboard)
-  - [B1.3.3 Note Flow](#b133-note-flow)
+  - [B1.3.2 Note Flow](#b132-note-flow)
     - [DLG-09 — Capture voice note](#dlg-09--capture-voice-note)
-  - [B1.3.4 Management](#b134-management)
+  - [B1.3.3 Management](#b133-management)
+    - [DLG-06 — Dashboard](#dlg-06--dashboard)
     - [DLG-07 — Notes list](#dlg-07--notes-list)
     - [DLG-08 — Note detail](#dlg-08--note-detail)
-  - [B1.3.5 Configuration](#b135-configuration)
+  - [B1.3.4 Configuration](#b134-configuration)
     - [DLG-10 — Settings](#dlg-10--settings)
 - [B1.4 Cross-cutting Dialogue Patterns](#b14-cross-cutting-dialogue-patterns)
   - [B1.4.1 Application chrome](#b141-application-chrome)
@@ -52,7 +51,7 @@ Each screen realises one or more use cases from F2; conversely, every operator-m
 | [DLG-03](#dlg-03--second-factor-enrolment) | Second-factor enrolment | Access | [UC-02](F2-anwendungsfaelle.md#uc-02--enrol-second-factor) | no (mid-flow) |
 | [DLG-04](#dlg-04--recovery) | Recovery | Access | [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access) (steps 1–4) | no |
 | [DLG-05](#dlg-05--recovery-result) | Recovery result | Access | [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access) (step 6) | yes (post-recovery) |
-| [DLG-06](#dlg-06--dashboard) | Dashboard | Common | — (entry hub) | yes |
+| [DLG-06](#dlg-06--dashboard) | Dashboard | Management | [UC-13](F2-anwendungsfaelle.md#uc-13--view-dashboard) | yes |
 | [DLG-07](#dlg-07--notes-list) | Notes list | Management | [UC-09](F2-anwendungsfaelle.md#uc-09--browse-voice-notes) | yes |
 | [DLG-08](#dlg-08--note-detail) | Note detail | Management / Note flow | [UC-10](F2-anwendungsfaelle.md#uc-10--view-a-voice-note) (host); [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note), [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content), [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note), [UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note) (entered from here) | yes |
 | [DLG-09](#dlg-09--capture-voice-note) | Capture voice note | Note flow | [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) | yes |
@@ -331,65 +330,7 @@ The screenshots embedded in this section are rendered from the static mockups in
 - **Preconditions:** None.
 - **Effect:** Leaves the recovery cluster and routes to [DLG-01](#dlg-01--sign-in-first-factor). The next sign-in will route through [DLG-03](#dlg-03--second-factor-enrolment) to enrol a new second factor, since `Operator.totpConfirmedAt` was cleared by the redemption.
 
-### B1.3.2 Common
-
-#### DLG-06 — Dashboard
-
-![DLG-06 — Dashboard](screenshots/dlg-06-dashboard.png)
-
-| Section | Content |
-|---------|---------|
-| **Identifier** | DLG-06 |
-| **Name** | Dashboard |
-| **Realises** | — (entry hub after sign-in; no F2 use case of its own). |
-| **Purpose** | Give the operator an at-a-glance view of their voice-note activity by status, surface the most recent notes, and offer the most common forward action — capturing a new note. |
-| **Entry points** | Default destination after a successful sign-in ([UC-01](F2-anwendungsfaelle.md#uc-01--sign-in)); *Dashboard* item in the persistent navigation chrome ([§B1.4.1](#b141-application-chrome)). |
-| **Layout regions** | Persistent navigation chrome; page header; status-overview tiles (one per processing state, with counts); primary capture entry point; recent-notes region listing the last few notes with title, summary, status, message-type indicator, issue reference (if dispatched), and timestamp. |
-| **Outcomes** | Navigational only; the dashboard itself does not change state. |
-| **Validation** | Not applicable. |
-| **Empty / loading / error states** | *Empty:* when no notes exist, the recent-notes region uses the *Empty states* pattern ([§B1.4.7](#b147-empty-states)); the *New Recording* action remains visible.<br>*Loading/error* of the underlying data follows the cross-cutting patterns in [§B1.4](#b14-cross-cutting-dialogue-patterns). |
-| **Qualities** | *Application chrome* ([§B1.4.1](#b141-application-chrome)). |
-
-##### GUI Statik
-
-| Field | Kind | Mapping | Default |
-|-------|------|---------|---------|
-| Page title | display | — | "Dashboard". |
-| Page subtitle | display | — | "Overview of your voice notes and processing status." |
-| *Total Notes* count | display | Aggregation: count of `VoiceNote` rows | Live count. |
-| *Recorded* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.status` = `recorded` (per [D2.5](D2-datentypen.md#d25-notestatusdt)) | Live count. |
-| *Processed* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.status` = `processed` | Live count. |
-| *Sent* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.status` = `sent` | Live count. |
-| *Errors* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.errorMessage` is non-empty (orthogonal to status — see [D2.5](D2-datentypen.md#d25-notestatusdt) *Failure handling*) | Live count. |
-| Recent-notes section heading | display | — | "Recent Notes". |
-| Recent-note row — type indicator | display | `VoiceNote.type` (per [D2.4](D2-datentypen.md#d24-messagetypedt)) | — |
-| Recent-note row — title | display | `VoiceNote.processedTitle` if set, else a placeholder for the unprocessed note | — |
-| Recent-note row — snippet | display | Excerpt derived from `VoiceNote.processedBody` (or transcript when not yet processed) | — |
-| Recent-note row — status badge | display | `VoiceNote.status`, with the *error* visual variant driven by `VoiceNote.errorMessage` being non-empty | — |
-| Recent-note row — issue reference | display | `VoiceNote.githubIssueNumber` (rendered as `#<n>`); shown only when present | — |
-| Recent-note row — timestamp | display | `VoiceNote.createdAt` | — |
-
-##### GUI Dynamik
-
-**New Recording**
-
-- **Trigger:** Click on the *New Recording* button.
-- **Preconditions:** None.
-- **Effect:** Routes to [DLG-09](#dlg-09--capture-voice-note) to start [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note).
-
-**Open recent note**
-
-- **Trigger:** Click on a row in the *Recent Notes* list.
-- **Preconditions:** None.
-- **Effect:** Routes to [DLG-08](#dlg-08--note-detail) for the selected `VoiceNote` ([UC-10](F2-anwendungsfaelle.md#uc-10--view-a-voice-note)).
-
-**Navigate via chrome**
-
-- **Trigger:** Click on a destination in the persistent navigation chrome ([§B1.4.1](#b141-application-chrome)).
-- **Preconditions:** None.
-- **Effect:** Routes to [DLG-06](#dlg-06--dashboard) / [DLG-09](#dlg-09--capture-voice-note) / [DLG-07](#dlg-07--notes-list) / [DLG-10](#dlg-10--settings) according to the chosen destination, or to [UC-04](F2-anwendungsfaelle.md#uc-04--sign-out) on *Sign out*. Documented once in [§B1.4.1](#b141-application-chrome) and not repeated on every authenticated dialogue's *GUI Dynamik*.
-
-### B1.3.3 Note Flow
+### B1.3.2 Note Flow
 
 #### DLG-09 — Capture voice note
 
@@ -510,7 +451,63 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 - **Preconditions:** A capture exists (state *review*); the captured audio satisfies [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*; type-specific extra fields satisfy their declared schema per [D2.7](D2-datentypen.md#d27-typespecificdata).
 - **Effect:** Submits the recording and metadata ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) step 6). On success creates a new `VoiceNote` row with `VoiceNote.status` = `recorded`, `VoiceNote.type` set, `VoiceNote.audioPath` populated, and `VoiceNote.metadata` populated per the bound type's slot inventory; routes to [DLG-08](#dlg-08--note-detail) for the new note. On failure stays in *review* and surfaces the failure inline per *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)); validation violations surface inline per *Form validation feedback* ([§B1.4.6](#b146-form-validation-feedback)).
 
-### B1.3.4 Management
+### B1.3.3 Management
+
+#### DLG-06 — Dashboard
+
+![DLG-06 — Dashboard](screenshots/dlg-06-dashboard.png)
+
+| Section | Content |
+|---------|---------|
+| **Identifier** | DLG-06 |
+| **Name** | Dashboard |
+| **Realises** | [UC-13](F2-anwendungsfaelle.md#uc-13--view-dashboard) *View dashboard*. |
+| **Purpose** | Give the operator an at-a-glance view of their voice-note activity by status, surface the most recent notes, and offer the most common forward action — capturing a new note. |
+| **Entry points** | Default destination after a successful sign-in ([UC-01](F2-anwendungsfaelle.md#uc-01--sign-in)); *Dashboard* item in the persistent navigation chrome ([§B1.4.1](#b141-application-chrome)). |
+| **Layout regions** | Persistent navigation chrome; page header; status-overview tiles (one per processing state, with counts); primary capture entry point; recent-notes region listing the last few notes with title, summary, status, message-type indicator, issue reference (if dispatched), and timestamp. |
+| **Outcomes** | Navigational only; the dashboard itself does not change state. |
+| **Validation** | Not applicable. |
+| **Empty / loading / error states** | *Empty:* when no notes exist, the recent-notes region uses the *Empty states* pattern ([§B1.4.7](#b147-empty-states)); the *New Recording* action remains visible.<br>*Loading/error* of the underlying data follows the cross-cutting patterns in [§B1.4](#b14-cross-cutting-dialogue-patterns). |
+| **Qualities** | *Application chrome* ([§B1.4.1](#b141-application-chrome)). |
+
+##### GUI Statik
+
+| Field | Kind | Mapping | Default |
+|-------|------|---------|---------|
+| Page title | display | — | "Dashboard". |
+| Page subtitle | display | — | "Overview of your voice notes and processing status." |
+| *Total Notes* count | display | Aggregation: count of `VoiceNote` rows | Live count. |
+| *Recorded* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.status` = `recorded` (per [D2.5](D2-datentypen.md#d25-notestatusdt)) | Live count. |
+| *Processed* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.status` = `processed` | Live count. |
+| *Sent* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.status` = `sent` | Live count. |
+| *Errors* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.errorMessage` is non-empty (orthogonal to status — see [D2.5](D2-datentypen.md#d25-notestatusdt) *Failure handling*) | Live count. |
+| Recent-notes section heading | display | — | "Recent Notes". |
+| Recent-note row — type indicator | display | `VoiceNote.type` (per [D2.4](D2-datentypen.md#d24-messagetypedt)) | — |
+| Recent-note row — title | display | `VoiceNote.processedTitle` if set, else a placeholder for the unprocessed note | — |
+| Recent-note row — snippet | display | Excerpt derived from `VoiceNote.processedBody` (or transcript when not yet processed) | — |
+| Recent-note row — status badge | display | `VoiceNote.status`, with the *error* visual variant driven by `VoiceNote.errorMessage` being non-empty | — |
+| Recent-note row — issue reference | display | `VoiceNote.githubIssueNumber` (rendered as `#<n>`); shown only when present | — |
+| Recent-note row — timestamp | display | `VoiceNote.createdAt` | — |
+
+##### GUI Dynamik
+
+**New Recording**
+
+- **Trigger:** Click on the *New Recording* button.
+- **Preconditions:** None.
+- **Effect:** Routes to [DLG-09](#dlg-09--capture-voice-note) to start [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note).
+
+**Open recent note**
+
+- **Trigger:** Click on a row in the *Recent Notes* list.
+- **Preconditions:** None.
+- **Effect:** Routes to [DLG-08](#dlg-08--note-detail) for the selected `VoiceNote` ([UC-10](F2-anwendungsfaelle.md#uc-10--view-a-voice-note)).
+
+**Navigate via chrome**
+
+- **Trigger:** Click on a destination in the persistent navigation chrome ([§B1.4.1](#b141-application-chrome)).
+- **Preconditions:** None.
+- **Effect:** Routes to [DLG-06](#dlg-06--dashboard) / [DLG-09](#dlg-09--capture-voice-note) / [DLG-07](#dlg-07--notes-list) / [DLG-10](#dlg-10--settings) according to the chosen destination, or to [UC-04](F2-anwendungsfaelle.md#uc-04--sign-out) on *Sign out*. Documented once in [§B1.4.1](#b141-application-chrome) and not repeated on every authenticated dialogue's *GUI Dynamik*.
 
 #### DLG-07 — Notes list
 
@@ -741,7 +738,7 @@ No forward actions are offered in this state. The note's content stages are read
 
 The shared *Back to Notes*, *Stream the audio recording*, and *Delete Note* actions remain available unchanged.
 
-### B1.3.5 Configuration
+### B1.3.4 Configuration
 
 #### DLG-10 — Settings
 
