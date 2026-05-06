@@ -34,9 +34,10 @@ state "Access" as ACCESS {
   ' --- First-factor outcomes ---
   DLG01 --> DLG02 : key OK / TOTP enrolled
   DLG01 --> DLG03 : key OK / first sign-in
-  DLG01 -[#888,dashed]-> DLG04 : direct URL only
 
   ' --- Recovery branch ---
+  DLG01 --> DLG04 : Recover Access
+  DLG02 --> DLG04 : Recover Access
   DLG04 --> DLG05 : token OK
   DLG04 --> DLG01 : cancel
   DLG05 --> DLG01 : continue
@@ -57,6 +58,8 @@ state "Authenticated session" as AUTH #E8F4FF {
   ' --- Specific flow transitions ---
   DLG09 --> DLG08 : submit
   DLG07 --> DLG08 : open a note
+  DLG06 --> DLG08 : open recent note
+  DLG06 --> DLG09 : new recording
   DLG08 --> DLG07 : back / delete
   DLG08 --> DLG08 : process / dispatch /\nsave edits
 
@@ -82,7 +85,6 @@ legend left
   | <#FFB07C> | no session required |
   | <#FFD27C> | post-recovery, no session yet |
   | <#99D9C0> | authenticated session required |
-  | <#FFFFFF> dashed edge | reached by direct URL, not by an in-UI link |
   | <#FFFFFF> retry self-loops | omitted; covered by NFR-15a-02 |
 endlegend
 
