@@ -111,6 +111,7 @@ The screenshots embedded in this section are rendered from the static mockups in
 | Field | Kind | Mapping | Default |
 |-------|------|---------|---------|
 | Brand identity (logo, product name, tagline) | display | — | Static. |
+| Step indicator (two dots, first active) | display | — | Reflects start-of-flow position; not operator-editable. |
 | API Key | input (mandatory) | `Operator.apiKeyHash` (verification target; the entered value is hashed and compared in constant time per [D2.6](D2-datentypen.md#d26-opaquesecret), it is never persisted in clear) | — |
 
 ##### GUI Dynamik
