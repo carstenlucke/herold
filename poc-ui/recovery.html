@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Herold — Recovery</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .recovery-card {
+      width: 100%;
+      max-width: 380px;
+      padding: var(--sp-8);
+      background: var(--c-surface-1);
+      border-radius: var(--radius-xl);
+    }
+
+    .recovery-step { display: none; }
+    .recovery-step.active { display: block; }
+
+    .variant-bar {
+      display: flex;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-4);
+      padding: var(--sp-2);
+      background: var(--c-surface-1);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-md);
+      flex-wrap: wrap;
+    }
+    .variant-btn {
+      padding: var(--sp-1) var(--sp-3);
+      font-family: var(--font-label);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--c-text-dim);
+      background: none;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+    .variant-btn.active {
+      color: var(--c-primary);
+      border-color: rgba(var(--c-primary-rgb), 0.5);
+      background: rgba(var(--c-primary-rgb), 0.06);
+    }
+    .variant-label {
+      font-family: var(--font-label);
+      font-size: 0.6rem;
+      color: var(--c-text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: var(--sp-2);
+    }
+
+    /* Local warning alert (styles.css ships .alert-error/.alert-success/.alert-info only) */
+    .alert-warning {
+      background: rgba(var(--c-warning-rgb), 0.1);
+      color: var(--c-warning);
+    }
+
+    .api-key-box {
+      background: var(--c-surface-2);
+      border-radius: var(--radius-md);
+      padding: var(--sp-3) var(--sp-4);
+      font-family: 'Space Mono', 'SF Mono', Menlo, monospace;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: var(--c-secondary);
+      word-break: break-all;
+    }
+
+    .field-label-static {
+      font-family: var(--font-label);
+      font-size: 0.6rem;
+      color: var(--c-text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: var(--sp-2);
+    }
+  </style>
+</head>
+<body>
+  <div class="layout-fullscreen">
+    <div style="width: 100%; max-width: 380px;">
+
+      <!-- Variant selector (poc-only) -->
+      <div class="variant-label">Mockup Variant (POC only)</div>
+      <div class="variant-bar">
+        <button class="variant-btn active" data-step="form">Form</button>
+        <button class="variant-btn" data-step="result">Result</button>
+      </div>
+
+      <!-- Step 1: Recovery form -->
+      <div class="recovery-step active" id="step-form">
+        <div class="recovery-card neon-border-primary">
+
+          <!-- Brand header -->
+          <div class="text-center mb-8">
+            <img src="../icons/herold-icon-l-256.png" alt="Herold" style="height: 48px; width: auto; margin: 0 auto var(--sp-4); display: block;">
+            <div class="brand-text text-h4 mb-1">Herold</div>
+            <div class="brand-subtitle">ACCOUNT RECOVERY</div>
+          </div>
+
+          <p class="text-body-2 text-center mb-6 text-muted">
+            Place your recovery token file on the host, then enter the secret string you wrote into it.
+          </p>
+
+          <div class="field with-icon">
+            <span class="field-icon mdi mdi-key-chain"></span>
+            <span class="field-label">Recovery Token</span>
+            <input type="password" autocomplete="off">
+          </div>
+
+          <button class="btn btn-outlined btn-block btn-lg mt-4">Recover Account</button>
+          <a href="login.html" class="btn btn-text btn-text-secondary btn-block mt-3 btn-sm">Back to Login</a>
+        </div>
+      </div>
+
+      <!-- Step 2: Recovery result -->
+      <div class="recovery-step" id="step-result">
+        <div class="recovery-card neon-border-secondary">
+
+          <!-- Brand header -->
+          <div class="text-center mb-6">
+            <img src="../icons/herold-icon-l-256.png" alt="Herold" style="height: 48px; width: auto; margin: 0 auto var(--sp-4); display: block;">
+            <div class="brand-text text-h4 mb-1">Herold</div>
+            <div class="brand-subtitle">ACCOUNT RECOVERED</div>
+          </div>
+
+          <div class="alert alert-success mb-6">
+            <span class="mdi mdi-check-circle"></span>
+            <div>Your account has been successfully recovered.</div>
+          </div>
+
+          <div class="mb-6">
+            <div class="field-label-static">New API Key</div>
+            <div class="api-key-box">
+              hk_3Z7L9pQwV2nR8tXmK4jY6bNcF1aHeS0dG5uPiOlMzVrBxCWyAt
+            </div>
+            <div class="d-flex mt-2">
+              <button class="btn btn-tonal-secondary btn-sm">
+                <span class="mdi mdi-content-copy"></span>
+                Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="alert alert-warning mb-6">
+            <span class="mdi mdi-alert"></span>
+            <div>Save this API key now. It will not be shown again. You will also need to set up TOTP again on your next login.</div>
+          </div>
+
+          <a href="login.html" class="btn btn-outlined btn-block btn-lg">
+            <span class="mdi mdi-login"></span>
+            Go to Login
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const variants = document.querySelectorAll('.variant-btn');
+    variants.forEach(btn => {
+      btn.addEventListener('click', () => {
+        variants.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.dataset.step;
+        document.querySelectorAll('.recovery-step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step-' + target).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

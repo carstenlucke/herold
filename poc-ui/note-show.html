@@ -72,6 +72,58 @@
       letter-spacing: 0.02em;
     }
     .field-helper.error { color: var(--c-error); }
+
+    /* Modal (Confirmation modals — UC-11) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: var(--sp-6);
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--c-surface-1);
+      border-radius: var(--radius-xl);
+      padding: var(--sp-8) var(--sp-8) var(--sp-6);
+      text-align: center;
+    }
+    .modal-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(var(--c-error-rgb), 0.12);
+      color: var(--c-error);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto var(--sp-4);
+    }
+    .modal-icon .mdi { font-size: 2rem; }
+    .modal-title {
+      font-family: var(--font-headline);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--c-text);
+      margin-bottom: var(--sp-3);
+    }
+    .modal-body {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: var(--c-text-muted);
+      margin-bottom: var(--sp-6);
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: var(--sp-3);
+    }
 </style>
 </head>
 <body>
@@ -132,6 +184,7 @@
           <button class="variant-btn" data-variant="editing" onclick="showVariant('editing')">Editing</button>
           <button class="variant-btn" data-variant="sent" onclick="showVariant('sent')">Sent</button>
           <button class="variant-btn" data-variant="error" onclick="showVariant('error')">Error</button>
+          <button class="variant-btn" data-variant="delete-confirm" onclick="showVariant('delete-confirm')">Delete?</button>
         </div>
 
         <!-- ============================================================
@@ -616,6 +669,63 @@ Changes needed:
               <span class="mdi mdi-delete"></span>
               Delete Note
             </button>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             VARIANT: DELETE CONFIRM (UC-11 — confirmation modal)
+             ============================================================ -->
+        <div class="variant" id="v-delete-confirm">
+
+          <!-- Faint reproduction of the underlying screen so the dialogue
+               context is visible behind the modal -->
+          <div style="opacity: 0.25; pointer-events: none;">
+            <div class="mb-6">
+              <h1 class="text-h5 mb-2">Harden recovery mechanism</h1>
+              <div class="d-flex align-center ga-2" style="flex-wrap: wrap;">
+                <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                <span class="type-chip"><span class="mdi mdi-message-text"></span> General</span>
+                <span class="meta-time" style="font-family: var(--font-label); font-size: 0.75rem; color: var(--c-text-muted);">09 Apr 2026, 14:34</span>
+              </div>
+            </div>
+            <div class="d-flex flex-column ga-4">
+              <div class="card neon-border-secondary pa-4">
+                <div class="step-header">
+                  <div class="icon-avatar icon-avatar-28 icon-avatar-warning">1</div>
+                  <span class="step-title">Recorded</span>
+                </div>
+              </div>
+              <div class="card neon-border-secondary pa-4">
+                <div class="step-header">
+                  <div class="icon-avatar icon-avatar-28 icon-avatar-secondary">2</div>
+                  <span class="step-title">Processed</span>
+                </div>
+              </div>
+              <div class="card neon-border-secondary pa-4">
+                <div class="step-header">
+                  <div class="icon-avatar icon-avatar-28 icon-avatar-primary">3</div>
+                  <span class="step-title">Sent to GitHub</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal backdrop + dialog -->
+          <div class="modal-backdrop">
+            <div class="modal-card neon-border-primary">
+              <div class="modal-icon"><span class="mdi mdi-alert-circle-outline"></span></div>
+              <h2 class="modal-title">Delete this note?</h2>
+              <p class="modal-body">
+                This action is irreversible. The note <strong>“Harden recovery mechanism”</strong> and its audio recording will be removed. The dispatched GitHub issue will remain in place.
+              </p>
+              <div class="modal-actions">
+                <button class="btn btn-text btn-text-secondary">Cancel</button>
+                <button class="btn btn-tonal-error">
+                  <span class="mdi mdi-delete"></span>
+                  Delete Note
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
