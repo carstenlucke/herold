@@ -1,0 +1,98 @@
+@startuml relational-datamodel
+!theme plain
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+title Herold -- Datenmodell (SQLite)
+
+' Strict subset of the D1 Herold-data store (see d1-information-model)
+' mapped to concrete SQLite columns. Framework tables
+' (sessions, password_reset_tokens, cache*, jobs*) and framework-only
+' columns (remember_token, email_verified_at) are intentionally not
+' shown — they are Laravel scaffolding, not part of the domain model.
+
+enum NoteStatus {
+  recorded
+  processed
+  sent
+  error
+}
+
+class voice_notes <<table>> {
+  **id** : ULID <<PK>>
+  --
+  type : string
+  status : string <<NoteStatus>>
+  audio_path : string [nullable]
+  transcript : text [nullable]
+  processed_title : string [nullable]
+  processed_body : text (markdown) [nullable]
+  metadata : json [nullable]
+  github_issue_number : integer [nullable]
+  github_issue_url : string [nullable]
+  error_message : text [nullable]
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+class users <<table>> {
+  **id** : bigint <<PK>>
+  --
+  name : string
+  email : string <<unique>>
+  api_key_hash : string [nullable]
+  totp_secret : text (encrypted) [nullable]
+  totp_confirmed_at : timestamp [nullable]
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+' -- Relationships --
+
+voice_notes ..> NoteStatus : status
+
+note right of voice_notes
+  Maps D1 **VoiceNote**.
+  **type**: closed enum **MessageTypeDT** (D2.4):
+  general | youtube | diary | obsidian | todo.
+  Per-type host bindings (prompt, GitHub label) live
+  in ""config/herold.php""; the slot inventory of
+  **metadata** is spec-declared (D2.7).
+
+  Column-to-D1 mapping:
+  - ""metadata"" persists D1 **VoiceNote.metadata**
+    (TypeSpecificData) as JSON
+  - ""audio_path"" persists D1 **VoiceNote.audioPath**
+  - ""github_issue_number"" / ""github_issue_url""
+    persist D1 **VoiceNote.githubIssueNumber/Url**
+
+  ""metadata"" JSON keys per type (snake_case at the
+  storage layer; camelCase in D2.7):
+  - youtube:  { youtube_url }
+  - diary:    { entry_date }
+  - obsidian: { vault }
+  - todo:     { deadline }
+  - general:  {}
+end note
+
+note bottom of users
+  Maps D1 **Operator**.
+  Single-user system — at most one row.
+  Enforced by SQLite trigger ""enforce_users_singleton""
+  (BEFORE INSERT, RAISE ABORT when count >= 1).
+
+  Authentication is **API key + TOTP**:
+  - ""api_key_hash"" persists D1 **Operator.apiKeyHash**
+    (SHA-256, constant-time compare)
+  - ""totp_secret"" persists D1 **Operator.totpSecret**
+    (Laravel cast ""encrypted"")
+  - ""totp_confirmed_at"" persists D1 **Operator.totpConfirmedAt**
+
+  Framework columns ""password"", ""remember_token"" and
+  ""email_verified_at"" exist in the migration but are
+  not part of D1's auth model — Herold does not verify
+  passwords and does not use Laravel's remember-me or
+  email-verification flows. They are omitted here.
+end note
+
+@enduml

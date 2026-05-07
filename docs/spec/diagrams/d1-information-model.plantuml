@@ -1,0 +1,155 @@
+@startuml d1-information-model
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam packageStyle frame
+skinparam linetype ortho
+
+title Herold — D1 Information Model
+
+' Non-trivial domain data types referenced below (Identifier,
+' OpaqueSecret, NoteStatusDT, IssueStateDT, MessageTypeDT,
+' TypeSpecificData) are defined in D2. Trivial types (Text, Integer,
+' Boolean, Date, Email, URL, Timestamp, Markdown) are used at face
+' value.
+
+' ============================================================
+' Herold data — local persistence (application database + local file store)
+' ============================================================
+package "Herold data" <<Frame>> #E8F4FF {
+
+  class Operator {
+    + id : Identifier
+    + name : Text
+    + email : Email
+    + apiKeyHash : OpaqueSecret [0..1]
+    + totpSecret : OpaqueSecret [0..1]
+    + totpConfirmedAt : Timestamp [0..1]
+  }
+  note left of Operator
+    Single-operator system. At most one Operator
+    instance exists at any time
+    (CON-3a-04 *Single-User System*).
+    **apiKeyHash** is the first-factor verifier:
+    the operator presents the raw API key at sign-in,
+    the system compares its hash in constant time.
+    **totpSecret** + **totpConfirmedAt** form the
+    second factor (RFC 6238 TOTP, UC-02).
+  end note
+
+  class RecoveryToken <<file>> {
+    + token : OpaqueSecret
+    + placedAt : Timestamp
+  }
+  note left of RecoveryToken
+    Single transient artefact placed by the operator
+    out-of-band on the host (e.g. via FTP) when
+    locked out. At most one exists at any time.
+    TTL is enforced relative to **placedAt**
+    (NFR-15a-04, 60 minutes).
+    Redemption (UC-03) deletes the artefact, unbinds
+    the bound TOTP, rotates **Operator.apiKeyHash**,
+    and surfaces the new API key to the operator
+    exactly once.
+  end note
+
+  class VoiceNote {
+    + id : Identifier
+    + type : MessageTypeDT
+    + status : NoteStatusDT
+    + audioPath : Text [0..1]
+    + transcript : Text [0..1]
+    + processedTitle : Text [0..1]
+    + processedBody : Markdown [0..1]
+    + metadata : TypeSpecificData [0..1]
+    + githubIssueNumber : Integer [0..1]
+    + githubIssueUrl : URL [0..1]
+    + errorMessage : Text [0..1]
+    + createdAt : Timestamp
+    + updatedAt : Timestamp
+  }
+  note right of VoiceNote
+    **type** classifies the note (MessageTypeDT enum).
+    The slot inventory of **metadata** is fixed per
+    type at spec level (see D2.7). The host configures,
+    per type, the prompt and the GitHub label written
+    on dispatch.
+    When the note reaches **sent**, **githubIssueNumber**
+    and **githubIssueUrl** point to the created issue.
+  end note
+
+  enum NoteStatusDT <<D2>> {
+    recorded
+    processed
+    sent
+  }
+
+  enum MessageTypeDT <<D2>> {
+    general
+    youtube
+    diary
+    obsidian
+    todo
+  }
+
+  ' Layout hints: Operator top-left, RecoveryToken below Operator,
+  ' VoiceNote to the right of Operator.
+  Operator       -[hidden]down-  RecoveryToken
+  Operator       -[hidden]right- VoiceNote
+  VoiceNote      -[hidden]down-  NoteStatusDT
+  NoteStatusDT     -[hidden]right- MessageTypeDT
+}
+
+' ============================================================
+' Ticket data — lives outside Herold's process boundary
+' ============================================================
+package "Ticket data" <<Frame>> #FFF4E0 {
+
+  class GitHubIssue {
+    + number : Integer
+    + url : URL
+    + title : Text
+    + body : Markdown
+    + labels : Set<Text>
+    + state : IssueStateDT
+  }
+  note right of GitHubIssue
+    GitHubIssue lives at GitHub. Herold persists only
+    **VoiceNote.githubIssueNumber** (→ **number**) and
+    **VoiceNote.githubIssueUrl** (→ **url**). The other
+    attributes describe the **structure Herold writes
+    on dispatch** (UC-08).
+  end note
+
+  class GitHubRepository {
+    + owner : Text
+    + name : Text
+  }
+  note right of GitHubRepository
+    Fixed at the host level by configuration.
+  end note
+
+  enum IssueStateDT <<D2>> {
+    open
+    closed
+  }
+
+  GitHubIssue -[hidden]down- IssueStateDT
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+
+VoiceNote ..>            NoteStatusDT     : status
+VoiceNote ..>            MessageTypeDT  : type
+VoiceNote ..>            GitHubIssue    : refers to
+GitHubIssue ..>          IssueStateDT   : state
+
+GitHubRepository "1" --> "*" GitHubIssue : contains
+
+' Stack the two packages vertically: Herold data on top,
+' Ticket data at the bottom.
+NoteStatusDT    -[hidden]down- GitHubIssue
+MessageTypeDT -[hidden]down- GitHubRepository
+
+@enduml

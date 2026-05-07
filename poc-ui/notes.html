@@ -5,6 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Herold — Notes</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .variant { display: none; }
+    .variant.active { display: block; }
+
+    .variant-bar {
+      display: flex;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-4);
+      padding: var(--sp-2);
+      background: var(--c-surface-1);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-md);
+      flex-wrap: wrap;
+    }
+    .variant-btn {
+      padding: var(--sp-1) var(--sp-3);
+      font-family: var(--font-label);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--c-text-dim);
+      background: none;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-out);
+    }
+    .variant-btn.active {
+      color: var(--c-primary);
+      border-color: rgba(var(--c-primary-rgb), 0.5);
+      background: rgba(var(--c-primary-rgb), 0.06);
+    }
+    .variant-label {
+      font-family: var(--font-label);
+      font-size: 0.6rem;
+      color: var(--c-text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: var(--sp-2);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--sp-12) var(--sp-6);
+      border: 1px dashed var(--c-border);
+      border-radius: var(--radius-xl);
+      background: var(--c-surface-1);
+    }
+    .empty-state-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(var(--c-primary-rgb), 0.1);
+      color: var(--c-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--sp-5);
+    }
+    .empty-state-icon .mdi { font-size: 2.5rem; }
+    .empty-state-title {
+      font-family: var(--font-headline);
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--c-text);
+      margin-bottom: var(--sp-2);
+    }
+    .empty-state-body {
+      font-size: 0.9rem;
+      color: var(--c-text-muted);
+      margin-bottom: var(--sp-5);
+      max-width: 360px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -13,24 +90,30 @@
     <nav class="side-nav">
       <a href="dashboard.html" class="side-nav-brand">
         <img src="../icons/herold-icon-l-256.png" alt="Herold">
-        Herold
+        <div>
+          <div class="brand-text">Herold</div>
+          <div class="brand-subtitle">VOICE DISPATCH SYSTEM</div>
+        </div>
       </a>
-      <a href="dashboard.html" class="nav-item">
-        <span class="mdi mdi-view-dashboard-outline"></span>
-        Dashboard
-      </a>
-      <a href="recording.html" class="nav-item nav-record">
-        <span class="mdi mdi-microphone"></span>
-        Record
-      </a>
-      <a href="notes.html" class="nav-item active">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
-        Notes
-      </a>
-      <a href="settings.html" class="nav-item">
-        <span class="mdi mdi-cog-outline"></span>
-        Settings
-      </a>
+      <div class="side-nav-divider"></div>
+      <div class="side-nav-list">
+        <a href="dashboard.html" class="nav-item">
+          <span class="mdi mdi-view-dashboard"></span>
+          Dashboard
+        </a>
+        <a href="recording.html" class="nav-item">
+          <span class="mdi mdi-microphone"></span>
+          Record
+        </a>
+        <a href="notes.html" class="nav-item active">
+          <span class="mdi mdi-format-list-bulleted"></span>
+          Notes
+        </a>
+        <a href="settings.html" class="nav-item">
+          <span class="mdi mdi-cog"></span>
+          Settings
+        </a>
+      </div>
       <div class="side-nav-footer">
         <a href="login.html" class="nav-item">
           <span class="mdi mdi-logout"></span>
@@ -41,138 +124,237 @@
 
     <!-- Main Content -->
     <main class="app-main">
+      <div class="content-container">
 
-      <div class="page-header">
-        <h1>Notes</h1>
-        <p>All your voice notes</p>
+        <div class="page-header">
+          <h1>Notes</h1>
+          <p>All your voice notes in one place.</p>
+        </div>
+
+        <!-- Variant selector (poc-only) -->
+        <div class="variant-label">Mockup Variant (POC only)</div>
+        <div class="variant-bar">
+          <button class="variant-btn active" data-variant="all" onclick="showVariant('all')">All</button>
+          <button class="variant-btn" data-variant="empty" onclick="showVariant('empty')">Empty</button>
+          <button class="variant-btn" data-variant="empty-filtered" onclick="showVariant('empty-filtered')">Empty (Filtered)</button>
+        </div>
+
+        <!-- ============================================================
+             VARIANT: ALL — list populated
+             ============================================================ -->
+        <div class="variant active" id="v-all">
+
+        <!-- Filter bar (Vuetify v-select filled, density compact) -->
+        <div class="d-flex ga-3 mb-4">
+          <div class="field" style="flex: 1; min-height: 48px;">
+            <span class="field-label">Type</span>
+            <select>
+              <option>All</option>
+              <option>General</option>
+              <option>YouTube Transcription</option>
+              <option>Diary</option>
+            </select>
+            <span class="field-suffix mdi mdi-menu-down"></span>
+          </div>
+          <div class="field" style="flex: 1; min-height: 48px;">
+            <span class="field-label">Status</span>
+            <select>
+              <option>All</option>
+              <option>Recorded</option>
+              <option>Processed</option>
+              <option>Sent</option>
+              <option>Error</option>
+            </select>
+            <span class="field-suffix mdi mdi-menu-down"></span>
+          </div>
+        </div>
+
+        <!-- Notes list -->
+        <div class="d-flex flex-column ga-3">
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-message-text"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Refactor authentication middleware</div>
+                <div class="note-card-snippet">Move the API key validation into a dedicated middleware class and add rate limiting per IP address.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-processed"><span class="mdi mdi-check-circle"></span> processed</span>
+                  <span class="meta-time">09 Apr 2026, 14:32</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-youtube"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Transcribe Laravel 13 keynote</div>
+                <div class="note-card-snippet">YouTube video covering new features in Laravel 13, especially the first-party AI SDK integration.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <span class="github-link-inline"><span class="mdi mdi-github"></span>#42</span>
+                  <span class="meta-time">09 Apr 2026, 13:10</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-book-open-variant"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Daily standup notes</div>
+                <div class="note-card-snippet">Finished the data model documentation, started working on the PlantUML diagrams, reviewed the ADRs for consistency.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <span class="github-link-inline"><span class="mdi mdi-github"></span>#41</span>
+                  <span class="meta-time">08 Apr 2026, 09:05</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-message-text"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Voice memo — quick idea</div>
+                <div class="note-card-snippet">Just a quick thought about the recovery mechanism that I want to capture before I forget.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-recorded"><span class="mdi mdi-microphone"></span> recorded</span>
+                  <span class="meta-time">07 Apr 2026, 18:24</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-error"><span class="mdi mdi-message-text"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Fix deployment pipeline</div>
+                <div class="note-card-snippet">The FTP upload script is missing the public/build directory, need to add it to the sync list.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-error"><span class="mdi mdi-alert-circle"></span> error</span>
+                  <span class="meta-time">06 Apr 2026, 11:50</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-youtube"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Vue 3.5 reactivity deep dive</div>
+                <div class="note-card-snippet">Video tutorial about the new reactivity improvements in Vue 3.5, signal-based approach.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <span class="github-link-inline"><span class="mdi mdi-github"></span>#39</span>
+                  <span class="meta-time">05 Apr 2026, 17:42</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+          <a href="note-show.html" class="card neon-border-primary card-interactive">
+            <div class="note-card">
+              <div class="icon-avatar icon-avatar-40 icon-avatar-primary"><span class="mdi mdi-book-open-variant"></span></div>
+              <div class="note-card-body">
+                <div class="note-card-title">Weekly reflection</div>
+                <div class="note-card-snippet">Productive week overall, managed to set up the full Docker development environment and get the spec consolidated.</div>
+                <div class="note-card-meta">
+                  <span class="status-chip status-chip-sent"><span class="mdi mdi-send-check"></span> sent</span>
+                  <span class="github-link-inline"><span class="mdi mdi-github"></span>#37</span>
+                  <span class="meta-time">04 Apr 2026, 22:11</span>
+                </div>
+              </div>
+              <span class="mdi mdi-chevron-right note-card-chevron"></span>
+            </div>
+          </a>
+
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-center mt-6">
+          <div class="pagination">
+            <button class="pagination-page"><span class="mdi mdi-chevron-left"></span></button>
+            <button class="pagination-page active">1</button>
+            <button class="pagination-page">2</button>
+            <button class="pagination-page">3</button>
+            <button class="pagination-page"><span class="mdi mdi-chevron-right"></span></button>
+          </div>
+        </div>
+
+        </div>
+
+        <!-- ============================================================
+             VARIANT: EMPTY — no notes captured yet
+             ============================================================ -->
+        <div class="variant" id="v-empty">
+          <div class="empty-state">
+            <div class="empty-state-icon"><span class="mdi mdi-microphone-outline"></span></div>
+            <div class="empty-state-title">No voice notes yet</div>
+            <div class="empty-state-body">
+              Capture your first note to see it here. Once recorded, you can process it, edit the generated content, and dispatch it as a GitHub issue.
+            </div>
+            <a href="recording.html" class="btn btn-outlined">
+              <span class="mdi mdi-microphone"></span>
+              Capture a note
+            </a>
+          </div>
+        </div>
+
+        <!-- ============================================================
+             VARIANT: EMPTY (FILTERED) — filter combination has no matches
+             ============================================================ -->
+        <div class="variant" id="v-empty-filtered">
+
+          <div class="d-flex ga-3 mb-4">
+            <div class="field" style="flex: 1; min-height: 48px;">
+              <span class="field-label">Type</span>
+              <select>
+                <option>YouTube Transcription</option>
+              </select>
+              <span class="field-suffix mdi mdi-menu-down"></span>
+            </div>
+            <div class="field" style="flex: 1; min-height: 48px;">
+              <span class="field-label">Status</span>
+              <select>
+                <option>Error</option>
+              </select>
+              <span class="field-suffix mdi mdi-menu-down"></span>
+            </div>
+          </div>
+
+          <div class="empty-state">
+            <div class="empty-state-icon"><span class="mdi mdi-filter-off-outline"></span></div>
+            <div class="empty-state-title">No notes match the current filter</div>
+            <div class="empty-state-body">
+              No <strong>YouTube Transcription</strong> notes are in the <strong>Error</strong> status. Try a different combination, or clear the filter to see all notes.
+            </div>
+            <button class="btn btn-outlined" onclick="showVariant('all')">
+              <span class="mdi mdi-close"></span>
+              Clear filter
+            </button>
+          </div>
+        </div>
+
       </div>
-
-      <!-- Filter Bar -->
-      <div class="filter-bar">
-        <select>
-          <option>All Types</option>
-          <option>General</option>
-          <option>YouTube Transcription</option>
-          <option>Diary</option>
-        </select>
-        <select>
-          <option>All Status</option>
-          <option>Recorded</option>
-          <option>Processed</option>
-          <option>Sent</option>
-          <option>Error</option>
-        </select>
-      </div>
-
-      <!-- Note List -->
-      <div class="stack-sm">
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-message-text"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Refactor authentication middleware</div>
-              <div class="note-card-snippet">We need to move the API key validation into a dedicated middleware class and add rate limiting per IP address...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-processed"><span class="mdi mdi-check-circle"></span> Processed</span>
-                <span>2 min ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-youtube" style="color: #ff4444;"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Transcribe Laravel 13 keynote</div>
-              <div class="note-card-snippet">YouTube video covering new features in Laravel 13, especially the first-party AI SDK and Inertia 3 improvements...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                <span>1 hour ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-book-open-variant"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Daily standup notes</div>
-              <div class="note-card-snippet">Finished the data model documentation, started working on the PlantUML diagrams, reviewed the ADRs for consistency...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                <span>Yesterday</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-message-text"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Voice memo — quick idea</div>
-              <div class="note-card-snippet">Just a quick thought about the recovery mechanism that I want to capture before I forget...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-recorded"><span class="mdi mdi-microphone"></span> Recorded</span>
-                <span>Yesterday</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-message-text"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Fix deployment pipeline</div>
-              <div class="note-card-snippet">The FTP upload script is missing the public/build directory, need to add it to the sync list...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-error"><span class="mdi mdi-alert-circle"></span> Error</span>
-                <span>2 days ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-youtube" style="color: #ff4444;"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Vue 3.5 reactivity deep dive</div>
-              <div class="note-card-snippet">Video tutorial about the new reactivity improvements in Vue 3.5, signal-based approach...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                <span>3 days ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <a href="note-show.html" class="card card-interactive">
-          <div class="note-card">
-            <div class="note-card-icon"><span class="mdi mdi-book-open-variant"></span></div>
-            <div class="note-card-body">
-              <div class="note-card-title">Weekly reflection</div>
-              <div class="note-card-snippet">Productive week overall, managed to set up the full Docker development environment and get the spec consolidated...</div>
-              <div class="note-card-meta">
-                <span class="badge badge-sent"><span class="mdi mdi-github"></span> Sent</span>
-                <span>4 days ago</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-      </div>
-
     </main>
 
     <!-- Bottom Navigation (mobile) -->
     <nav class="bottom-nav">
       <a href="dashboard.html" class="nav-item">
-        <span class="mdi mdi-view-dashboard-outline"></span>
+        <span class="mdi mdi-view-dashboard"></span>
         Dashboard
       </a>
       <a href="recording.html" class="nav-item nav-record">
@@ -180,15 +362,25 @@
         Record
       </a>
       <a href="notes.html" class="nav-item active">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
+        <span class="mdi mdi-format-list-bulleted"></span>
         Notes
       </a>
       <a href="settings.html" class="nav-item">
-        <span class="mdi mdi-cog-outline"></span>
+        <span class="mdi mdi-cog"></span>
         Settings
       </a>
     </nav>
 
   </div>
+
+  <script>
+    function showVariant(name) {
+      document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('v-' + name).classList.add('active');
+      const btn = document.querySelector('.variant-btn[data-variant="' + name + '"]');
+      if (btn) btn.classList.add('active');
+    }
+  </script>
 </body>
 </html>

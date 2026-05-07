@@ -1,0 +1,117 @@
+@startuml f2-use-cases
+!theme plain
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam UsecaseBorderColor #333333
+skinparam UsecaseBackgroundColor #F5F5F5
+skinparam ActorBorderColor #333333
+skinparam nodesep 18
+skinparam ranksep 40
+
+title Herold — F2 Use Cases
+
+' Primary actor on the left.
+actor "Operator" as OP
+
+rectangle "Herold" as HEROLD {
+
+  ' Per-use-case fill colour encodes the authentication state:
+  '   #FFB07C — reachable without an established session (UC-01..UC-03)
+  '   #99D9C0 — requires an authenticated session (UC-04..UC-13)
+  ' Package backgrounds keep encoding the F2 grouping.
+
+  package "Access" as ACCESS #E8F4FF {
+    usecase "UC-01\nSign in\n--\nextension points:\nauthentication lost" as UC01 #FFB07C
+    usecase "UC-02\nEnrol second factor"                                    as UC02 #FFB07C
+    usecase "UC-03\nRecover access"                                         as UC03 #FFB07C
+    usecase "UC-04\nSign out"                                               as UC04 #99D9C0
+  }
+
+  package "Note flow" as NOTEFLOW #E8FFE8 {
+    usecase "UC-05\nCapture voice note"        as UC05 #99D9C0
+    usecase "UC-06\nProcess voice note"        as UC06 #99D9C0
+    usecase "UC-07\nEdit generated content"    as UC07 #99D9C0
+    usecase "UC-08\nDispatch voice note"       as UC08 #99D9C0
+  }
+
+  package "Management" as MGMT #FFF4E0 {
+    usecase "UC-09\nBrowse voice notes"                                            as UC09 #99D9C0
+    usecase "UC-10\nView a voice note\n--\nextension points:\nfrom detail view"    as UC10 #99D9C0
+    usecase "UC-11\nDelete a voice note"                                           as UC11 #99D9C0
+    usecase "UC-13\nView dashboard"                                                as UC13 #99D9C0
+  }
+
+  package "Configuration" as CONFIG #F0E8FF {
+    usecase "UC-12\nView settings" as UC12 #99D9C0
+  }
+}
+
+' Supporting external systems on the right, grouped near the use cases
+' they back. Modelled as «system» nodes (not actors) — they are
+' non-human participants Herold delegates to. OpenAI is one system
+' exposing two API endpoints used by Herold.
+rectangle "OpenAI" <<system>> as OPENAI {
+  rectangle "Whisper API"         <<api>> as WHISPER
+  rectangle "Chat Completion API" <<api>> as CHAT
+}
+rectangle "GitHub Issues" <<system>> as GH
+
+' Primary actor — one association per use case.
+OP -- UC01
+OP -- UC02
+OP -- UC03
+OP -- UC04
+OP -- UC05
+OP -- UC06
+OP -- UC07
+OP -- UC08
+OP -- UC09
+OP -- UC10
+OP -- UC11
+OP -- UC12
+OP -- UC13
+
+' Supporting external systems.
+UC06 -- WHISPER
+UC06 -- CHAT
+UC08 -- GH
+
+' Use-case relationships extracted from F2.
+' UC-10 is the typical entry point for these (UC-10 postcondition);
+' UC-07 step 1 explicitly opens the detail view, the others enter from it.
+UC06 ..> UC10 : <<extend>>\n(from detail view)
+UC07 ..> UC10 : <<extend>>\n(from detail view)
+UC08 ..> UC10 : <<extend>>\n(from detail view)
+UC11 ..> UC10 : <<extend>>\n(from detail view)
+
+' Recovery is the pivot when UC-01 cannot succeed (UC-01 exception).
+UC03 ..> UC01 : <<extend>>\n(authentication lost)
+
+' Enrolment runs inline inside UC-01 on the first sign-in (UC-01 main
+' scenario step 4) and is required again after a recovery (UC-03
+' postcondition).
+UC01 ..> UC02 : <<include>>\n[first sign-in,\nTOTP not enrolled]
+UC03 ..> UC02 : <<precedes>>
+
+' Layout hint: stack OpenAI above GitHub Issues so the two external
+' systems form a single column on the right edge of the diagram.
+' Everything else is left to Graphviz — the section ordering inside
+' Herold falls out naturally from the include/extend edges into UC-10.
+OPENAI -[hidden]down- GH
+
+' System-wide precondition (cheaper than drawing 9 <<precedes>> edges
+' from UC-01 into the Note flow, Management and Configuration sections).
+' Rendered as a positioned legend so it lands in the empty top-left
+' corner of the canvas, next to the OpenAI/GitHub Issues column, rather
+' than as a `note ... of HEROLD` whose connector line would wrap around
+' the diagram.
+legend top left
+  **Authentication state (use-case fill colour)**
+  <back:#FFB07C>   </back> reachable without an established session — UC-01, UC-02, UC-03
+  <back:#99D9C0>   </back> requires an authenticated session — all other use cases
+  (the authenticated session is the postcondition of UC-01).
+end legend
+
+@enduml

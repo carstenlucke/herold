@@ -53,22 +53,22 @@ The reference description of the building-block model is in [`SIEDERSLEBEN.md`](
 
 | Block | Title | Status | File |
 |-------|-------|--------|------|
-| F1 | Business Processes | 🛠 | `F1-geschaeftsprozesse.md` |
-| F2 | Use Cases | 🛠 | `F2-anwendungsfaelle.md` |
-| F3 | Application Functions | 🛠 | `F3-anwendungsfunktionen.md` |
+| F1 | Business Processes | ✅ | [`F1-geschaeftsprozesse.md`](F1-geschaeftsprozesse.md) |
+| F2 | Use Cases | ✅ | [`F2-anwendungsfaelle.md`](F2-anwendungsfaelle.md) |
+| F3 | Application Functions | ✅ | [`F3-anwendungsfunktionen.md`](F3-anwendungsfunktionen.md) |
 
 ### 3. Data
 
 | Block | Title | Status | File |
 |-------|-------|--------|------|
-| D1 | Data Model | 🛠 | `D1-datenmodell.md` |
-| D2 | Data Type Catalogue | 🛠 | `D2-datentypen.md` |
+| D1 | Data Model | ✅ | [`D1-datenmodell.md`](D1-datenmodell.md) |
+| D2 | Data Type Catalogue | ✅ | [`D2-datentypen.md`](D2-datentypen.md) |
 
 ### 4. User Interface
 
 | Block | Title | Status | File |
 |-------|-------|--------|------|
-| B1 | Dialogue Specification | 🛠 | `B1-dialogspezifikation.md` |
+| B1 | Dialogue Specification | ✅ | `B1-dialogspezifikation.md` |
 | B2 | Batch | ⛔ | — |
 | B3 | Print Output | ⛔ | — |
 
@@ -76,16 +76,16 @@ The reference description of the building-block model is in [`SIEDERSLEBEN.md`](
 
 | Block | Title | Status | File |
 |-------|-------|--------|------|
-| S1 | Neighbouring System Interfaces | 🛠 | `S1-nachbarsysteme.md` |
+| S1 | Neighbouring System Interfaces | ✅ | [`S1-nachbarsysteme.md`](S1-nachbarsysteme.md) |
 | S2 | Data Migration | ⛔ | — |
-| S3 | Commissioning / Rollout | 🛠 | `S3-inbetriebnahme.md` |
+| S3 | Commissioning / Rollout | ✅ | [`S3-inbetriebnahme.md`](S3-inbetriebnahme.md) |
 
 ### 6. Cross-cutting Aspects
 
 | Block | Title | Status | File |
 |-------|-------|--------|------|
 | N1 | Non-functional Requirements | ✅ | [`N1-nichtfunktional.md`](N1-nichtfunktional.md) |
-| N2 | Cross-cutting Concepts | 🛠 | `N2-querschnittskonzepte.md` |
+| N2 | Cross-cutting Concepts | ✅ | [`N2-querschnittskonzepte.md`](N2-querschnittskonzepte.md) |
 
 ### 7. Supplementary Blocks
 
@@ -102,7 +102,7 @@ The following blocks of the Siedersleben model are deliberately not produced for
 
 ### B2 — Batch
 
-Herold has no batch processing. The processing pipeline is synchronous inside the HTTP request (see ADR-002). The production environment forbids `crontab`, and there is no queue, worker, or scheduler.
+Herold has no batch processing. The processing pipeline is synchronous inside the HTTP request (see ADR-002). The production environment does not permit scheduled jobs, and there is no queue, worker, or scheduler.
 
 ### B3 — Print Output
 

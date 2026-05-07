@@ -1,0 +1,25 @@
+@startuml f2-uc07-edit-content
+!theme plain
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam SequenceLifeLineBorderColor #333333
+skinparam SequenceParticipantBorderColor #333333
+skinparam SequenceParticipantBackgroundColor #F5F5F5
+skinparam SequenceReferenceBackgroundColor #F0E8FF
+skinparam SequenceGroupBodyBackgroundColor transparent
+
+title Herold — UC-07 Edit generated content (main scenario)
+
+actor    "Operator" as OP
+participant "Herold"  as SYS
+
+OP  ->  SYS : open note detail view //(UC-10)//
+SYS --> OP  : current title, body, extra fields
+
+OP  ->  OP  : edit title, body, or extra fields
+OP  ->  SYS : save changes
+SYS ->  SYS : sanitise edited markdown //(AF-03)//\nrevalidate extra fields //(D2.7)//
+SYS ->  SYS : persist changes\n(status stays ""processed"")
+SYS --> OP  : confirmation
+
+@enduml

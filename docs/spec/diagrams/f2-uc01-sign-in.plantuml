@@ -1,0 +1,33 @@
+@startuml f2-uc01-sign-in
+!theme plain
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam SequenceLifeLineBorderColor #333333
+skinparam SequenceParticipantBorderColor #333333
+skinparam SequenceParticipantBackgroundColor #F5F5F5
+skinparam SequenceReferenceBackgroundColor #F0E8FF
+skinparam SequenceGroupBodyBackgroundColor transparent
+
+title Herold — UC-01 Sign in (main scenario)
+
+actor    "Operator" as OP
+participant "Herold"  as SYS
+
+OP  ->  SYS : open Herold (no active session)
+SYS --> OP  : sign-in screen
+
+OP  ->  SYS : enter API key //(first factor)//
+SYS ->  SYS : verify against ""Operator.apiKeyHash""
+
+alt no confirmed TOTP secret bound to the account (first sign-in)
+  ref over OP, SYS : UC-02 — Enrol second factor\n(inline include)
+else TOTP secret confirmed (subsequent sign-in)
+  SYS --> OP  : prompt for TOTP code
+  OP  ->  SYS : enter current code
+  SYS ->  SYS : verify against ""Operator.totpSecret""
+end
+
+SYS ->  SYS : establish authenticated session
+SYS --> OP  : redirect to dashboard
+
+@enduml

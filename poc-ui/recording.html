@@ -6,55 +6,48 @@
   <title>Herold — New Recording</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .type-section {
-      margin-bottom: var(--sp-6);
-    }
+    .variant { display: none; }
+    .variant.active { display: block; }
 
-    .extra-fields {
-      display: none;
-      margin-top: var(--sp-4);
-    }
-
-    .extra-fields.visible {
-      display: block;
-    }
-
-    .recorder-wrapper {
+    .variant-bar {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: var(--sp-8) 0;
-    }
-
-    .recorder-controls {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-6);
-    }
-
-    .recorder-secondary-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: var(--c-surface-2);
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-4);
+      padding: var(--sp-2);
+      background: var(--c-surface-1);
       border: 1px solid var(--c-border);
-      color: var(--c-text-muted);
-      font-size: 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border-radius: var(--radius-md);
+      flex-wrap: wrap;
+    }
+    .variant-btn {
+      padding: var(--sp-1) var(--sp-3);
+      font-family: var(--font-label);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--c-text-dim);
+      background: none;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: all var(--duration-fast) var(--ease-out);
+    }
+    .variant-btn.active {
+      color: var(--c-primary);
+      border-color: rgba(var(--c-primary-rgb), 0.5);
+      background: rgba(var(--c-primary-rgb), 0.06);
+    }
+    .variant-label {
+      font-family: var(--font-label);
+      font-size: 0.6rem;
+      color: var(--c-text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: var(--sp-2);
     }
 
-    .recorder-secondary-btn:hover {
-      border-color: rgba(var(--c-primary-rgb), 0.3);
-      color: var(--c-text);
-    }
-
-    .save-spacer {
-      height: calc(var(--nav-height) + 80px);
-    }
+    .extra-fields { display: none; }
+    .extra-fields.visible { display: block; }
   </style>
 </head>
 <body>
@@ -64,24 +57,30 @@
     <nav class="side-nav">
       <a href="dashboard.html" class="side-nav-brand">
         <img src="../icons/herold-icon-l-256.png" alt="Herold">
-        Herold
+        <div>
+          <div class="brand-text">Herold</div>
+          <div class="brand-subtitle">VOICE DISPATCH SYSTEM</div>
+        </div>
       </a>
-      <a href="dashboard.html" class="nav-item">
-        <span class="mdi mdi-view-dashboard-outline"></span>
-        Dashboard
-      </a>
-      <a href="recording.html" class="nav-item nav-record active">
-        <span class="mdi mdi-microphone"></span>
-        Record
-      </a>
-      <a href="notes.html" class="nav-item">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
-        Notes
-      </a>
-      <a href="settings.html" class="nav-item">
-        <span class="mdi mdi-cog-outline"></span>
-        Settings
-      </a>
+      <div class="side-nav-divider"></div>
+      <div class="side-nav-list">
+        <a href="dashboard.html" class="nav-item">
+          <span class="mdi mdi-view-dashboard"></span>
+          Dashboard
+        </a>
+        <a href="recording.html" class="nav-item active">
+          <span class="mdi mdi-microphone"></span>
+          Record
+        </a>
+        <a href="notes.html" class="nav-item">
+          <span class="mdi mdi-format-list-bulleted"></span>
+          Notes
+        </a>
+        <a href="settings.html" class="nav-item">
+          <span class="mdi mdi-cog"></span>
+          Settings
+        </a>
+      </div>
       <div class="side-nav-footer">
         <a href="login.html" class="nav-item">
           <span class="mdi mdi-logout"></span>
@@ -92,102 +91,140 @@
 
     <!-- Main Content -->
     <main class="app-main">
+      <div class="content-container">
 
-      <div class="page-header">
-        <h1>New Recording</h1>
-        <p>Select a type, then record your voice note</p>
-      </div>
-
-      <!-- Type Selector -->
-      <div class="type-section">
-        <label>Message Type</label>
-        <div class="chip-group mt-2">
-          <button class="chip active" onclick="selectType(this, 'general')">
-            <span class="mdi mdi-message-text"></span>
-            General
-          </button>
-          <button class="chip" onclick="selectType(this, 'youtube')">
-            <span class="mdi mdi-youtube"></span>
-            YouTube Transcription
-          </button>
-          <button class="chip" onclick="selectType(this, 'diary')">
-            <span class="mdi mdi-book-open-variant"></span>
-            Diary
-          </button>
+        <div class="page-header">
+          <h1>New Recording</h1>
+          <p>Select a type, record your voice note, then save.</p>
         </div>
-      </div>
 
-      <!-- Extra Fields (YouTube) -->
-      <div class="extra-fields" id="youtubeFields">
-        <div class="form-group">
-          <label for="youtubeUrl">YouTube URL</label>
-          <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+        <!-- Variant selector (poc-only) -->
+        <div class="variant-label">Mockup Variant (POC only)</div>
+        <div class="variant-bar">
+          <button class="variant-btn active" onclick="showVariant('idle')">Idle</button>
+          <button class="variant-btn" onclick="showVariant('recording')">Recording</button>
+          <button class="variant-btn" onclick="showVariant('review')">Review</button>
         </div>
-      </div>
 
-      <!-- Audio Recorder -->
-      <div class="card">
-        <div class="recorder-wrapper">
-          <!-- Waveform -->
-          <div class="waveform mb-6" id="waveform">
-            <div class="waveform-bar" style="height: 12px;"></div>
-            <div class="waveform-bar" style="height: 8px;"></div>
-            <div class="waveform-bar" style="height: 20px;"></div>
-            <div class="waveform-bar" style="height: 14px;"></div>
-            <div class="waveform-bar" style="height: 28px;"></div>
-            <div class="waveform-bar" style="height: 18px;"></div>
-            <div class="waveform-bar" style="height: 32px;"></div>
-            <div class="waveform-bar" style="height: 24px;"></div>
-            <div class="waveform-bar" style="height: 16px;"></div>
-            <div class="waveform-bar" style="height: 36px;"></div>
-            <div class="waveform-bar" style="height: 20px;"></div>
-            <div class="waveform-bar" style="height: 28px;"></div>
-            <div class="waveform-bar" style="height: 12px;"></div>
-            <div class="waveform-bar" style="height: 24px;"></div>
-            <div class="waveform-bar" style="height: 8px;"></div>
-            <div class="waveform-bar" style="height: 18px;"></div>
-            <div class="waveform-bar" style="height: 30px;"></div>
-            <div class="waveform-bar" style="height: 14px;"></div>
-            <div class="waveform-bar" style="height: 22px;"></div>
-            <div class="waveform-bar" style="height: 10px;"></div>
-            <div class="waveform-bar" style="height: 26px;"></div>
-            <div class="waveform-bar" style="height: 16px;"></div>
-            <div class="waveform-bar" style="height: 20px;"></div>
-            <div class="waveform-bar" style="height: 12px;"></div>
-          </div>
-
-          <!-- Timer -->
-          <div class="recorder-timer mb-6" id="timer">00:00</div>
-
-          <!-- Controls -->
-          <div class="recorder-controls">
-            <button class="recorder-secondary-btn" title="Pause" id="pauseBtn" style="visibility: hidden;">
-              <span class="mdi mdi-pause"></span>
+        <!-- Type selector -->
+        <div class="mb-6">
+          <div class="text-caption font-label text-muted mb-2">Message Type</div>
+          <div class="chip-group">
+            <button class="chip active" onclick="selectType(this, 'general')">
+              <span class="mdi mdi-message-text"></span>
+              General
             </button>
-            <button class="recorder-btn" id="recordBtn" onclick="toggleRecording()">
-              <span class="mdi mdi-microphone"></span>
+            <button class="chip" onclick="selectType(this, 'youtube')">
+              <span class="mdi mdi-youtube"></span>
+              YouTube Transcription
             </button>
-            <div style="width: 44px;"></div>
+            <button class="chip" onclick="selectType(this, 'diary')">
+              <span class="mdi mdi-book-open-variant"></span>
+              Diary
+            </button>
           </div>
         </div>
+
+        <!-- Extra fields (YouTube) -->
+        <div class="extra-fields" id="youtubeFields">
+          <div class="field">
+            <span class="field-label">YouTube URL</span>
+            <input type="url" placeholder="https://www.youtube.com/watch?v=...">
+          </div>
+        </div>
+
+        <!-- =========================================================
+             VARIANT: IDLE — ready to record
+             ========================================================= -->
+        <div class="variant active" id="v-idle">
+          <div class="recorder py-6">
+            <div class="waveform-mini idle">
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+            </div>
+
+            <div class="recorder-timer">00:00</div>
+
+            <div class="d-flex align-center ga-4">
+              <button class="record-button">
+                <span class="mdi mdi-microphone"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================
+             VARIANT: RECORDING — active capture
+             ========================================================= -->
+        <div class="variant" id="v-recording">
+          <div class="recorder py-6">
+            <div class="waveform-mini">
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+              <div class="waveform-mini-bar"></div>
+            </div>
+
+            <div class="recorder-timer">00:23</div>
+
+            <div class="d-flex align-center ga-4">
+              <button class="btn btn-tonal-secondary btn-icon">
+                <span class="mdi mdi-pause"></span>
+              </button>
+              <button class="record-button recording">
+                <span class="mdi mdi-stop"></span>
+              </button>
+              <div style="width: 40px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================
+             VARIANT: REVIEW — playback after recording
+             ========================================================= -->
+        <div class="variant" id="v-review">
+          <div class="recorder py-6">
+            <div class="d-flex align-center" style="width: 240px;">
+              <div class="playback-bar">
+                <div class="playback-bar-fill" style="width: 38%;"></div>
+              </div>
+            </div>
+
+            <div class="recorder-timer">00:18 / 00:47</div>
+
+            <div class="d-flex align-center ga-4">
+              <button class="btn btn-tonal-error btn-icon">
+                <span class="mdi mdi-delete"></span>
+              </button>
+              <button class="record-button">
+                <span class="mdi mdi-play"></span>
+              </button>
+              <div style="width: 40px;"></div>
+            </div>
+          </div>
+
+          <!-- Save -->
+          <button class="btn btn-outlined btn-block btn-lg mt-4">
+            <span class="mdi mdi-content-save"></span>
+            Save Voice Note
+          </button>
+        </div>
+
       </div>
-
-      <div class="save-spacer"></div>
-
     </main>
-
-    <!-- Sticky Save Button -->
-    <div class="sticky-footer" id="saveFooter" style="display: none;">
-      <button class="btn btn-primary btn-block btn-lg">
-        <span class="mdi mdi-content-save"></span>
-        Save Recording
-      </button>
-    </div>
 
     <!-- Bottom Navigation (mobile) -->
     <nav class="bottom-nav">
       <a href="dashboard.html" class="nav-item">
-        <span class="mdi mdi-view-dashboard-outline"></span>
+        <span class="mdi mdi-view-dashboard"></span>
         Dashboard
       </a>
       <a href="recording.html" class="nav-item nav-record active">
@@ -195,11 +232,11 @@
         Record
       </a>
       <a href="notes.html" class="nav-item">
-        <span class="mdi mdi-text-box-multiple-outline"></span>
+        <span class="mdi mdi-format-list-bulleted"></span>
         Notes
       </a>
       <a href="settings.html" class="nav-item">
-        <span class="mdi mdi-cog-outline"></span>
+        <span class="mdi mdi-cog"></span>
         Settings
       </a>
     </nav>
@@ -207,43 +244,17 @@
   </div>
 
   <script>
-    let isRecording = false;
-    let seconds = 0;
-    let timerInterval;
-
     function selectType(el, type) {
       document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
       el.classList.add('active');
       document.getElementById('youtubeFields').classList.toggle('visible', type === 'youtube');
     }
 
-    function toggleRecording() {
-      const btn = document.getElementById('recordBtn');
-      const waveform = document.getElementById('waveform');
-      const pauseBtn = document.getElementById('pauseBtn');
-      const saveFooter = document.getElementById('saveFooter');
-
-      if (!isRecording) {
-        isRecording = true;
-        btn.classList.add('recording');
-        btn.querySelector('.mdi').className = 'mdi mdi-stop';
-        waveform.classList.add('active');
-        pauseBtn.style.visibility = 'visible';
-        timerInterval = setInterval(() => {
-          seconds++;
-          const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-          const s = String(seconds % 60).padStart(2, '0');
-          document.getElementById('timer').textContent = `${m}:${s}`;
-        }, 1000);
-      } else {
-        isRecording = false;
-        btn.classList.remove('recording');
-        btn.querySelector('.mdi').className = 'mdi mdi-microphone';
-        waveform.classList.remove('active');
-        pauseBtn.style.visibility = 'hidden';
-        clearInterval(timerInterval);
-        saveFooter.style.display = 'block';
-      }
+    function showVariant(name) {
+      document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('v-' + name).classList.add('active');
+      event.target.classList.add('active');
     }
   </script>
 </body>

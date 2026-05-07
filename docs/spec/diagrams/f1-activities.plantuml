@@ -11,31 +11,33 @@ skinparam ArrowColor #555555
 skinparam ActivityBorderColor #333333
 skinparam ActivityBackgroundColor #F5F5F5
 
-|Operator|
+|Operator (browser)|
 start
 :A1 — Form intent
 //(idea, task, observation)//;
-
-|Browser|
-:A2 — Select message type;
+:A2 — Open Herold;
 :A3 — Record voice note
-//(audio + optional extra fields)//;
+//(audio + message type + optional extra fields)//;
 
 |Herold|
 :A4 — Begin processing
 //(persist note · status = recorded)//;
 
-|OpenAI|
-:A5 — Transcribe audio
-//(Whisper)//;
+|OpenAI Whisper|
+:A5 — Transcribe audio;
+
+|Herold|
+:Persist transcript;
+
+|OpenAI Chat|
 :A6 — Generate title + body
-//(Chat · type-specific prompt)//;
+//(type-specific prompt)//;
 
 |Herold|
 :Persist structured content
 //(status = processed)//;
 
-|Operator|
+|Operator (browser)|
 repeat
   :A7 — Review and edit content;
 repeat while (Satisfied?) is (no) not (yes)

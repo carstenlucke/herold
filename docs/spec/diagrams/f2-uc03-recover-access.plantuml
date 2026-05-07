@@ -1,0 +1,25 @@
+@startuml f2-uc03-recover-access
+!theme plain
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam SequenceLifeLineBorderColor #333333
+skinparam SequenceParticipantBorderColor #333333
+skinparam SequenceParticipantBackgroundColor #F5F5F5
+skinparam SequenceReferenceBackgroundColor #F0E8FF
+skinparam SequenceGroupBodyBackgroundColor transparent
+
+title Herold — UC-03 Recover access (main scenario)
+
+actor    "Operator" as OP
+participant "Herold"  as SYS
+
+OP  ->  SYS : select recovery option
+SYS ->  SYS : check recovery token presence and freshness //(NFR-15a-04)//
+SYS --> OP  : token-secret prompt
+
+OP  ->  SYS : token secret
+SYS ->  SYS : verify in constant time,\ndelete recovery-token file
+SYS ->  SYS : unbind TOTP, rotate API key,\nestablish authenticated session
+SYS --> OP  : new API key (shown once)
+
+@enduml

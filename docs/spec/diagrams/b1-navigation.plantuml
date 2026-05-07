@@ -1,0 +1,95 @@
+@startuml b1-navigation
+!theme plain
+skinparam shadowing false
+skinparam linetype polyline
+skinparam ArrowColor #555555
+skinparam StateBorderColor #333333
+skinparam StateBackgroundColor #F5F5F5
+skinparam StateFontSize 12
+skinparam nodesep 70
+skinparam ranksep 90
+
+title Herold — B1 Dialogue Navigation Map
+
+' Per-dialogue fill colour encodes the authentication state, mirroring F2:
+'   #FFB07C — reachable without an established session (DLG-01..DLG-04)
+'   #FFD27C — mid-flow, post-recovery, no authenticated session yet (DLG-05)
+'   #99D9C0 — requires an authenticated session (DLG-06..DLG-10)
+'
+' Self-loops for rate-limited retries on rejected input (DLG-01, DLG-02,
+' DLG-03, DLG-04) are intentionally not drawn; they would clutter the map
+' without changing the navigation topology and are governed by
+' NFR-15a-02 *Login Rate Limiting and Lockout*.
+'
+' The persistent navigation chrome (side/bottom nav, reachable from every
+' authenticated screen) is represented as a note rather than a fan-in /
+' fan-out hub. Rendering every screen-to-chrome edge stacked the labels
+' into a single region and obscured the actual workflow transitions.
+
+[*] --> DLG01
+
+state "Access" as ACCESS {
+
+  state "DLG-01\nSign-in (first factor)"        as DLG01 #FFB07C
+  state "DLG-02\nSecond-factor verification"    as DLG02 #FFB07C
+  state "DLG-03\nSecond-factor enrolment"       as DLG03 #FFB07C
+  state "DLG-04\nRecovery"                      as DLG04 #FFB07C
+  state "DLG-05\nRecovery result"               as DLG05 #FFD27C
+
+  ' --- First-factor outcomes ---
+  DLG01 -down-> DLG02  : key OK / TOTP enrolled
+  DLG01 -right-> DLG03 : key OK / first sign-in
+
+  ' --- Recovery branch (kept on the left side of the cluster) ---
+  DLG01 -left-> DLG04  : Recover Access
+  DLG02 -left-> DLG04  : Recover Access
+  DLG04 -down-> DLG05  : token OK
+  DLG04 -up-> DLG01    : cancel
+  DLG05 --> DLG01      : continue
+}
+
+state "Authenticated session" as AUTH #E8F4FF {
+
+  state "DLG-06\nDashboard"     as DLG06 #99D9C0
+  state "DLG-07\nNotes list"    as DLG07 #99D9C0
+  state "DLG-08\nNote detail"   as DLG08 #99D9C0
+  state "DLG-09\nCapture"       as DLG09 #99D9C0
+  state "DLG-10\nSettings"      as DLG10 #99D9C0
+
+  ' --- Sign-in lands on dashboard (or the originally requested page) ---
+  DLG02 --> DLG06 : code OK
+  DLG03 --> DLG06 : confirmation OK
+
+  ' --- Specific flow transitions ---
+  DLG06 -right-> DLG09 : new recording
+  DLG09 -up-> DLG08    : submit
+  DLG06 -down-> DLG08  : open recent note
+  DLG07 -up-> DLG08    : open a note
+  DLG08 -left-> DLG07  : back / delete
+  DLG08 --> DLG08      : process / dispatch /\nsave edits
+}
+
+note right of AUTH
+  **Persistent nav chrome.**
+  Every authenticated screen
+  reaches the four primary
+  destinations via the side /
+  bottom navigation:
+  • DLG-06 Dashboard
+  • DLG-07 Notes
+  • DLG-09 Record
+  • DLG-10 Settings
+end note
+
+' --- Sign-out (UC-04) and session loss leave the authenticated cluster ---
+AUTH -[#B05050]-> DLG01 : sign out / session lost
+
+legend left
+  | <#FFB07C> | no session required |
+  | <#FFD27C> | post-recovery, no session yet |
+  | <#99D9C0> | authenticated session required |
+  | <#FFFFFF> retry self-loops | omitted; covered by NFR-15a-02 |
+  | <#FFFFFF> persistent chrome | rendered as side note |
+endlegend
+
+@enduml

@@ -75,7 +75,7 @@ Bewertung der Relevanz jedes Bausteins für das Projekt Herold inklusive Quelle 
 
 | Baustein | Relevant | Quelle | Zieldatei |
 |----------|----------|--------|-----------|
-| **D1 – Datenmodell** | Ja | `docs/spec/DATA_MODEL.md`, `docs/spec/diagrams/datamodel.plantuml` | `D1-datenmodell.md` (oder Verweis auf Bestehendes) |
+| **D1 – Datenmodell** | Ja | `docs/spec/DATA_MODEL.md`, `docs/arch/diagrams/relational-datamodel.plantuml` | `D1-datenmodell.md` (oder Verweis auf Bestehendes) |
 | **D2 – Datentypenverzeichnis** | Ja (klein: Enums, Wertebereiche, Formate) | Migrations, Enums (`NoteStatus`), Models | `D2-datentypen.md` |
 
 ### 4. Benutzerschnittstelle

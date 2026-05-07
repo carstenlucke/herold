@@ -1,0 +1,31 @@
+@startuml f2-uc06-process-note
+!theme plain
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam SequenceLifeLineBorderColor #333333
+skinparam SequenceParticipantBorderColor #333333
+skinparam SequenceParticipantBackgroundColor #F5F5F5
+skinparam SequenceReferenceBackgroundColor #F0E8FF
+skinparam SequenceGroupBodyBackgroundColor transparent
+
+title Herold — UC-06 Process voice note (main scenario)
+
+actor       "Operator"            as OP
+participant "Herold"               as SYS
+participant "Whisper API"          as WHISPER <<system>>
+participant "Chat Completion API"  as CHAT    <<system>>
+
+OP  ->  SYS     : open note detail view //(UC-10)//
+SYS --> OP      : note detail view
+
+OP  ->  SYS     : trigger processing
+SYS ->  WHISPER : transcribe audio //(S1.3)//
+WHISPER --> SYS : transcript
+SYS ->  SYS     : resolve message type //(D2.4)//
+SYS ->  CHAT    : generate structured content\nfrom transcript //(S1.4)//
+CHAT --> SYS    : title, body, optional extra fields
+SYS ->  SYS     : sanitise markdown //(AF-03)//\nand persist structured content
+SYS ->  SYS     : transition to ""processed"" //(D2.5)//
+SYS --> OP      : updated note view
+
+@enduml

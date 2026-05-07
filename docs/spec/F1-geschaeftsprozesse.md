@@ -4,7 +4,7 @@ Real-world workflows that Herold participates in, in the sense of Siedersleben (
 
 Herold is one such supporting IT system. The process documented here therefore extends beyond Herold's HTTP boundary: it starts before the operator opens the browser and ends after a downstream consumer has acted on the resulting GitHub Issue. Herold is the *capture and dispatch* segment of the process — important, but not the whole.
 
-The blocks that translate this process into Herold-implemented behaviour are **F2** (use cases — the DV-supported activities) and **F3** (application functions — the algorithms reused across use cases).
+The blocks that translate this process into Herold-implemented behaviour are **F2** (use cases — the system-supported activities) and **F3** (application functions — the algorithms reused across use cases).
 
 ---
 
@@ -28,18 +28,18 @@ Note that Herold itself, the AI agent, GitHub, and OpenAI are listed as actors h
 
 ### F1.1.2 Activities
 
-Listed in temporal order. The **Support** column names which actor materially performs the activity; activities labelled *manual* are not DV-supported even when an IT system is incidentally present.
+Listed in temporal order. The **Support** column names which actor materially performs the activity; activities labelled *manual* are not system-supported even when an IT system is incidentally present.
 
 | # | Activity | Support | Notes |
 |---|----------|---------|-------|
 | A1 | Operator forms an intent (idea, task, observation) | manual | Pre-Herold; no IT support. |
-| A2 | Operator opens Herold and selects a message type | Browser → Herold | Type drives prompt and outbound label. |
-| A3 | Operator records the voice note (and fills extra fields if required by the type) | Browser | Status `recorded`. |
-| A4 | Operator triggers processing | Herold | Synchronous request begins. |
-| A5 | Audio is transcribed | OpenAI Whisper | Synchronous; blocks the request. |
-| A6 | Transcript is structured into title + body (and optional extra fields) | OpenAI Chat | Prompt is type-specific. |
-| A7 | Operator reviews and edits the generated content | Herold | Status `processed`; markdown is sanitised on save. |
-| A8 | Operator dispatches the note | Herold → GitHub | Status `sent`; issue reference recorded. |
+| A2 | Operator opens Herold to start a new note | Browser → Herold | Entry point; bracket between A1 and Herold-supported activities. |
+| A3 | Operator records the voice note (choosing the message type and filling any required extra fields) | Browser | Status `recorded`. The message type is captured as a parameter of the recording, not as a separate activity; it drives the prompt (A6) and the outbound label (A8). Audio upload is validated server-side per [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*. The capture must work on mobile and desktop browsers per [NFR-13a-01](N1-nichtfunktional.md) *Mobile and Desktop Usage*. |
+| A4 | Operator triggers processing | Herold | Synchronous request begins ([NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*). |
+| A5 | Audio is transcribed | OpenAI Whisper | Synchronous; blocks the request. Failure is surfaced to the operator without state change ([NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*). |
+| A6 | Transcript is structured into title + body (and optional extra fields) | OpenAI Chat | Prompt is type-specific. Failure handled per [NFR-12d-01](N1-nichtfunktional.md). |
+| A7 | Operator reviews and edits the generated content | Herold | Status `processed`; markdown is sanitised on save per [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization*. |
+| A8 | Operator dispatches the note | Herold → GitHub | Status `sent`; issue reference recorded. Push is gated by sanitisation ([NFR-15b-04](N1-nichtfunktional.md)) and runs synchronously ([NFR-12a-01](N1-nichtfunktional.md)). |
 | A9 | Downstream consumer reads the issue and acts on it according to the type label | Downstream consumer | Outside Herold's control. |
 | A10 | Process closure | Downstream consumer or operator | Issue closed, archived, or simply persisted, depending on the type. |
 
@@ -62,18 +62,22 @@ Concrete artefacts that move through the process.
 
 | Store | Owner | Holds |
 |-------|-------|-------|
-| **Local audio store** | Herold | Audio recording until processing succeeds; retained or pruned per N1. |
+| **Local audio store** | Herold | Audio recording, persisted alongside the voice note record. Removed only when the note is deleted (see UC-11 in [F2](F2-anwendungsfaelle.md)). |
 | **Application data store** | Herold | Voice note records, status, generated content, issue references, type metadata. |
 | **GitHub repository (issues)** | GitHub | Sole external sink. Source of truth for the dispatched note. |
 | **Operator's mind / notes app** | Operator | Pre-process (A1) and post-process review of the consumer's outcome. |
 
 ### F1.1.5 Activity Diagram
 
-UML Activity Diagram with swimlanes per actor. The flow is linear with one operator-driven review loop at A7. Activity labels match the numbering in F1.1.2; the additional unnumbered nodes (`Persist structured content`, `Issue persisted`) make the implicit handoffs between actors visible without introducing new activities.
+UML Activity Diagram with swimlanes per actor. The flow is linear with one operator-driven review loop at A7.
+
+The labels **A1–A10** number the first-class steps of the business process, regardless of which actor performs them. A1 (Operator), A9, and A10 (Downstream consumer) are deliberately numbered alongside the Herold-supported A2–A8: they bracket Herold's contribution and show that the process exists with or without Herold.
+
+The three **unnumbered nodes** in the diagram — `Persist transcript`, `Persist structured content`, `Issue persisted` — are *not* business activities. They are internal hand-off steps that bridge consecutive numbered activities and make the flow of artefacts between actors visible. In particular, Herold mediates between the two OpenAI services: the transcript from A5 returns to Herold for persistence before A6 is invoked.
+
+The Operator and the browser share a single swimlane because the browser has no autonomous agency in the process — it renders the UI and captures audio on the operator's behalf. The actor list in F1.1.1 still distinguishes them, since the browser remains a distinct IT actor with its own technical contribution (audio capture, offline behaviour); collapsing the swimlane is a presentational choice, not a redefinition of actors.
 
 ![F1 Activity Diagram — Voice-to-Issue Dispatch](diagrams-png/f1-activities.png)
-
-> Source: [`diagrams/f1-activities.plantuml`](diagrams/f1-activities.plantuml). Regenerate with `./scripts/generate-diagrams.sh`.
 
 ---
 
@@ -81,7 +85,7 @@ UML Activity Diagram with swimlanes per actor. The flow is linear with one opera
 
 The note's **message type** (`general`, `todo`, `diary`, `youtube`, `obsidian`, …) is a *parameter* of the process, not a separate process. It does two things:
 
-- **Inside Herold** (A2, A6, A8): selects the preprocessing prompt that shapes title and body, defines the optional extra fields the operator may fill, and determines the GitHub label attached to the dispatched issue.
+- **Inside Herold** (A3, A6, A8): selects the preprocessing prompt that shapes title and body, defines the optional extra fields the operator may fill, and determines the GitHub label attached to the dispatched issue.
 - **Outside Herold** (A9–A10): signals to the downstream consumer what kind of handling is appropriate. A coding-oriented agent may treat `todo` as a work item and produce a pull request; an Obsidian sync agent may move `obsidian`-labelled issues into a vault; a diary-aware consumer may file `diary` issues into a journal; types without a configured consumer simply persist as an archived issue.
 
 Adding a new message type does not introduce a new business process — it adds a new label/prompt pair to the existing one. The downstream-consumer ecosystem, which is operated outside Herold, decides what to do with each label. The set of available message types is configurable.
@@ -94,11 +98,11 @@ This is why F1 documents only one process: the Herold-internal flow is type-agno
 
 Activities and concerns that are deliberately **not** part of this process:
 
-- **Agent selection, agent configuration, agent execution.** The operator chooses and operates the downstream agent independently. See [ADR-003](../arch/ARCHITECTURE_DECISIONS.md) and P1 non-goal NG-02.
+- **Agent selection, agent configuration, agent execution.** The operator chooses and operates the downstream agent independently. See [ADR-003](../arch/ARCHITECTURE_DECISIONS.md) and P1 non-goal [NG-02](P1-ziele-rahmenbedingungen.md) *Agent control API*.
 - **Issue triage and labelling beyond the message-type label.** Herold attaches exactly one type label and the title/body. Any further triage (priority, milestone, assignee) is done in GitHub by the operator or the agent.
-- **Issue lifecycle after dispatch.** Status synchronisation, comments, and closure are handled in GitHub; Herold does not read back. P1 non-goal NG-03.
+- **Issue lifecycle after dispatch.** Status synchronisation, comments, and closure are handled in GitHub; Herold does not read back. P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle*.
 - **Cross-process coordination.** Each voice note is one process instance. Herold has no concept of related notes, threads, or campaigns.
-- **Multi-operator workflows.** Single-user system; CON-3a-04.
+- **Multi-operator workflows.** Single-user system per [CON-3a-04](P1-constraints.md) *Single-User System*.
 
 ---
 
@@ -118,8 +122,8 @@ Following Siedersleben's warnings (chapter 4.3):
 |-------|-----------------|
 | [P1](P1-ziele-rahmenbedingungen.md) | Goals G-01, G-02, G-05 — why this process exists. |
 | [P2](P2-architekturueberblick.md) | NB-01 to NB-05 — every actor in F1.1.1 mapped to a neighbouring system. |
-| F2 (planned) | Use cases that automate activities A2–A8. |
-| F3 (planned) | Application functions reused across use cases (transcription, content generation, sanitisation, issue formatting). |
-| D1 (planned) | Voice note record, status enum, issue reference, message type metadata. |
-| [N1](N1-nichtfunktional.md) | End-to-end latency, mobile-first capture, retention. |
-| S1 (planned) | OpenAI and GitHub interface contracts that A5, A6, A8 depend on. |
+| [F2](F2-anwendungsfaelle.md) | Use cases UC-05 to UC-08 realise activities A2–A8; access UCs (UC-01 to UC-04) bracket the process. |
+| [F3](F3-anwendungsfunktionen.md) | [AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) *Markdown Sanitisation* runs inside A6, A7 and at the dispatch boundary in A8. |
+| [S1](S1-nachbarsysteme.md) | [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) and [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) are invoked inside A5/A6; [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) is invoked at A8. |
+| [D1](D1-datenmodell.md) | Voice note record, audio document lifecycle, issue reference, message-type metadata. Status transitions ([D2.5](D2-datentypen.md#d25-notestatusdt)) are driven by A3, A6, A8. |
+| [N1](N1-nichtfunktional.md) | End-to-end latency budget for A4–A8 ([NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*); responsive capture for A3 across mobile and desktop ([NFR-13a-01](N1-nichtfunktional.md) *Mobile and Desktop Usage*); audio upload constraints at A3 ([NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*). |
