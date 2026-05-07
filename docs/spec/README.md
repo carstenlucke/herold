@@ -68,7 +68,7 @@ The reference description of the building-block model is in [`SIEDERSLEBEN.md`](
 
 | Block | Title | Status | File |
 |-------|-------|--------|------|
-| B1 | Dialogue Specification | 🛠 | `B1-dialogspezifikation.md` |
+| B1 | Dialogue Specification | ✅ | `B1-dialogspezifikation.md` |
 | B2 | Batch | ⛔ | — |
 | B3 | Print Output | ⛔ | — |
 
