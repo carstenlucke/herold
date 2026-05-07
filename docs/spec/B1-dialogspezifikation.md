@@ -810,7 +810,7 @@ Every authenticated screen ([DLG-06](#dlg-06--dashboard) to [DLG-10](#dlg-10--se
 
 ![Desktop chrome — side rail](screenshots/pattern-desktop-chrome.png)
 
-*Mobile chrome — same destinations rendered as a bottom-edge bar; the brand becomes a header element:*
+*Mobile chrome — same destinations rendered as a bottom-edge bar; the brand is omitted and the top region carries only the screen title:*
 
 ![Mobile chrome — bottom-edge bar](screenshots/pattern-mobile-chrome.png)
 
