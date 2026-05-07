@@ -164,6 +164,8 @@ The screenshots embedded in this section are rendered from the static mockups in
 - **Preconditions:** None.
 - **Effect:** Routes to [DLG-04](#dlg-04--recovery) to start [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access).
 
+---
+
 #### DLG-02 — Second-factor verification
 
 ![DLG-02 — Second-factor verification](screenshots/dlg-02-totp-verify.png)
@@ -210,6 +212,8 @@ The screenshots embedded in this section are rendered from the static mockups in
 - **Preconditions:** None.
 - **Effect:** Routes to [DLG-01](#dlg-01--sign-in-first-factor). The in-flight sign-in is abandoned; on the next attempt the API key has to be re-entered.
 
+---
+
 #### DLG-03 — Second-factor enrolment
 
 ![DLG-03 — Second-factor enrolment](screenshots/dlg-03-totp-setup.png)
@@ -251,6 +255,8 @@ The screenshots embedded in this section are rendered from the static mockups in
 - **Preconditions:** None.
 - **Effect:** Routes to [DLG-01](#dlg-01--sign-in-first-factor) without confirming the provisional secret. The unconfirmed value is replaced on the next enrolment attempt; no second factor is bound until a confirmation succeeds.
 
+---
+
 #### DLG-04 — Recovery
 
 ![DLG-04 — Recovery](screenshots/dlg-04-recovery-form.png)
@@ -289,6 +295,8 @@ The screenshots embedded in this section are rendered from the static mockups in
 - **Trigger:** Click on the *Back to Login* link.
 - **Preconditions:** None.
 - **Effect:** Routes to [DLG-01](#dlg-01--sign-in-first-factor) without redeeming. Any token placed on the host remains in place until it expires per [NFR-15a-04](N1-nichtfunktional.md).
+
+---
 
 #### DLG-05 — Recovery result
 
@@ -329,6 +337,8 @@ The screenshots embedded in this section are rendered from the static mockups in
 - **Trigger:** Click on the *Go to Login* button.
 - **Preconditions:** None.
 - **Effect:** Leaves the recovery cluster and routes to [DLG-01](#dlg-01--sign-in-first-factor). The next sign-in will route through [DLG-03](#dlg-03--second-factor-enrolment) to enrol a new second factor, since `Operator.totpConfirmedAt` was cleared by the redemption.
+
+---
 
 ### B1.3.2 Note Flow
 
@@ -451,6 +461,8 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 - **Preconditions:** A capture exists (state *review*); the captured audio satisfies [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*; type-specific extra fields satisfy their declared schema per [D2.7](D2-datentypen.md#d27-typespecificdata).
 - **Effect:** Submits the recording and metadata ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) step 6). On success creates a new `VoiceNote` row with `VoiceNote.status` = `recorded`, `VoiceNote.type` set, `VoiceNote.audioPath` populated, and `VoiceNote.metadata` populated per the bound type's slot inventory; routes to [DLG-08](#dlg-08--note-detail) for the new note. On failure stays in *review* and surfaces the failure inline per *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)); validation violations surface inline per *Form validation feedback* ([§B1.4.6](#b146-form-validation-feedback)).
 
+---
+
 ### B1.3.3 Management
 
 #### DLG-06 — Dashboard
@@ -508,6 +520,8 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 - **Trigger:** Click on a destination in the persistent navigation chrome ([§B1.4.1](#b141-application-chrome)).
 - **Preconditions:** None.
 - **Effect:** Routes to [DLG-06](#dlg-06--dashboard) / [DLG-09](#dlg-09--capture-voice-note) / [DLG-07](#dlg-07--notes-list) / [DLG-10](#dlg-10--settings) according to the chosen destination, or to [UC-04](F2-anwendungsfaelle.md#uc-04--sign-out) on *Sign out*. Documented once in [§B1.4.1](#b141-application-chrome) and not repeated on every authenticated dialogue's *GUI Dynamik*.
+
+---
 
 #### DLG-07 — Notes list
 
@@ -573,6 +587,8 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 - **Trigger:** Click on the *Clear filter* control rendered by the *Empty states* pattern when the current filter combination has no matches.
 - **Preconditions:** The list is currently filter-empty (see [§B1.4.7](#b147-empty-states)).
 - **Effect:** Resets *Type* and *Status* to *All* and re-renders the list region.
+
+---
 
 #### DLG-08 — Note detail
 
@@ -738,6 +754,8 @@ No forward actions are offered in this state. The note's content stages are read
 
 The shared *Back to Notes*, *Stream the audio recording*, and *Delete Note* actions remain available unchanged.
 
+---
+
 ### B1.3.4 Configuration
 
 #### DLG-10 — Settings
@@ -867,7 +885,7 @@ Per [NFR-13a-01](N1-nichtfunktional.md) *Mobile Usage on the Go*, every screen i
 - **Internal screen-to-screen URLs and route names.** Implementation-bound; documented in code and architecture.
 - **Algorithmic validation and sanitisation.** Lives in [N2](N2-querschnittskonzepte.md) *Validation* (per-type input) and [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) *Markdown Sanitisation*; B1 only cites where it is surfaced.
 - **Localisation and translation.** Herold runs in a single language for a single operator; multi-language support is not in scope.
-- **Accessibility conformance levels.** *TBD* — defer to N1 once a conformance target is fixed.
+- **Accessibility conformance levels.** Owned by [N1 §11d](N1-nichtfunktional.md#11d-accessibility-requirements); B1 only honours the framework-level a11y defaults cited there.
 
 ---
 
