@@ -78,7 +78,7 @@ The reference description of the building-block model is in [`SIEDERSLEBEN.md`](
 |-------|-------|--------|------|
 | S1 | Neighbouring System Interfaces | ✅ | [`S1-nachbarsysteme.md`](S1-nachbarsysteme.md) |
 | S2 | Data Migration | ⛔ | — |
-| S3 | Commissioning / Rollout | 🛠 | `S3-inbetriebnahme.md` |
+| S3 | Commissioning / Rollout | ✅ | [`S3-inbetriebnahme.md`](S3-inbetriebnahme.md) |
 
 ### 6. Cross-cutting Aspects
 
