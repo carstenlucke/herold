@@ -159,9 +159,9 @@ Authentication (API key + TOTP) must be resettable without privileged shell acce
 
 **NFR-14c-01: AI Provider Portability**
 
-The AI integration must allow switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) through host-level configuration, without changing application code. The transcription and content-generation neighbours ([S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api)) must remain decoupled from any single provider.
+Switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) must be a local change. Provider-specific code is confined to a single integration point per neighbour ([S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) transcription, [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) content generation); the rest of the application — domain logic, persistence, UI, pipeline orchestration — must remain unchanged. Provider selection and credentials are supplied out-of-band via host configuration.
 
-**Fit Criterion:** A different AI provider can be activated by host-level configuration alone; transcription and content generation continue to function without code changes.
+**Fit Criterion:** Replacing the active AI provider requires editing only the single integration point per neighbour plus host configuration. No change is required outside those isolation points for transcription and content generation to continue functioning.
 
 ---
 
