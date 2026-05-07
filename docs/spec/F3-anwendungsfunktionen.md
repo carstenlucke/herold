@@ -39,10 +39,10 @@ The earlier identifiers AF-01, AF-02, AF-04, AF-05, AF-06, AF-07 and AF-08 have 
 
 ## F3.3 Out of Scope for F3
 
-- **Authentication and 2FA verification.** Cross-cutting concern; see [N2](N2-querschnittskonzepte.md) and the relevant NFRs in [N1](N1-nichtfunktional.md).
+- **Authentication and 2FA verification.** Cross-cutting concern; see [N2.4](N2-querschnittskonzepte.md#n24-authentication-and-session) and the relevant NFRs in [N1](N1-nichtfunktional.md).
 - **Calls into neighbouring systems.** Transcription, content generation, and GitHub dispatch live in [S1](S1-nachbarsysteme.md), not here. The algorithm in those cases is provided by the third-party system.
 - **Status transitions and entity lifecycles.** The `VoiceNote` status machine ([D2.5](D2-datentypen.md#d25-notestatusdt)) and the audio-document lifecycle ([D1.1 *VoiceNote*](D1-datenmodell.md#voicenote)) are entity invariants, not application functions.
-- **Type-driven configuration resolution and per-type input validation.** Cross-cutting concepts; see [N2](N2-querschnittskonzepte.md), backed by [D2.4](D2-datentypen.md#d24-messagetypedt) and [D2.7](D2-datentypen.md#d27-typespecificdata).
+- **Type-driven configuration resolution and per-type input validation.** Cross-cutting concepts; see [N2.2](N2-querschnittskonzepte.md#n22-type-driven-configuration) and [N2.3](N2-querschnittskonzepte.md#n23-validation), backed by [D2.4](D2-datentypen.md#d24-messagetypedt) and [D2.7](D2-datentypen.md#d27-typespecificdata).
 - **Persistence operations.** Loading and storing voice note records, status updates as a database operation, and audio file I/O are implementation concerns.
 - **Rendering, navigation, screen layout.** Belong in [B1](B1-dialogspezifikation.md).
 - **HTTP route handling, controllers, middleware.** Implementation, not specification.
@@ -57,4 +57,5 @@ The earlier identifiers AF-01, AF-02, AF-04, AF-05, AF-06, AF-07 and AF-08 have 
 | [F2](F2-anwendungsfaelle.md) | [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note), [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content), [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note) invoke AF-03. |
 | [S1](S1-nachbarsysteme.md) | AF-03 sanitises content produced by [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) before it is dispatched via [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api). |
 | [N1](N1-nichtfunktional.md) | [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization* is the binding requirement on AF-03. |
+| [N2](N2-querschnittskonzepte.md) | [N2.7](N2-querschnittskonzepte.md#n27-content-sanitisation) is the cross-cutting strategy that schedules AF-03 at every persistence and dispatch boundary. |
 | [E2](E2-glossar.md) | Definitions for *voice note*, *message type*. |

@@ -102,7 +102,7 @@ Used as the primary key type of every entity in [D1](D1-datenmodell.md): `VoiceN
 
 No other transitions are reachable; in particular there are no regressions and no skipping of intermediate states. The status is never advanced speculatively — each transition is the consequence of a successful operation at the corresponding boundary (transcript + content populated for `processed`; issue reference populated for `sent`).
 
-**Failure handling (orthogonal to status).** Transition triggers may fail. On failure the status **does not advance**; instead `VoiceNote.errorMessage` is populated with the failure reason per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*. The operator may retry by re-invoking the same use case; on success `errorMessage` is cleared and the documented transition fires. `errorMessage` is therefore an orthogonal failure flag on `VoiceNote`, not a separate state.
+**Failure handling (orthogonal to status).** Transition triggers may fail. On failure the status **does not advance**; instead `VoiceNote.errorMessage` is populated with the failure reason per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*. The operator may retry by re-invoking the same use case; on success `errorMessage` is cleared and the documented transition fires. `errorMessage` is therefore an orthogonal failure flag on `VoiceNote`, not a separate state. The cross-cutting failure-handling strategy is documented in [N2.5](N2-querschnittskonzepte.md#n25-failure-handling).
 
 ![D2.5 NoteStatusDT — state diagram](diagrams-png/d2-notestatus-states.png)
 
@@ -121,7 +121,7 @@ A type tag for credential or secret material (`Operator.apiKeyHash`, `Operator.t
 
 **Equality.** Equality is verification-only and constant-time. Direct equality between two `OpaqueSecret` values outside a verification context is not defined.
 
-**Cross-references.** [NFR-15a-02](N1-nichtfunktional.md), [E2](E2-glossar.md) (*fine-grained PAT*).
+**Cross-references.** [N2.8](N2-querschnittskonzepte.md#n28-secret-handling), [NFR-15a-02](N1-nichtfunktional.md), [E2](E2-glossar.md) (*fine-grained PAT*).
 
 ---
 
@@ -181,5 +181,5 @@ The following multiplicity and composition notations are used in D1 and D2 attri
 | [F2](F2-anwendungsfaelle.md) | Status transitions in [D2.5](#d25-notestatusdt) are driven by [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note), [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note), [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note); the slot inventory in [D2.7](#d27-typespecificdata) is validated at [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) and [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content). |
 | [S1](S1-nachbarsysteme.md) | Per-`MessageTypeDT` bindings drive [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) (prompt) and [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) (label). |
 | [N1](N1-nichtfunktional.md) | Handling rules for `OpaqueSecret` are reinforced by content-sanitisation and rate-limiting NFRs; failure handling in [D2.5](#d25-notestatusdt) defers to [NFR-12d-01](N1-nichtfunktional.md). |
-| [N2](N2-querschnittskonzepte.md) | *Type-driven configuration* operationalises the resolution rule in [D2.4](#d24-messagetypedt); *Validation* operationalises the rules in [D2.7](#d27-typespecificdata). |
+| [N2](N2-querschnittskonzepte.md) | [N2.2](N2-querschnittskonzepte.md#n22-type-driven-configuration) operationalises the resolution rule in [D2.4](#d24-messagetypedt); [N2.3](N2-querschnittskonzepte.md#n23-validation) operationalises the rules in [D2.7](#d27-typespecificdata); [N2.5](N2-querschnittskonzepte.md#n25-failure-handling) frames the failure handling on [D2.5](#d25-notestatusdt); [N2.8](N2-querschnittskonzepte.md#n28-secret-handling) frames the handling rules on [D2.6](#d26-opaquesecret). |
 | [E2](E2-glossar.md) | Glossary entries for *fine-grained PAT*, *message type*. |

@@ -77,7 +77,7 @@ Audio transcription, LLM preprocessing, and GitHub issue creation run synchronou
 
 If an API call (OpenAI, GitHub) fails during synchronous processing, the voice note's status does **not** advance (see [D2.5](D2-datentypen.md#d25-notestatusdt) *NoteStatusDT*); `VoiceNote.errorMessage` is populated with the failure reason. The user can manually retry from the UI via the "Process" or "Send" button; on a successful retry `errorMessage` is cleared and the documented status transition fires.
 
-No automatic retries. Each retry is an explicit user action.
+No automatic retries. Each retry is an explicit user action. The cross-cutting failure-handling strategy is documented in [N2.5](N2-querschnittskonzepte.md#n25-failure-handling).
 
 **Fit Criterion:** Transient API failures (timeouts, 5xx) do not result in data loss. The voice note and audio file are preserved. The error message is displayed to the user.
 
@@ -171,7 +171,7 @@ Switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) must be a lo
 
 **NFR-15a-01: Two-Factor Browser Authentication**
 
-Browser access requires API key + TOTP (Time-based One-Time Password). Two factors: something you know (API key) + something you have (Authenticator app).
+Browser access requires API key + TOTP (Time-based One-Time Password). Two factors: something you know (API key) + something you have (Authenticator app). The cross-cutting authentication concept is [N2.4](N2-querschnittskonzepte.md#n24-authentication-and-session); credential-handling rules apply per [N2.8](N2-querschnittskonzepte.md#n28-secret-handling).
 
 **Fit Criterion:** Access is denied if either factor is missing or incorrect.
 
@@ -196,7 +196,7 @@ Audio uploads (UC-05) must be validated server-side:
 
 **NFR-15a-04: Recovery Token Expiry**
 
-The `RecoveryToken` (D1) must have a time-to-live of 60 minutes counted from `RecoveryToken.placedAt`. After the time-to-live expires, the token must not grant recovery access. A missing token, a token with a non-matching secret, and an expired token must surface to the operator as the same generic rejection — the internal reason for rejection must not be disclosed externally, but must be recorded in the application log together with the source IP and the time of the attempt.
+The `RecoveryToken` (D1) must have a time-to-live of 60 minutes counted from `RecoveryToken.placedAt`. After the time-to-live expires, the token must not grant recovery access. A missing token, a token with a non-matching secret, and an expired token must surface to the operator as the same generic rejection — the internal reason for rejection must not be disclosed externally, but must be recorded in the application log together with the source IP and the time of the attempt (see [N2.6](N2-querschnittskonzepte.md#n26-logging) *Logging*).
 
 **Fit Criterion:** A `RecoveryToken` older than 60 minutes does not grant access to UC-03. The three failure modes (missing, mismatched, expired) are externally indistinguishable. Each rejection produces a log entry containing source IP and timestamp.
 
@@ -204,19 +204,19 @@ The `RecoveryToken` (D1) must have a time-to-live of 60 minutes counted from `Re
 
 **NFR-15b-01: No API Keys in Frontend**
 
-All external API credentials (OpenAI, GitHub PAT) are held server-side only. The frontend never receives or transmits these credentials.
+All external API credentials (OpenAI, GitHub PAT) are held server-side only. The frontend never receives or transmits these credentials. The cross-cutting secret-handling strategy is [N2.8](N2-querschnittskonzepte.md#n28-secret-handling).
 
 **Fit Criterion:** No external API credential is observable in any request or response received by the browser.
 
 **NFR-15b-02: No Preprocessing Prompts Surfaced to the Browser**
 
-The browser-facing view of the configuration (UC-12) must surface only those per-`MessageTypeDT` properties the operator needs to choose a type and fill its extra fields — i.e. the human-readable label, icon, GitHub label, and the extra-field schema. The configured preprocessing prompt for any `MessageTypeDT` value is server-only and must never be transmitted to the browser, neither in UC-12 nor anywhere else.
+The browser-facing view of the configuration (UC-12) must surface only those per-`MessageTypeDT` properties the operator needs to choose a type and fill its extra fields — i.e. the human-readable label, icon, GitHub label, and the extra-field schema. The configured preprocessing prompt for any `MessageTypeDT` value is server-only and must never be transmitted to the browser, neither in UC-12 nor anywhere else. Prompts are kept on a different surface from operator-derived content per [N2.7](N2-querschnittskonzepte.md#n27-content-sanitisation) and are subject to [N2.8](N2-querschnittskonzepte.md#n28-secret-handling) handling rules.
 
 **Fit Criterion:** No payload reaching the browser contains the contents of any configured preprocessing prompt.
 
 **NFR-15b-03: Secret Redaction in Logs**
 
-Sensitive values must not appear in the application log. A redaction mechanism must mask the application's framework key, the operator's API key, third-party API tokens (OpenAI, GitHub), and any session or bearer token. Transcript contents (`VoiceNote.transcript`) must not be logged — only processing events that reference the note by `VoiceNote.id` are permitted.
+Sensitive values must not appear in the application log. A redaction mechanism must mask the application's framework key, the operator's API key, third-party API tokens (OpenAI, GitHub), and any session or bearer token. Transcript contents (`VoiceNote.transcript`) must not be logged — only processing events that reference the note by `VoiceNote.id` are permitted. The cross-cutting logging concept is [N2.6](N2-querschnittskonzepte.md#n26-logging).
 
 **Fit Criterion:** Inspection of the application log reveals no API key, token, or transcript text.
 
@@ -227,6 +227,8 @@ Voice note content (transcript, generated title, generated body) is untrusted in
 - Render any active markup (e.g. embedded HTML, script-bearing URIs) inert in the issue body.
 - Visually delimit operator-derived content from application-generated structure inside the issue body, so a downstream reader can tell which is which.
 - Exclude any prompt-engineering material (e.g. configured preprocessing prompts) from the issue body.
+
+The cross-cutting sanitisation strategy — including the policy of running [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) at every persistence and dispatch boundary — is documented in [N2.7](N2-querschnittskonzepte.md#n27-content-sanitisation).
 
 **Fit Criterion:** An attempted injection in a transcript (e.g. an embedded markup comment instructing a downstream agent to ignore previous instructions) appears as inert text in the dispatched issue. The issue body's structure makes the boundary between operator-derived content and application-generated structure self-evident.
 
