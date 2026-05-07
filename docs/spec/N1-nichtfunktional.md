@@ -59,11 +59,11 @@ The application must be usable without documentation or training. Type selection
 
 Audio transcription, LLM preprocessing, and GitHub issue creation run synchronously in the HTTP request. No queue, no cron, no background jobs. See [ADR-002](../arch/002-dev-prod-parity.md).
 
-- Processing time: ~10-30 seconds per voice note
+- Processing time: typically up to ~5 seconds for short notes and ~10–15 seconds for notes around one to two minutes. Longer notes are not the design target — Herold dispatches voice notes capturing task intent, not meeting or lecture transcripts (see NG-09 in [P1.4](P1-ziele-rahmenbedingungen.md#out-of-scope)).
 - The UI shows a loading indicator during processing
 - Errors surface immediately in the HTTP response
 
-**Fit Criterion:** After clicking "Process", the response returns the processed result (or an error) within 60 seconds. A loading indicator is visible throughout.
+**Fit Criterion:** After clicking "Process", the response returns the processed result (or an error) within 30 seconds for a note of up to ~2 minutes of audio. A loading indicator is visible throughout.
 
 ### 12b. Safety-Critical Requirements
 

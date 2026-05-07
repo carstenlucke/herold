@@ -59,6 +59,7 @@ Multi-user support is explicitly out of scope (see CON-3a-04 in [constraints.md]
 | NG-06 | Native mobile apps | Mobile-first responsive web is sufficient. |
 | NG-07 | Reports, exports, print output | No reporting use case. |
 | NG-08 | Migration of legacy data | Greenfield project. |
+| NG-09 | Long-form audio (meetings, lectures, podcasts) | Herold dispatches voice notes that capture task intent in the moment. Long-form transcription is a different problem domain and would defeat the synchronous-processing model (see [NFR-12a-01](N1-nichtfunktional.md)). |
 
 ---
 
@@ -90,7 +91,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 | ID | Criterion |
 |----|-----------|
 | SC-01 | A voice note recorded on a smartphone results in a well-formed GitHub Issue with type label, title, and Markdown body — without manual reformatting. |
-| SC-02 | End-to-end latency (record → issue created) is dominated by external APIs (~10–30 s), with no additional polling or cron delays. |
+| SC-02 | End-to-end latency (record → issue created) is dominated by external APIs (typically a few seconds for short notes, ~10–15 s for notes up to ~2 minutes), with no additional polling or cron delays. |
 | SC-03 | Adding a new message type requires only a configuration entry plus a prompt — no PHP, no Vue, no migration. |
 | SC-04 | The same Apache + PHP 8.5 + SQLite stack runs in development (Docker) and production (shared hosting) without environment-specific code paths. |
 | SC-05 | Loss of API key or TOTP secret is recoverable without provider support, using only FTP and the recovery flow. |
@@ -105,7 +106,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 | AS-02 | The operator has an OpenAI API key with access to Whisper and a Chat model. |
 | AS-03 | The hosting provider serves HTTPS — required by the browser audio capture used in UC-05. |
 | AS-04 | Voice notes are short enough to fit within OpenAI's per-request audio limit (≤ 25 MB). |
-| AS-05 | Synchronous requests of 10–30 s are not killed by the hosting provider's PHP/Apache timeouts. |
+| AS-05 | Synchronous requests of up to ~30 s are not killed by the hosting provider's PHP/Apache timeouts. |
 
 ---
 
