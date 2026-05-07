@@ -83,7 +83,7 @@ No automatic retries. Each retry is an explicit user action.
 
 ### 12e. Capacity Requirements
 
-*Not critical. Single-user system. SQLite handles the expected data volume (< 10,000 voice notes over the application's lifetime).*
+*Not critical. Single-user system. Expected data volume is below 10,000 voice notes over the application's lifetime.*
 
 ---
 
@@ -116,13 +116,13 @@ The application must not depend on container runtimes, cron-scheduled tasks, or 
 
 **NFR-13c-01: Agent Interoperability**
 
-Local AI agents (Claude Code, OpenCode) interact exclusively with GitHub Issues, not with Herold. See [ADR-003](../arch/003-github-issues-as-ticket-store.md).
+Local AI agents (Claude Code, OpenCode) interact exclusively with the GitHub Issues neighbour ([S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api)), not with Herold. See [ADR-003](../arch/003-github-issues-as-ticket-store.md).
 
-- Ticket consumption: `gh issue list`, `gh issue view`
-- Status updates: `gh issue comment`, `gh issue edit` (labels)
-- Agent memory: file-based, managed locally by each agent (e.g., `CLAUDE.md`)
+- Ticket consumption: read dispatched issues and their content.
+- Status updates: comment on or relabel issues to reflect work progress.
+- Agent memory: managed locally by each agent, outside Herold.
 
-**Fit Criterion:** An agent can read tickets and update their status using only `gh` CLI commands. No Herold API access required.
+**Fit Criterion:** An agent can read tickets and update their status through the GitHub Issues neighbour interface alone. Herold exposes no API to agents and none is required.
 
 ### 13d. Productization Requirements
 
@@ -134,11 +134,16 @@ Local AI agents (Claude Code, OpenCode) interact exclusively with GitHub Issues,
 
 ### 14a. Maintenance Requirements
 
-**NFR-14a-01: Config-Driven Message Types**
+**NFR-14a-01: Layered Message-Type Definition**
 
-New message types must be addable through host-level configuration alone. Adding a type does not require code changes unless the type also introduces a new external API integration.
+The definition of a message type is split between the spec/codebase and host-level configuration, mirroring the strategy in [N2](N2-querschnittskonzepte.md) *Type-driven configuration*:
 
-**Fit Criterion:** A new type — with display label, icon, GitHub label, extra-field schema, and preprocessing prompt — can be added without editing application code, by changing host configuration only.
+- **Spec/code layer** — the closed catalogue of `MessageTypeDT` identifiers ([D2.4](D2-datentypen.md#d24-messagetypedt)) and the per-type slot inventory of `TypeSpecificData` ([D2.7](D2-datentypen.md#d27-typespecificdata)). Adding a new type or changing its slot inventory is a spec change, accompanied by the corresponding code change.
+- **Host-config layer** — per-type display label, icon, GitHub label, and preprocessing prompt. These bindings are supplied out-of-band and are not part of the application's persisted data ([D1](D1-datenmodell.md)).
+
+Once the spec/code layer declares a type, all per-type bindings in the host-config layer must be adjustable without code changes.
+
+**Fit Criterion:** For a `MessageTypeDT` value already declared at spec level, its display label, icon, GitHub label, and preprocessing prompt can each be changed by editing host configuration only, without editing application code.
 
 **NFR-14a-02: Out-of-Band Auth Recovery**
 
@@ -245,9 +250,9 @@ Voice note content (transcript, generated title, generated body) is untrusted in
 - Code, comments, variable names: English
 - Documentation (README, ADRs, docs/): English
 - Git commits: English (conventional commits)
-- Exception: `prompts/herold-spec.prompt.md` remains in German
+- Exception: the original German project specification source remains in German.
 
-**Fit Criterion:** No German text appears in the UI, codebase, or documentation (except `prompts/herold-spec.prompt.md`).
+**Fit Criterion:** No German text appears in the UI, codebase, or documentation, except in the original German project specification source.
 
 ---
 

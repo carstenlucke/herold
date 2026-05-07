@@ -76,6 +76,10 @@ The lifecycle state of a voice note. Values: `recorded`, `processed`, `sent`. Th
 
 The single human user of Herold. There is exactly one operator account; multi-user is out of scope.
 
+### Out-of-band
+
+Outside the application's regular request/response path. An out-of-band action uses a separate channel — the host file system, FTP, SSH, environment variables, or hand-edited configuration files — rather than the browser UI or an HTTP endpoint. The opposite is *in-band*: through the application itself. The term originates in telecommunications, where in-band signalling shares the channel with payload data and out-of-band signalling uses a separate channel. Herold uses out-of-band channels for host configuration (per-type prompt, label, icon, GitHub label), credential placement (`.env`), and the recovery flow (UC-03).
+
 ### Pipeline
 
 The three-step request flow `Record → Process → Send`. Synchronous inside the HTTP request; see P2 and ADR-002.
