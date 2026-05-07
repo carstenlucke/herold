@@ -10,16 +10,14 @@ Based on the [Volere Requirements Specification Template](https://www.volere.org
 
 ### 10a. Appearance Requirements
 
-**NFR-10a-01: Mobile First Design**
+**NFR-10a-01: Responsive Design**
 
-The UI must be designed mobile first. The primary usage context is a smartphone (voice recording on the go), desktop is secondary.
+The UI must be fully usable on both smartphone and desktop. Both contexts are equally important: voice recording on the go on a smartphone, review and editing on a desktop. The layout must adapt to viewport width without horizontal scrolling on any supported viewport.
 
-- Vuetify 4 breakpoints (xs/sm/md/lg/xl) must be used consistently
-- Touch-optimized: large tap targets (min 48x48dp), swipe gestures where appropriate
-- Bottom navigation on mobile, side navigation on desktop
-- All views must be fully usable on screens >= 320px width
+- Touch-optimized on touch devices: minimum tap target size of 48x48dp.
+- All views must be fully usable on viewports from 320px width upwards.
 
-**Fit Criterion:** Every view renders correctly and is fully operable on iPhone SE (375x667) and desktop (1920x1080).
+**Fit Criterion:** Every view renders correctly and is fully operable on a smartphone-class viewport (e.g. iPhone SE, 375x667) and a desktop-class viewport (e.g. 1920x1080).
 
 ---
 
@@ -47,7 +45,7 @@ The application must be usable without documentation or training. Type selection
 
 ### 11d. Accessibility Requirements
 
-*Deferred. Not a priority for a single-user personal tool, but Vuetify 4's built-in a11y support should be preserved (ARIA labels, keyboard navigation).*
+*Deferred. Not a priority for a single-user personal tool.*
 
 ---
 
@@ -93,11 +91,11 @@ No automatic retries. Each retry is an explicit user action.
 
 ### 13a. Expected Physical Environment
 
-**NFR-13a-01: Mobile Usage (On the Go)**
+**NFR-13a-01: Mobile and Desktop Usage**
 
-The primary usage context is a smartphone in a mobile environment. The app must function on modern mobile browsers (Safari iOS, Chrome Android), including the in-browser audio capture used by UC-05.
+The application is used both in mobile environments (smartphone, voice recording on the go) and at a desk (desktop browser, review and editing). It must function on current major browsers in both contexts, including the in-browser audio capture used by UC-05.
 
-**Fit Criterion:** Voice recording and playback work on current major mobile browsers (Safari iOS, Chrome Android) on devices the operator is reasonably expected to use.
+**Fit Criterion:** Voice recording, playback, review, and editing work on current major mobile browsers (Safari iOS, Chrome Android) and current major desktop browsers (Safari, Chrome, Firefox) on devices the operator is reasonably expected to use.
 
 ### 13b. Expected Technological Environment
 

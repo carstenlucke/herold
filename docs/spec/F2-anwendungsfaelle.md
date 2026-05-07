@@ -123,7 +123,7 @@ The four use cases in this group form the supported segment of the business proc
 | **Main scenario** | 1. Operator opens the recording screen.<br>2. Operator selects a message type.<br>3. If the type declares extra fields (per [D2.4](D2-datentypen.md#d24-messagetypedt) *MessageTypeDT* and [D2.7](D2-datentypen.md#d27-typespecificdata) *TypeSpecificData*), system reveals them and operator fills the required ones.<br>4. Operator records an audio note in the browser.<br>5. Operator submits the recording.<br>6. System validates the operator input against the type schema ([D2.7](D2-datentypen.md#d27-typespecificdata)) and the audio against the upload constraints in [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*.<br>7. System persists the audio document (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)) and a new note record, transitioning it to status `recorded` ([D2.5](D2-datentypen.md#d25-notestatusdt)).<br><br>![UC-05 Capture voice note — main scenario](diagrams-png/f2-uc05-capture-note.png) |
 | **Alternative scenarios** | *Operator cancels before submitting:* nothing is persisted. |
 | **Exception scenarios** | - *Type-specific validation fails:* the offending fields are flagged; operator corrects and resubmits.<br>- *Audio fails upload validation:* operator is informed; no note is created.<br>- *Microphone access is denied by the browser:* operator is informed; no note is created. |
-| **Qualities** | [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*; [NFR-13a-01](N1-nichtfunktional.md) *Mobile Usage on the Go*. |
+| **Qualities** | [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*; [NFR-13a-01](N1-nichtfunktional.md) *Mobile and Desktop Usage*. |
 
 ### UC-06 — Process voice note
 

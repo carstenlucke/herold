@@ -102,11 +102,11 @@ Local coding agents consume tickets exclusively via GitHub (`gh` CLI or GitHub A
 
 ## 3e. Anticipated Workplace Environment
 
-### CON-3e-01: Mobile Primary, Desktop Secondary
+### CON-3e-01: Mobile and Desktop Equally Supported
 
-The primary usage context is a smartphone (voice recording on the go). The user records voice notes while mobile and reviews/edits them later, potentially on a desktop.
+The application is operated from both a smartphone (voice recording on the go) and a desktop (review, editing, configuration). Neither context is privileged over the other.
 
-**Rationale:** Voice input is most natural on a mobile device. Review and editing benefit from a larger screen.
+**Rationale:** Voice input is most natural on a mobile device, while review and editing benefit from a larger screen. Both flows are core to the operator's workflow.
 
 ---
 

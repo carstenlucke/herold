@@ -3,7 +3,7 @@
 
 title System Context — Herold
 
-Person(operator, "Operator", "Single human user; mobile-first")
+Person(operator, "Operator", "Single human user; mobile and desktop")
 
 System(herold, "Herold", "Voice-to-issue dispatcher (Laravel monolith)")
 

@@ -6,9 +6,9 @@ Foundation block of the Herold specification according to Siedersleben. Answers:
 
 ## P1.1 Mission
 
-Herold is a single-user voice-to-issue dispatcher. The user records a voice note on a mobile device; the system transcribes it, derives structured content, and pushes the result as a GitHub Issue into a private repository. Local AI coding agents (e.g. Claude Code, OpenCode) consume the issues through GitHub's native interfaces and act on them.
+Herold is a single-user voice-to-issue dispatcher. The user records a voice note in the browser; the system transcribes it, derives structured content, and pushes the result as a GitHub Issue into a private repository. Local AI coding agents (e.g. Claude Code, OpenCode) consume the issues through GitHub's native interfaces and act on them.
 
-Herold replaces the cognitive overhead of typing well-formed tickets while walking, driving, or otherwise away from the keyboard.
+Herold replaces the cognitive overhead of typing well-formed tickets — whether away from the keyboard (walking, driving) or at the desk, where speaking a note is faster than composing structured Markdown by hand.
 
 ---
 
@@ -56,7 +56,7 @@ Multi-user support is explicitly out of scope (see CON-3a-04 in [constraints.md]
 | NG-03 | Local ticket lifecycle (status sync, comments, closing) | GitHub is the sole ticket store (see ADR-003). |
 | NG-04 | Asynchronous processing (queues, workers, cron) | Synchronous pipeline fits shared hosting (see ADR-002). |
 | NG-05 | PWA, service worker, offline mode | Connectivity assumed; complexity not justified. |
-| NG-06 | Native mobile apps | Mobile-first responsive web is sufficient. |
+| NG-06 | Native mobile apps | A responsive web UI covering smartphone and desktop is sufficient. |
 | NG-07 | Reports, exports, print output | No reporting use case. |
 | NG-08 | Migration of legacy data | Greenfield project. |
 | NG-09 | Long-form audio (meetings, lectures, podcasts) | Herold dispatches voice notes that capture task intent in the moment. Long-form transcription is a different problem domain and would defeat the synchronous-processing model (see [NFR-12a-01](N1-nichtfunktional.md)). |
@@ -80,7 +80,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 | CON-3c-02 | GitHub Issues API (fine-grained PAT) |
 | CON-3c-03 | Local AI agents consume tickets via GitHub only |
 | CON-3d-01 | Key dependencies (Laravel AI SDK, two-factor, Inertia, Vuetify) |
-| CON-3e-01 | Mobile-primary, desktop-secondary |
+| CON-3e-01 | Mobile and desktop equally supported |
 | CON-3g-01 | Existing hosting (no budget for dedicated infrastructure) |
 | CON-3g-02 | OpenAI API costs unmanaged (low single-user volume) |
 
@@ -90,7 +90,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 
 | ID | Criterion |
 |----|-----------|
-| SC-01 | A voice note recorded on a smartphone results in a well-formed GitHub Issue with type label, title, and Markdown body — without manual reformatting. |
+| SC-01 | A voice note recorded in the browser results in a well-formed GitHub Issue with type label, title, and Markdown body — without manual reformatting. |
 | SC-02 | End-to-end latency (record → issue created) is dominated by external APIs (typically a few seconds for short notes, ~10–15 s for notes up to ~2 minutes), with no additional polling or cron delays. |
 | SC-03 | Adding a new message type requires only a configuration entry plus a prompt — no PHP, no Vue, no migration. |
 | SC-04 | The same Apache + PHP 8.5 + SQLite stack runs in development (Docker) and production (shared hosting) without environment-specific code paths. |
