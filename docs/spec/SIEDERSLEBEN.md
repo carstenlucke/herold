@@ -92,7 +92,7 @@ Bewertung der Relevanz jedes Bausteins für das Projekt Herold inklusive Quelle 
 |----------|----------|--------|-----------|
 | **S1 – Nachbarsystem-Schnittstellen** | Ja | OpenAI (STT + Generation), GitHub Issues API | `S1-nachbarsysteme.md` |
 | **S2 – Datenmigration** | Nein — Greenfield, kein Altdatenbestand | — | im Wurzeldokument als „nicht anwendbar" markieren |
-| **S3 – Inbetriebnahme** | Ja | `docs/FTP_DEPLOYMENT.md`, `CLAUDE.md` (Production Environment) | `S3-inbetriebnahme.md` |
+| **S3 – Inbetriebnahme** | Ja | `FTP_DEPLOYMENT.md`, `CLAUDE.md` (Production Environment) | `S3-inbetriebnahme.md` |
 
 ### 6. Übergreifendes
 
