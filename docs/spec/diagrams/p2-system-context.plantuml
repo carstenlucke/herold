@@ -5,7 +5,7 @@ title System Context — Herold
 
 Person(operator, "Operator", "Single human user; mobile and desktop")
 
-System(herold, "Herold", "Voice-to-issue dispatcher (Laravel monolith)")
+System(herold, "Herold", "Voice-to-issue dispatcher")
 
 System_Ext(openai, "OpenAI API", "Whisper + Chat Completion")
 System_Ext(github, "GitHub Issues", "Sole ticket store")

@@ -103,7 +103,7 @@ The application is used both in mobile environments (smartphone, voice recording
 
 The application must run on standard shared hosting that provides only:
 
-- The runtime mandated by P1-constraints (see CON-3a-01 and CON-3a-03).
+- The application runtime stack required by the architecture, satisfying the low-footprint database constraint ([CON-3a-03](P1-constraints.md#con-3a-03-low-footprint-database)).
 - HTTPS provided by the hosting provider (assumption AS-03).
 - Out-of-band file-store write access (e.g. via FTP) for deployment and for the recovery channel (UC-03).
 - Optional limited shell access for one-off maintenance only — no scheduled jobs, no long-running workers.

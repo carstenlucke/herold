@@ -13,7 +13,7 @@ title Herold — D1 Information Model
 ' value.
 
 ' ============================================================
-' Herold data — local persistence (SQLite database + local file store)
+' Herold data — local persistence (application database + local file store)
 ' ============================================================
 package "Herold data" <<Frame>> #E8F4FF {
 

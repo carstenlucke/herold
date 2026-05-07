@@ -30,10 +30,10 @@ Herold replaces the cognitive overhead of typing well-formed tickets — whether
 |------|-------------|-------------------------|
 | **Operator** | Sole human user. Owns and operates the system. | Records, reviews, edits, sends notes via the browser UI. |
 | **Local AI agents** | Claude Code, OpenCode, etc. | No direct interaction. Read tickets from GitHub. |
-| **Hosting provider** | Shared hosting operator. | Provides PHP 8.5, Apache, HTTPS, FTP, limited SSH. |
+| **Hosting provider** | Shared hosting operator. | Provides the runtime environment per [CON-3b-01](P1-constraints.md#con-3b-01-shared-hosting-production): HTTPS at the public web edge, an out-of-band write channel into the host file store, and optional limited shell access. |
 | **External APIs** | OpenAI, GitHub. | Called synchronously during the processing pipeline. |
 
-Multi-user support is explicitly out of scope (see CON-3a-04 in [constraints.md](constraints.md)).
+Multi-user support is explicitly out of scope (see [CON-3a-04](P1-constraints.md#con-3a-04-single-user-system)).
 
 ---
 
@@ -69,20 +69,17 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 
 | ID | Constraint |
 |----|------------|
-| CON-3a-01 | Laravel 13 monolith |
-| CON-3a-02 | Inertia.js + Vue 3 + Vuetify 4 |
-| CON-3a-03 | SQLite as sole database |
-| CON-3a-04 | Single-user system (DB-enforced) |
-| CON-3a-05 | Vite 8 build toolchain |
-| CON-3b-01 | Shared hosting (production) — no Docker, no cron, FTP deployment |
-| CON-3b-02 | Docker Compose (local development only) |
-| CON-3c-01 | OpenAI API via Laravel AI SDK |
+| CON-3a-03 | Low-footprint database — no separate server, minimal operational overhead |
+| CON-3a-04 | Single-user system |
+| CON-3b-01 | Shared hosting (production) — no container runtime, no scheduler, FTP deployment |
+| CON-3c-01 | OpenAI APIs (Whisper for transcription, Chat Completion for text generation) |
 | CON-3c-02 | GitHub Issues API (fine-grained PAT) |
 | CON-3c-03 | Local AI agents consume tickets via GitHub only |
-| CON-3d-01 | Key dependencies (Laravel AI SDK, two-factor, Inertia, Vuetify) |
 | CON-3e-01 | Mobile and desktop equally supported |
 | CON-3g-01 | Existing hosting (no budget for dedicated infrastructure) |
 | CON-3g-02 | OpenAI API costs unmanaged (low single-user volume) |
+
+Technology choices (language, framework, database product, build toolchain, local development tooling, dependency versions) are *design decisions* and live in [`docs/arch/`](../arch/); items pending ADR capture are tracked in [`docs/arch/arch-backlog.md`](../arch/arch-backlog.md).
 
 ---
 
@@ -93,7 +90,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 | SC-01 | A voice note recorded in the browser results in a well-formed GitHub Issue with type label, title, and Markdown body — without manual reformatting. |
 | SC-02 | End-to-end latency (record → issue created) is dominated by external APIs (typically a few seconds for short notes, ~10–15 s for notes up to ~2 minutes), with no additional polling or cron delays. |
 | SC-03 | Adding a new message type requires only a configuration entry plus a prompt — no PHP, no Vue, no migration. |
-| SC-04 | The same Apache + PHP 8.5 + SQLite stack runs in development (Docker) and production (shared hosting) without environment-specific code paths. |
+| SC-04 | The same runtime stack runs in development and production without environment-specific code paths. |
 | SC-05 | Loss of API key or TOTP secret is recoverable without provider support, using only FTP and the recovery flow. |
 
 ---
@@ -106,7 +103,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 | AS-02 | The operator has an OpenAI API key with access to Whisper and a Chat model. |
 | AS-03 | The hosting provider serves HTTPS — required by the browser audio capture used in UC-05. |
 | AS-04 | Voice notes are short enough to fit within OpenAI's per-request audio limit (≤ 25 MB). |
-| AS-05 | Synchronous requests of up to ~30 s are not killed by the hosting provider's PHP/Apache timeouts. |
+| AS-05 | Synchronous requests of up to ~30 s are not killed by the hosting provider's request timeouts. |
 
 ---
 
