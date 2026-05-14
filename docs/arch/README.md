@@ -28,7 +28,7 @@ Reference template: <https://arc42.org/>. A local Markdown copy of the template 
 
 | # | Title | Status | File |
 |---|-------|--------|------|
-| 1 | Introduction and Goals | 🛠 | [`A01-introduction-and-goals.md`](A01-introduction-and-goals.md) |
+| 1 | Introduction and Goals | ✅ | [`A01-introduction-and-goals.md`](A01-introduction-and-goals.md) |
 | 2 | Architecture Constraints | 🛠 | [`A02-architecture-constraints.md`](A02-architecture-constraints.md) |
 | 3 | Context and Scope | 🛠 | [`A03-context-and-scope.md`](A03-context-and-scope.md) |
 | 4 | Solution Strategy | 🛠 | [`A04-solution-strategy.md`](A04-solution-strategy.md) |
