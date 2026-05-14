@@ -48,3 +48,4 @@ database/data/*.sqlite-*
 .env-testing
 docs/spec/siedersleben-bausteine.pdf
 docs/arch/arc42-template-EN-withhelp-gitHubMarkdown/
+docs/arch/SW-Arch kompakt - Hruschka u Starke.pdf

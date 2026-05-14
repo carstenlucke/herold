@@ -98,7 +98,7 @@ This is why F1 documents only one process: the Herold-internal flow is type-agno
 
 Activities and concerns that are deliberately **not** part of this process:
 
-- **Agent selection, agent configuration, agent execution.** The operator chooses and operates the downstream agent independently. See [ADR-003](../arch/ARCHITECTURE_DECISIONS.md) and P1 non-goal [NG-02](P1-ziele-rahmenbedingungen.md) *Agent control API*.
+- **Agent selection, agent configuration, agent execution.** The operator chooses and operates the downstream agent independently. See [ADR-003](../arch/A09-architecture-decisions.md) and P1 non-goal [NG-02](P1-ziele-rahmenbedingungen.md) *Agent control API*.
 - **Issue triage and labelling beyond the message-type label.** Herold attaches exactly one type label and the title/body. Any further triage (priority, milestone, assignee) is done in GitHub by the operator or the agent.
 - **Issue lifecycle after dispatch.** Status synchronisation, comments, and closure are handled in GitHub; Herold does not read back. P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle*.
 - **Cross-process coordination.** Each voice note is one process instance. Herold has no concept of related notes, threads, or campaigns.

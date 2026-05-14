@@ -1,4 +1,4 @@
-# Architecture Decisions
+# 9 Architecture Decisions
 
 This document records key architecture decisions made for the project. Each decision documents the context, considered options, and rationale.
 

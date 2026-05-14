@@ -61,7 +61,7 @@ Bewertung der Relevanz jedes Bausteins für das Projekt Herold inklusive Quelle 
 | Baustein | Relevant | Quelle | Zieldatei |
 |----------|----------|--------|-----------|
 | **P1 – Ziele und Rahmenbedingungen** | Ja | `prompts/herold-spec.prompt.md` (Zielsetzung) | `P1-ziele-rahmenbedingungen.md` (+ Anhang `P1-constraints.md`) |
-| **P2 – Architekturüberblick** | Ja | `CLAUDE.md` (Architecture), `docs/arch/ARCHITECTURE_DECISIONS.md` | `P2-architekturueberblick.md` |
+| **P2 – Architekturüberblick** | Ja | `CLAUDE.md` (Architecture), `docs/arch/A09-architecture-decisions.md` | `P2-architekturueberblick.md` |
 
 ### 2. Abläufe und Funktionen
 
