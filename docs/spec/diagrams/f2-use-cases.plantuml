@@ -38,7 +38,7 @@ rectangle "Herold" as HEROLD {
 
   package "Management" as MGMT #FFF4E0 {
     usecase "UC-09\nBrowse voice notes"                                            as UC09 #99D9C0
-    usecase "UC-10\nView a voice note\n--\nextension points:\nfrom detail view"    as UC10 #99D9C0
+    usecase "UC-10\nView a voice note\n--\nextension points:\ndetail view action" as UC10 #99D9C0
     usecase "UC-11\nDelete a voice note"                                           as UC11 #99D9C0
     usecase "UC-13\nView dashboard"                                                as UC13 #99D9C0
   }
@@ -79,12 +79,14 @@ UC06 -- CHAT
 UC08 -- GH
 
 ' Use-case relationships extracted from F2.
-' UC-10 is the typical entry point for these (UC-10 postcondition);
-' UC-07 step 1 explicitly opens the detail view, the others enter from it.
-UC06 ..> UC10 : <<extend>>\n(from detail view)
-UC07 ..> UC10 : <<extend>>\n(from detail view)
-UC08 ..> UC10 : <<extend>>\n(from detail view)
-UC11 ..> UC10 : <<extend>>\n(from detail view)
+' UC-10 is the detail-view hub; from its `detail view action` extension
+' point the operator may optionally trigger one of the note-flow actions.
+' Each extension is guarded by the note status it requires (UC-11 is
+' reachable in any status, so it carries no guard).
+UC06 ..> UC10 : <<extend>>\n(detail view action)\n[status = recorded]
+UC07 ..> UC10 : <<extend>>\n(detail view action)\n[status = processed]
+UC08 ..> UC10 : <<extend>>\n(detail view action)\n[status = processed]
+UC11 ..> UC10 : <<extend>>\n(detail view action)
 
 ' Recovery is the pivot when UC-01 cannot succeed (UC-01 exception).
 UC03 ..> UC01 : <<extend>>\n(authentication lost)
