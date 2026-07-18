@@ -1,0 +1,47 @@
+@startuml a06-send
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Runtime View — Dispatch a voice note to GitHub (UC-08)
+
+actor Operator as op
+participant "Notes/Show.vue\n+ useProcessing.ts" as ui
+participant "VoiceNoteController\n::send" as ctrl
+participant "IssueContentSanitizer" as sani
+participant "GitHubService" as gh
+database "SQLite\nvoice_notes" as db
+participant "GitHub Issues API\nPOST /repos/{owner}/{repo}/issues" as api
+
+op -> ui : click "Create Ticket"
+ui -> ctrl : POST /notes/{id}/send
+
+alt status ≠ processed
+  ctrl --> ui : redirect back —\n"Note must be processed before sending."
+else status = processed
+  ctrl -> sani : sanitizeAndWrap(note)
+  sani -> sani : strip HTML comments, <script>/<style>,\nall tags, javascript: URIs, data:text/html
+  sani -> sani : append "## Metadata" section\n(labels from type extra_fields);\njoin sections with "---" rules
+  sani --> ctrl : issue body\n(sanitised + delimited)
+  ctrl -> ctrl : labels = [config type github_label]
+  ctrl -> gh : createIssue(title ?? "Untitled Voice Note",\nbody, labels)
+  gh -> api : POST JSON, fine-grained PAT,\nX-GitHub-Api-Version 2022-11-28,\ntimeout 30 s
+  api --> gh : {number, html_url}
+  gh --> ctrl : issue reference
+  ctrl -> db : UPDATE status = sent,\ngithub_issue_number, github_issue_url
+  ctrl --> ui : redirect → notes.show
+  ui --> op : stepper complete,\nlink to issue #number
+
+  group catch (\\Throwable) — provider error or network failure mid-call
+    ctrl -> ctrl : Log::error('Voice note send to GitHub failed.',\n{note_id, error})
+    ctrl -> db : UPDATE status = error,\nerror_message = reason
+    ctrl --> ui : redirect → notes.show
+    note over ui, ctrl
+      No speculative issue reference is stored.
+      Retry path: "Process" regenerates content
+      (status → processed), then "Create Ticket" again —
+      ::send's guard admits only status = processed.
+    end note
+  end
+end
+
+@enduml

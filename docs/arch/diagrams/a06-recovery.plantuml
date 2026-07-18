@@ -1,0 +1,43 @@
+@startuml a06-recovery
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Runtime View — Recover access via out-of-band file token (UC-03)
+
+actor Operator as op
+participant "FTP client\n(out-of-band)" as ftp
+participant "host file store\nstorage/app/private/\n.herold-recovery" as fs
+participant "Auth/Recovery.vue\n(+ RecoverySuccess)" as ui
+participant "AuthController" as auth
+database "SQLite users" as db
+
+op -> ftp : upload .herold-recovery\n(content = chosen secret)
+ftp -> fs : file placed\n(mtime = placedAt)
+
+op -> ui : open /recovery
+ui -> auth : GET /recovery (throttle:5,60)
+auth -> fs : marker exists?\nmtime younger than 60 min?
+
+alt missing or expired
+  auth --> ui : 404 — uniform rejection,\nreason logged with source IP
+else token present and fresh
+  auth --> ui : recovery form
+  op -> ui : enter secret string
+  ui -> auth : POST /recovery (throttle:5,60)
+  auth -> fs : read file content
+  auth -> auth : hash_equals(file content,\ninput)
+  alt mismatch
+    auth --> ui : 404 — same uniform rejection
+  else match
+    auth -> fs : delete .herold-recovery
+    auth -> db : api_key_hash = sha256(Str::random(64)),\ntotp_secret = null,\ntotp_confirmed_at = null
+    auth --> ui : RecoverySuccess —\nnew API key shown exactly once
+    note right of ui
+      Next sign-in re-runs UC-01 with the
+      new key; TOTP enrolment (UC-02)
+      happens inline again.
+    end note
+  end
+end
+
+@enduml

@@ -1,0 +1,47 @@
+@startuml a06-process
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Runtime View — Process a voice note (UC-06), synchronous inside one HTTP request
+
+actor Operator as op
+participant "Notes/Show.vue\n+ useProcessing.ts" as ui
+participant "VoiceNoteController\n::process" as ctrl
+participant "AIService" as ai
+participant "PreprocessingService" as prep
+database "SQLite\nvoice_notes" as db
+participant "OpenAI\naudio/transcriptions\n(gpt-4o-transcribe)" as whisper
+participant "OpenAI\nchat/completions\n(gpt-5.4-mini, JSON mode)" as chat
+
+op -> ui : click "Process"
+ui -> ctrl : POST /notes/{id}/process
+note right of ctrl : no status guard —\nerrored notes are retried\nvia this same action
+ctrl -> db : UPDATE error_message = null
+
+opt audio_path set AND transcript empty
+  ctrl -> ai : transcribe(Storage path)
+  ai -> whisper : POST multipart, Bearer key,\ntimeout 120 s
+  whisper --> ai : plain-text transcript
+  ai --> ctrl : transcript
+  ctrl -> db : UPDATE transcript
+end
+
+ctrl -> prep : process(note)
+prep -> prep : resolve config('herold.types.{type}')\nsystem prompt = preprocessing_prompt\n+ metadata lines\n+ current date (diary, todo)
+prep -> ai : chat(systemPrompt,\n"Transcript:\\n…", 0.3)
+ai -> chat : POST JSON, Bearer key,\nresponse_format json_object
+chat --> ai : {title, body, extra_fields?}
+ai --> prep : parsed array\n(title + body required)
+prep -> db : UPDATE processed_title,\nprocessed_body,\nmetadata ⊕ extra_fields,\nstatus = processed
+
+ctrl --> ui : redirect → notes.show
+ui --> op : review & edit generated content
+
+group catch (\\Throwable) — any provider or parsing failure
+  ctrl -> ctrl : Log::error('Voice note processing failed.',\n{note_id, error}) — redacted channel
+  ctrl -> db : UPDATE status = error,\nerror_message = reason
+  ctrl --> ui : redirect → notes.show
+  ui --> op : error banner; audio + transcript preserved —\nretry = click "Process" again
+end
+
+@enduml
