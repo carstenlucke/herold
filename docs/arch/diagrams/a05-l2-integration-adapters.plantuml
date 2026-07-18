@@ -1,0 +1,37 @@
+@startuml a05-l2-integration-adapters
+!theme plain
+skinparam componentStyle rectangle
+
+title Building Block View — Level 2: Whitebox "Integration Adapters"
+
+package "Integration Adapters (whitebox) — app/Services/" {
+  [AIService\ntranscribe(audioPath)\nchat(system, user, temp)] as ai
+  [GitHubService\ncreateIssue(title, body, labels)] as gh
+}
+
+' Level-1 neighbours of this whitebox
+rectangle "Web Edge (L1)" as edge #EEEEEE
+rectangle "Domain Services (L1)\nPreprocessingService" as domain #EEEEEE
+file "config/herold.php\nopenai.api_key · github.token\ngithub.owner · github.repo" as cfg
+
+cloud "OpenAI\nTranscription API\nPOST /v1/audio/transcriptions" as whisper
+cloud "OpenAI\nChat Completion API\nPOST /v1/chat/completions" as chat
+cloud "GitHub\nIssues API\nPOST /repos/{owner}/{repo}/issues" as issues
+
+edge --> ai : transcribe()\n[UC-06]
+domain --> ai : chat()\n[UC-06]
+edge --> gh : createIssue()\n[UC-08]
+ai ..> cfg : Bearer credential\n(fail-fast if unset)
+gh ..> cfg : PAT + repo target\n(fail-fast if unset)
+ai --> whisper : HTTPS multipart,\ntimeout 120 s (NB-02)
+ai --> chat : HTTPS JSON,\njson_object mode (NB-03)
+gh --> issues : HTTPS JSON, PAT,\nAPI version 2022-11-28,\ntimeout 30 s (NB-04)
+
+note bottom of ai
+  Both adapters use Laravel's ""Http"" facade —
+  no vendor SDK. One logical seam per neighbour
+  (NB-02, NB-03, NB-04); AIService bundles two
+  seams in one class — refined in Level 3 (§ 5.3.1).
+end note
+
+@enduml

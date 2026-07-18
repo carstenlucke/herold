@@ -1,0 +1,34 @@
+@startuml a05-l2-domain-services
+!theme plain
+skinparam componentStyle rectangle
+
+title Building Block View — Level 2: Whitebox "Domain Services"
+
+package "Domain Services (whitebox) — app/Services/" {
+  [PreprocessingService\nprompt assembly,\ncontent post-processing] as prep
+  [IssueContentSanitizer\nmarkdown sanitisation +\nissue-body composition] as sani
+  [MessageTypeRegistry\nbrowser-safe type projection] as reg
+}
+
+' Level-1 neighbours of this whitebox
+rectangle "Web Edge (L1)" as edge #EEEEEE
+rectangle "Integration Adapters (L1)" as adapters #EEEEEE
+rectangle "Persistence (L1)" as persistence #EEEEEE
+file "config/herold.php\ntypes catalogue" as cfg
+
+edge --> prep : process(note)\n[UC-06]
+edge --> sani : sanitizeAndWrap(note)\n[UC-08]
+edge --> reg : all(), get(), keys()\n[Inertia props, /types]
+prep --> adapters : chat(systemPrompt,\nuserMessage, 0.3)
+prep --> persistence : title/body/metadata,\nstatus = processed
+prep ..> cfg : preprocessing_prompt,\nextra_fields,\nneeds_current_date_context
+sani ..> cfg : extra_fields labels\n(Metadata section)
+reg ..> cfg : types — strips prompt +\ndate-context flag
+
+note bottom of reg
+  Enforcement point of NFR-15b-02:
+  ""preprocessing_prompt"" never leaves
+  the server through this projection.
+end note
+
+@enduml

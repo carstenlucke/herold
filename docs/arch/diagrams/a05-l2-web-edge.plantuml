@@ -1,0 +1,46 @@
+@startuml a05-l2-web-edge
+!theme plain
+skinparam componentStyle rectangle
+
+title Building Block View — Level 2: Whitebox "Web Edge"
+
+package "Web Edge (whitebox) — routes/web.php + app/Http/" {
+  [routes/web.php\nroute table, auth group,\nper-route throttles] as routes
+  [AuthController\nsign-in, TOTP, recovery] as auth
+  [VoiceNoteController\npipeline orchestrator] as vnc
+  [DashboardController] as dash
+  [SettingsController] as settings
+  [StoreVoiceNoteRequest\ncapture validation] as svr
+  [SecurityHeaders\n(middleware)] as sech
+}
+
+' Level-1 neighbours of this whitebox (blackboxes here)
+rectangle "UI Shell (L1)" as ui #EEEEEE
+rectangle "Domain Services (L1)" as domain #EEEEEE
+rectangle "Integration Adapters (L1)" as adapters #EEEEEE
+rectangle "Persistence (L1)" as persistence #EEEEEE
+file "config/herold.php" as cfg
+
+ui --> routes : HTTPS — Inertia visits, form posts,\nmultipart upload, audio streaming
+routes --> auth : /login*, /recovery,\n/logout (throttled)
+routes --> vnc : /notes* (auth guard,\nstore throttled 10/60)
+routes --> dash : / (auth guard)
+routes --> settings : /settings, /types\n(auth guard)
+sech .. routes : appended to the\nweb group
+vnc ..> svr : validates store() via
+svr ..> cfg : type keys +\nextra_fields rules
+vnc --> domain : process(), sanitizeAndWrap(),\ntype catalogue
+vnc --> adapters : transcribe(),\ncreateIssue()
+vnc --> persistence : VoiceNote CRUD,\nstatus, audio path
+auth --> persistence : User::sole(),\napi_key_hash, totp_secret
+dash --> persistence : status counts,\nrecent notes
+settings --> persistence : hasTotpEnabled()
+settings ..> cfg : github owner/repo
+
+note bottom of sech
+  ""app/Http/Middleware/VerifyApiKey.php"" exists
+  but is wired nowhere (dead code, A11 D-06);
+  the session ""auth"" guard is the single gate.
+end note
+
+@enduml

@@ -1,0 +1,56 @@
+@startuml a05-l2-ui-shell
+!theme plain
+skinparam linetype ortho
+skinparam componentStyle rectangle
+
+title Building Block View — Level 2: Whitebox "UI Shell" (resources/js/)
+
+[app.ts\ncreateInertiaApp + createVuetify\n(heroldDark / heroldLight)] as app
+
+package "Layouts/" {
+  [AppLayout.vue\nnav drawer (desktop) /\nbottom nav (mobile)] as layout
+}
+
+package "Pages/" {
+  [Dashboard.vue] as dashboard
+  [Notes/Index.vue] as nindex
+  [Notes/Show.vue] as nshow
+  [Recording/Create.vue] as create
+  [Settings/Index.vue] as psettings
+  [Auth/Login.vue\n(+ TotpSetup, TotpVerify,\nRecovery, RecoverySuccess)] as login
+}
+
+package "Components/" {
+  [AudioRecorder.vue] as recorder
+  [NoteCard.vue] as card
+  [NoteStatusBadge.vue] as badge
+  [TranscriptEditor.vue] as transcript
+  [TypeSelector.vue] as typesel
+}
+
+package "Composables/" {
+  [useAudioRecorder.ts\nMediaRecorder, mime pick,\nblob assembly] as useRec
+  [useProcessing.ts\nPOST /notes/{id}/process·send] as useProc
+}
+
+[Types/index.ts\nVoiceNote, MessageType,\nExtraField, …] as types
+
+app --> layout : resolves pages\ninto
+dashboard --> card
+nindex --> card
+card --> badge
+nshow --> badge
+nshow --> transcript
+nshow --> useProc
+create --> typesel
+create --> recorder
+recorder --> useRec
+create ..> useRec : blob → useForm.post('/notes',\nforceFormData)
+login ..> app : qrcode pkg renders\notpauth:// URI
+layout ..> types
+dashboard ..> types
+nindex ..> types
+nshow ..> types
+create ..> types
+
+@enduml
