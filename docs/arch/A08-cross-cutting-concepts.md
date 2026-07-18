@@ -65,16 +65,34 @@ Consumers and their access paths:
 | `IssueContentSanitizer` | `extra_fields` labels for the `## Metadata` section. |
 | `VoiceNoteController::send` | `github_label` → the issue's single label. |
 
-No consumer hard-codes a type name; `TypeExtensionTest` proves that a new type added *only* in config is immediately capturable, validated, processed, and labelled. **Layering note:** the spec splits type definition into a code-level catalogue ([D2.4](../spec/D2-datentypen.md#d24-messagetypedt)) and host-level bindings ([NFR-14a-01](../spec/N1-nichtfunktional.md#14a-maintenance-requirements)); the implementation folds both layers into the config file — the catalogue *is* the set of config keys, which satisfies the fit criterion (bindings changeable without code edits) while making the "closed set" a convention between spec and config rather than a PHP enum.
+No consumer hard-codes a type name.
+
+> **Recipe — add a new message type.** Add one entry under `types` in `config/herold.php` with the keys shown above — nothing else. Every consumer in the table resolves the new type at runtime: it appears in the capture UI (Inertia props / `GET /types`), its key and slots validate ([§ 8.3](#83-validation)), `PreprocessingService` uses its prompt, and dispatch applies its `github_label`. `TypeExtensionTest::test_new_type_can_be_added_via_config` asserts exactly this path with a type that exists only in config.
+
+**Layering note:** the spec splits type definition into a code-level catalogue ([D2.4](../spec/D2-datentypen.md#d24-messagetypedt)) and host-level bindings ([NFR-14a-01](../spec/N1-nichtfunktional.md#14a-maintenance-requirements)); the implementation folds both layers into the config file — the catalogue *is* the set of config keys, which satisfies the fit criterion (bindings changeable without code edits) while making the "closed set" a convention between spec and config rather than a PHP enum.
 
 ## 8.3 Validation
 
-Strict, schema-driven, at the two boundaries that accept operator input ([N2.3](../spec/N2-querschnittskonzepte.md#n23-validation)):
+Realisation of [N2.3](../spec/N2-querschnittskonzepte.md#n23-validation) — strict, schema-driven, and layered along every boundary through which data enters the system. **The server is the single authority**: whatever the browser checks is convenience only and is re-enforced server-side.
 
-- **Capture** (`POST /notes` → `StoreVoiceNoteRequest`): `audio` required, `mimetypes:audio/webm,video/webm,audio/ogg,audio/mp4`, max 25 600 KB (= the 25 MB of [NFR-15a-03](../spec/N1-nichtfunktional.md#15a-access-requirements)); `type` must be a configured key; per-type metadata rules as in § 8.2. `validated()` additionally intersects `metadata` against the declared slot names — unknown keys are dropped, empty values nulled, so nothing undeclared ever reaches the JSON column.
-- **Edit** (`PUT /notes/{note}` → `VoiceNoteController::update`): same per-type rule construction against the *bound* type, plus free-text rules for `transcript`, `processed_title` (max 255), `processed_body`; the same key-intersection filter applies.
+| Boundary | Validator | Rules | On failure |
+|----------|-----------|-------|------------|
+| **Browser (convenience)** | `Recording/Create.vue` | Vuetify `:rules` mark required metadata slots inline; the `canSave` computed keeps *Save* disabled until an audio blob exists and every required slot is filled; date slots are picker-driven (read-only text field), so a malformed date cannot be typed. | Inline field hint / disabled button. Never authoritative. |
+| **Operator input — capture** | `StoreVoiceNoteRequest` (`POST /notes`) | `audio`: required, `file`, `mimetypes:audio/webm,video/webm,audio/ogg,audio/mp4`, max 25 600 KB (= the 25 MB of [NFR-15a-03](../spec/N1-nichtfunktional.md#15a-access-requirements)); `type`: `Rule::in` over the configured type keys; per-slot rules derived from the type's `extra_fields` (`url` → `url`, `date` → `date_format:Y-m-d`, else `string`; `required` flag honoured). `validated()` additionally intersects `metadata` against the declared slot names — unknown keys dropped, so nothing undeclared ever reaches the JSON column. | 422 field errors, surfaced inline by Inertia; nothing persisted. |
+| **Operator input — edit** | `VoiceNoteController::update` (`PUT /notes/{note}`) | Free-text rules for `transcript`, `processed_title` (max 255), `processed_body`; identical per-slot rule construction and key-intersection filter, evaluated against the note's *bound* type. | 422, as above. |
+| **Operator input — authentication** | `AuthController` | API key, TOTP code, and recovery secret are verified as credentials (`hash_equals`, RFC 6238 drift window) — see [§ 8.4](#84-authentication-and-session). | Uniform rejection (error flash / 404), throttled, logged with source IP. |
+| **Machine input — AI responses** | `AIService`, `PreprocessingService` | Non-2xx responses from both OpenAI endpoints throw; `chat()` structurally validates the returned payload — it must decode to a JSON object carrying `title` **and** `body`; `PreprocessingService` rejects notes whose `type` has no config entry. | `RuntimeException` → the [§ 8.6](#86-failure-handling) path (`status = error`, inputs preserved). |
+| **Configuration** | Adapter constructors | `AIService` / `GitHubService` fail fast when their API key/token is unset — see [§ 8.8](#88-secret-handling). | `RuntimeException` before any external call. |
 
-Failures return standard Laravel 422 field errors that Inertia surfaces inline; nothing is persisted on rejection. Rate limits complement validation at the same boundary: `throttle:10,60` on capture (deviation from the spec's 20/h — [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(c)), `throttle:5,1` on both sign-in factors, `throttle:5,60` on recovery.
+Rate limits complement validation at the same boundaries: `throttle:10,60` on capture (deviation from the spec's 20/h — [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(c)), `throttle:5,1` on both sign-in factors, `throttle:5,60` on recovery. Validation rejections never touch `status`/`error_message` ([§ 8.6](#86-failure-handling)).
+
+> **Recipe — add a validated metadata slot.** Append one entry to the type's `extra_fields` in `config/herold.php`:
+>
+> ```php
+> ['name' => 'deadline', 'type' => 'date', 'required' => false, 'label' => 'Deadline'],
+> ```
+>
+> This single entry drives every layer of the table above: the rendered form control including its client-side required rule (`Recording/Create.vue` builds the form from the browser-safe type projection), the server rules on capture **and** edit, the key-intersection filter, the extraction schema (`PreprocessingService` merges an AI-extracted value of the same name into `metadata`), and the labelled row in the issue's `## Metadata` section ([§ 8.5](#85-content-sanitisation)). No other file changes.
 
 ## 8.4 Authentication and session
 
@@ -106,6 +124,8 @@ Realisation of [N2.5](../spec/N2-querschnittskonzepte.md#n25-failure-handling) �
 - **Retry asymmetry.** `process` has no status guard — it is both first run and retry. `send` admits only `status = processed`; after a failed dispatch (status `error`) the operator re-runs *Process* (which restores `processed`) and then *Send*. No speculative issue reference is ever stored on a mid-call failure ([§ 6.3](A06-runtime-view.md#63-dispatch-to-github)).
 - **Realisation note.** The spec models failure as the orthogonal flag `errorMessage` with an unchanged three-value status ([D2.5](../spec/D2-datentypen.md#d25-notestatusdt)); the implementation adds `error` as a fourth `NoteStatus` case carrying the same information (visible as its own dashboard count). Semantically equivalent for retries, structurally different — [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(a).
 - **Validation rejections are not failures**: they surface as 422 field errors and never touch `status`/`error_message` ([§ 8.3](#83-validation)).
+
+> **Recipe — failure handling for a new pipeline action.** Follow the pattern of `process`/`send`: wrap the whole action in a single `try/catch (\Throwable)`; in the handler, `Log::error` with `note_id` and the exception message only (the redacting channel covers the rest — [§ 8.7](#87-logging)), write `status = NoteStatus::ERROR` plus `error_message`, and redirect back to the detail view. Leave every input (audio, transcript, generated content) untouched so the action stays re-runnable, and never persist a speculative external reference before the external call has succeeded.
 
 ## 8.7 Logging
 
