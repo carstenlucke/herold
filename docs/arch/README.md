@@ -30,13 +30,13 @@ Reference template: <https://arc42.org/>. A local Markdown copy of the template 
 |---|-------|--------|------|
 | 1 | Introduction and Goals | ✅ | [`A01-introduction-and-goals.md`](A01-introduction-and-goals.md) |
 | 2 | Architecture Constraints | ✅ | [`A02-architecture-constraints.md`](A02-architecture-constraints.md) |
-| 3 | Context and Scope | 🛠 | [`A03-context-and-scope.md`](A03-context-and-scope.md) |
-| 4 | Solution Strategy | 🛠 | [`A04-solution-strategy.md`](A04-solution-strategy.md) |
-| 5 | Building Block View | 🛠 | [`A05-building-block-view.md`](A05-building-block-view.md) |
-| 6 | Runtime View | 🛠 | [`A06-runtime-view.md`](A06-runtime-view.md) |
-| 7 | Deployment View | 🛠 | [`A07-deployment-view.md`](A07-deployment-view.md) |
-| 8 | Cross-cutting Concepts | 🛠 | [`A08-cross-cutting-concepts.md`](A08-cross-cutting-concepts.md) |
-| 9 | Architecture Decisions | 🟡 | [`A09-architecture-decisions.md`](A09-architecture-decisions.md) |
-| 10 | Quality Requirements | 🛠 | [`A10-quality-requirements.md`](A10-quality-requirements.md) |
-| 11 | Risks and Technical Debts | 🛠 | [`A11-risks-and-technical-debts.md`](A11-risks-and-technical-debts.md) |
-| 12 | Glossary | 🛠 | [`A12-glossary.md`](A12-glossary.md) |
+| 3 | Context and Scope | ✅ | [`A03-context-and-scope.md`](A03-context-and-scope.md) |
+| 4 | Solution Strategy | ✅ | [`A04-solution-strategy.md`](A04-solution-strategy.md) |
+| 5 | Building Block View | ✅ | [`A05-building-block-view.md`](A05-building-block-view.md) |
+| 6 | Runtime View | ✅ | [`A06-runtime-view.md`](A06-runtime-view.md) |
+| 7 | Deployment View | ✅ | [`A07-deployment-view.md`](A07-deployment-view.md) |
+| 8 | Cross-cutting Concepts | ✅ | [`A08-cross-cutting-concepts.md`](A08-cross-cutting-concepts.md) |
+| 9 | Architecture Decisions | ✅ | [`A09-architecture-decisions.md`](A09-architecture-decisions.md) |
+| 10 | Quality Requirements | ✅ | [`A10-quality-requirements.md`](A10-quality-requirements.md) |
+| 11 | Risks and Technical Debts | ✅ | [`A11-risks-and-technical-debts.md`](A11-risks-and-technical-debts.md) |
+| 12 | Glossary | ✅ | [`A12-glossary.md`](A12-glossary.md) |
