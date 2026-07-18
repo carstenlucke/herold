@@ -9,8 +9,8 @@ participant "Notes/Show.vue\n+ useProcessing.ts" as ui
 participant "VoiceNoteController\n::send" as ctrl
 participant "IssueContentSanitizer" as sani
 participant "GitHubService" as gh
-database "SQLite\nvoice_notes" as db
-participant "GitHub Issues API\nPOST /repos/{owner}/{repo}/issues" as api
+database "Persistence\nSQLite voice_notes" as db
+participant "GitHub Issues API (NB-04)\nPOST /repos/{owner}/{repo}/issues" as api
 
 op -> ui : click "Create Ticket"
 ui -> ctrl : POST /notes/{id}/send

@@ -9,8 +9,8 @@ participant "Recording/Create.vue\n+ AudioRecorder.vue\n+ useAudioRecorder.ts" a
 participant "routes/web.php\n(auth, throttle:10,60)" as route
 participant "StoreVoiceNoteRequest" as req
 participant "VoiceNoteController\n::store" as ctrl
-database "SQLite\nvoice_notes" as db
-participant "local disk\nstorage/app/private/audio/" as fs
+database "Persistence\nSQLite voice_notes" as db
+participant "Persistence\naudio store\nstorage/app/private/audio/" as fs
 
 op -> ui : tap Record
 ui -> ui : getUserMedia({audio})\nMediaRecorder.start(250)\nmime: webm;opus → webm → ogg;opus

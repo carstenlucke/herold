@@ -7,8 +7,7 @@ title Runtime View — Sign in with inline first-time TOTP enrolment (UC-01 / UC
 actor Operator as op
 participant "Auth/Login.vue\n(+ TotpSetup / TotpVerify)" as ui
 participant "AuthController" as auth
-database "SQLite users\n(singleton row)" as db
-participant "Laravel session" as sess
+database "Persistence\nSQLite users\n(singleton row)" as db
 
 op -> ui : open /login
 ui -> auth : GET /login → showLogin
@@ -23,7 +22,7 @@ alt key rejected
   auth -> auth : Log::warning(+ source IP)
   auth --> ui : back with error
 else key verified
-  auth -> sess : auth.key_verified = true,\nauth.user_id
+  auth -> auth : session: auth.key_verified = true,\nauth.user_id
   alt first sign-in — no confirmed TOTP
     auth -> auth : generateTotpSecret()\n(160-bit random → Base32)
     auth -> db : store totp_secret\n(encrypted cast)
@@ -32,7 +31,7 @@ else key verified
     ui -> auth : POST /login/totp/confirm
     auth -> auth : verifyTotpCode()\nRFC 6238, ±1 step drift,\nhash_equals
     auth -> db : totp_confirmed_at = now()
-    auth -> sess : Auth::login + regenerate,\nforget auth.* flags
+    auth -> auth : Auth::login + session regenerate,\nforget auth.* flags
     auth --> ui : redirect → dashboard
   else returning sign-in
     auth --> ui : step = "totp"
@@ -43,7 +42,7 @@ else key verified
       auth -> auth : Log::warning(+ source IP)
       auth --> ui : back with error
     else code verified
-      auth -> sess : Auth::login + regenerate,\nforget auth.* flags
+      auth -> auth : Auth::login + session regenerate,\nforget auth.* flags
       auth --> ui : redirect → intended | dashboard
     end
   end

@@ -9,9 +9,9 @@ participant "Notes/Show.vue\n+ useProcessing.ts" as ui
 participant "VoiceNoteController\n::process" as ctrl
 participant "AIService" as ai
 participant "PreprocessingService" as prep
-database "SQLite\nvoice_notes" as db
-participant "OpenAI\naudio/transcriptions\n(gpt-4o-transcribe)" as whisper
-participant "OpenAI\nchat/completions\n(gpt-5.4-mini, JSON mode)" as chat
+database "Persistence\nSQLite voice_notes" as db
+participant "OpenAI Transcription API (NB-02)\naudio/transcriptions\n(gpt-4o-transcribe)" as whisper
+participant "OpenAI Chat Completion API (NB-03)\nchat/completions\n(gpt-5.4-mini, JSON mode)" as chat
 
 op -> ui : click "Process"
 ui -> ctrl : POST /notes/{id}/process
