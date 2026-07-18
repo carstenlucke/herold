@@ -14,17 +14,17 @@ title Building Block View — Level 1 (whitebox Herold, one deployable)
 Person(operator, "Operator", "Browser on desktop or mobile")
 
 System_Boundary(herold, "Herold — Laravel monolith") {
-  Component(ui, "UI Shell", "Vue 3 + Inertia + Vuetify", "resources/js/ — pages, components, composables, layout; runs in the operator's browser, served by the same deployable")
+  Component(ui, "UI Shell", "Vue 3 + Inertia + Vuetify", "resources/js/ — entry point (app.ts), layout, pages, components, composables, shared types; runs in the operator's browser, served by the same deployable")
   Component(edge, "Web Edge", "Laravel routing + HTTP layer", "routes/web.php, app/Http/ — controllers, form request validation, middleware, session auth gate, rate limits")
   Component(domain, "Domain Services", "Plain PHP services", "app/Services/ — PreprocessingService, IssueContentSanitizer, MessageTypeRegistry")
   Component(adapters, "Integration Adapters", "Http facade, one seam per neighbour", "app/Services/ — AIService (transcribe, chat), GitHubService (createIssue)")
-  Component(persistence, "Persistence", "Eloquent on SQLite + file store", "app/Models/ (VoiceNote, User), app/Enums/NoteStatus, storage/app/private/audio/")
-  Component(logging, "Log Redaction", "Monolog tap", "app/Logging/ — SecretRedactionProcessor on every log channel")
+  Component(persistence, "Persistence", "Eloquent on SQLite + file store", "app/Models/ (VoiceNote, User), app/Enums/NoteStatus, database/migrations/, storage/app/private/audio/")
+  Component(logging, "Log Redaction", "Monolog tap", "app/Logging/ — RedactSecrets installs SecretRedactionProcessor on every log channel")
 }
 
-System_Ext(whisper, "OpenAI Transcription API", "audio/transcriptions")
-System_Ext(chat, "OpenAI Chat Completion API", "chat/completions")
-System_Ext(github, "GitHub Issues API", "repos/{owner}/{repo}/issues")
+System_Ext(whisper, "OpenAI Transcription API (NB-02)", "audio/transcriptions")
+System_Ext(chat, "OpenAI Chat Completion API (NB-03)", "chat/completions")
+System_Ext(github, "GitHub Issues API (NB-04)", "repos/{owner}/{repo}/issues")
 
 Rel(operator, ui, "Records, reviews, dispatches", "HTTPS")
 Rel(ui, edge, "Inertia page visits, form posts,\nmultipart audio upload, audio streaming", "HTTPS")

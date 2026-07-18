@@ -8,18 +8,21 @@ title Building Block View — decomposition overview (refinement levels 0 → 3)
 
 ' ---------- Level 0: context (blackbox Herold) ----------
 rectangle "Level 0 — system context (chapter 3)" as L0 {
-  actor "Operator" as op
+  actor "Operator\n(NB-01)" as op
   folder "Herold" as sys0 #DDDDDD
-  folder "OpenAI\nTranscription API" as nb02
-  folder "OpenAI\nChat Completion API" as nb03
-  folder "GitHub\nIssues API" as nb04
+  folder "OpenAI\nTranscription API\n(NB-02)" as nb02
+  folder "OpenAI\nChat Completion API\n(NB-03)" as nb03
+  folder "GitHub\nIssues API\n(NB-04)" as nb04
+  folder "Local AI agents\n(NB-05)" as nb05
 
   op <-r-> sys0
   sys0 --> nb02
   sys0 --> nb03
   sys0 --> nb04
+  nb05 -l-> nb04
   nb02 -[hidden]r-> nb03
   nb03 -[hidden]r-> nb04
+  nb04 -[hidden]r-> nb05
 }
 
 ' ---------- Level 1: whitebox Herold ----------
@@ -34,6 +37,7 @@ package "Level 1 — Herold (whitebox, § 5.1)" as L1 {
   ui1 -r-> edge1
   edge1 -r-> dom1
   dom1 -r-> ad1
+  edge1 --> ad1
   edge1 -d-> per1
   dom1 -d-> per1
   per1 -[hidden]r-> log1
@@ -45,7 +49,7 @@ sys0 -[dashed]d-> L1 : refined
 package "Level 2 — UI Shell\n(whitebox, § 5.2.1)" as L2ui {
   folder "app.ts" as f_app #DDDDDD
   folder "AppLayout.vue" as f_layout #DDDDDD
-  folder "Pages (×6)" as f_pages #DDDDDD
+  folder "Pages (×10)" as f_pages #DDDDDD
   folder "Components (×5)" as f_comp #DDDDDD
   folder "Composables (×2)" as f_compo #DDDDDD
   folder "Types" as f_types #DDDDDD

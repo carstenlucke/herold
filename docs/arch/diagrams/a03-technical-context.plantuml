@@ -12,17 +12,17 @@ HIDE_STEREOTYPE()
 
 title Technical Context — Herold (channels, protocols, credentials)
 
-Person(operator, "Operator", "Browser on desktop or mobile,\nMediaRecorder-capable")
+Person(operator, "Operator", "NB-01 — browser on desktop or mobile,\nMediaRecorder-capable")
 
 System(herold, "Herold", "Voice-to-issue dispatcher\nApache + PHP 8.5 on a shared host")
 
 Boundary(openai, "OpenAI") {
-  System_Ext(whisper, "Whisper API", "Speech-to-text (REST)")
-  System_Ext(chat, "Chat Completion API", "Title + body generation (REST)")
+  System_Ext(whisper, "Whisper API (NB-02)", "Speech-to-text (REST)")
+  System_Ext(chat, "Chat Completion API (NB-03)", "Title + body generation (REST)")
 }
 
-System_Ext(github, "GitHub Issues API", "REST — sole ticket sink")
-System_Ext(agents, "Local AI agents", "Claude Code, OpenCode, …")
+System_Ext(github, "GitHub Issues API (NB-04)", "REST — sole ticket sink")
+System_Ext(agents, "Local AI agents (NB-05)", "Claude Code, OpenCode, …")
 
 Rel(operator, herold, "Records, reviews, dispatches", "HTTPS\nInertia.js pages + multipart upload\nSession cookie (API key + TOTP)")
 Rel(herold, whisper, "transcribe(audio)", "HTTPS, multipart\nOpenAI API key (server-only)")

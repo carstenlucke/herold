@@ -47,7 +47,7 @@ The same five neighbours, mapped to the concrete channels Herold uses to talk to
 |---------|-----------|---------|----------------|
 | Operator → Herold *(app shell / pages)* | HTTPS at the hosting edge | Inertia.js page payloads (JSON-over-HTML hydration) | Laravel session cookie, set after API key + TOTP verification (TECH-13) |
 | Operator → Herold *(audio upload)* | HTTPS, `multipart/form-data` | Browser-encoded audio blob from `MediaRecorder` | Same session as above; payload validated per [NFR-15a-03](../spec/N1-nichtfunktional.md#15a-access-requirements) |
-| Herold → OpenAI Whisper *(NB-02)* | HTTPS, `multipart/form-data` | Audio bytes + model identifier from host configuration | OpenAI API key from server-only env |
+| Herold → OpenAI Whisper *(NB-02)* | HTTPS, `multipart/form-data` | Audio bytes + model identifier (hard-coded in the adapter — risk [R-07](A11-risks-and-technical-debts.md#111-risks)) | OpenAI API key from server-only env |
 | Herold → OpenAI Chat *(NB-03)* | HTTPS, `application/json` | Per-type preprocessing prompt + transcript; optional extra-field schema | OpenAI API key (same credential as NB-02) |
 | Herold → GitHub Issues *(NB-04)* | HTTPS, `application/json` | Title, sanitised Markdown body, exactly one type label | Fine-grained GitHub PAT (`Issues: Read & Write`), server-only |
 | Local AI agents → GitHub | `gh` CLI / GitHub REST | Issue read, comment, close, possibly open new issues | Agent's own GitHub credentials — **not** a Herold channel |
