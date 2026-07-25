@@ -48,7 +48,7 @@ sys0 -[dashed]d-> L1 : refined
 ' ---------- Level 2: one whitebox per opened level-1 blackbox ----------
 package "Level 2 — UI Shell\n(whitebox, § 5.2.1)" as L2ui {
   folder "app.ts" as f_app #DDDDDD
-  folder "AppLayout.vue" as f_layout #DDDDDD
+  folder "Layouts (×1)" as f_layout #DDDDDD
   folder "Pages (×10)" as f_pages #DDDDDD
   folder "Components (×5)" as f_comp #DDDDDD
   folder "Composables (×2)" as f_compo #DDDDDD
@@ -63,19 +63,13 @@ package "Level 2 — UI Shell\n(whitebox, § 5.2.1)" as L2ui {
 
 package "Level 2 — Web Edge\n(whitebox, § 5.2.2)" as L2edge {
   folder "routes/web.php" as f_routes #DDDDDD
-  folder "AuthController" as f_auth #DDDDDD
-  folder "VoiceNoteController" as f_vnc #DDDDDD
-  folder "DashboardController" as f_dash #DDDDDD
-  folder "SettingsController" as f_set #DDDDDD
-  folder "StoreVoiceNoteRequest" as f_svr #DDDDDD
-  folder "SecurityHeaders" as f_sech #DDDDDD
+  folder "Controllers (×4)" as f_ctrl #DDDDDD
+  folder "Requests (×1)" as f_req #DDDDDD
+  folder "Middleware (×2)" as f_mw #DDDDDD
 
-  f_routes -[hidden]d-> f_auth
-  f_auth -[hidden]d-> f_vnc
-  f_vnc -[hidden]d-> f_dash
-  f_dash -[hidden]d-> f_set
-  f_set -[hidden]d-> f_svr
-  f_svr -[hidden]d-> f_sech
+  f_routes -[hidden]d-> f_ctrl
+  f_ctrl -[hidden]d-> f_req
+  f_req -[hidden]d-> f_mw
 }
 
 package "Level 2 — Domain Services\n(whitebox, § 5.2.3)" as L2dom {

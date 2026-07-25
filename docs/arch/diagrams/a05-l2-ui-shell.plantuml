@@ -7,58 +7,30 @@ title Building Block View — Level 2: Whitebox "UI Shell" (resources/js/)
 
 [app.ts\ncreateInertiaApp + createVuetify\n(heroldDark / heroldLight)] as app
 
-package "Layouts/" {
-  [AppLayout.vue\nnav drawer (desktop) /\nbottom nav (mobile)] as layout
-}
+[Layouts/ (×1)\nresponsive chrome:\nnav drawer / bottom nav] as layout
 
-package "Pages/" {
-  [Dashboard.vue] as dashboard
-  [Notes/Index.vue] as nindex
-  [Notes/Show.vue] as nshow
-  [Recording/Create.vue] as create
-  [Settings/Index.vue] as psettings
-  [Auth/Login.vue\n(+ TotpSetup, TotpVerify,\nRecovery, RecoverySuccess)] as login
-}
+[Pages/ (×10)\none page per dialogue (B1)] as pages
 
-package "Components/" {
-  [AudioRecorder.vue] as recorder
-  [NoteCard.vue] as card
-  [NoteStatusBadge.vue] as badge
-  [TranscriptEditor.vue] as transcript
-  [TypeSelector.vue] as typesel
-}
+[Components/ (×5)\nreusable widgets] as comps
 
-package "Composables/" {
-  [useAudioRecorder.ts\nMediaRecorder, mime pick,\nblob assembly] as useRec
-  [useProcessing.ts\nPOST /notes/{id}/process·send] as useProc
-}
+[Composables/ (×2)\naudio capture,\npipeline actions] as compo
 
-[Types/index.ts\nVoiceNote, MessageType,\nExtraField, …] as types
+[Types/\nInertia prop contracts\n(compile-time only)] as types
 
 ' Level-1 neighbour of this whitebox (blackbox here) —
 ' the only server contact of the UI Shell (§ 5.1.1)
 rectangle "Web Edge (L1)" as edge #EEEEEE
 
 app --> layout : resolves pages\ninto
-dashboard --> card
-nindex --> card
-card --> badge
-nshow --> badge
-nshow --> transcript
-nshow --> useProc
-create --> typesel
-create --> recorder
-recorder --> useRec
-create ..> useRec : takes assembled\naudio blob
-login ..> app : qrcode pkg renders\notpauth:// URI
-app --> edge : Inertia page visits,\nform posts (HTTPS)
-create --> edge : useForm.post('/notes',\nforceFormData) — multipart audio
-useProc --> edge : POST /notes/{id}/\nprocess · send
-nshow --> edge : streams\nGET /notes/{id}/audio
+layout --> pages
+pages --> comps
+comps --> compo
+pages --> compo
+pages ..> types
 layout ..> types
-dashboard ..> types
-nindex ..> types
-nshow ..> types
-create ..> types
+
+app --> edge : Inertia page visits,\nform posts (HTTPS)
+pages --> edge : multipart audio upload,\naudio streaming
+compo --> edge : POST /notes/{id}/\nprocess · send
 
 @enduml
