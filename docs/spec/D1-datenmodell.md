@@ -9,7 +9,7 @@ D1 captures the *information* Herold orchestrates, irrespective of where that in
 
 Configuration parameters supplied by the host operator out-of-band (per-type prompt and extra-field shape, GitHub credentials and target repository, OpenAI model identifiers) are **not** modelled as D1 entities. They are spec-level constants of the running system, inspected via UC-12.
 
-The diagram and tables below show **entity types only**. Non-trivial domain data types referenced as attribute types — e.g., `Identifier`, `OpaqueSecret`, `NoteStatusDT`, `IssueStateDT`, `MessageTypeDT`, `TypeSpecificData` — are catalogued in [D2](D2-datentypen.md). Trivial types (`Text`, `Integer`, `Boolean`, `Date`, `Email`, `URL`, `Timestamp`, `Markdown`) are used at face value and not separately defined. Storage decisions and physical schema live in the architecture layer (`docs/arch/`) and in code, not here.
+The diagram and tables below show **entity types only**. Non-trivial domain data types referenced as attribute types — e.g., `Identifier`, `OpaqueSecret`, `NoteStatusDT`, `IssueStateDT`, `MessageTypeDT`, `TypeSpecificData` — are catalogued in [D2](D2-datentypen.md). Trivial types (`Text`, `Integer`, `Boolean`, `Date`, `Email`, `URL`, `Timestamp`, `Markdown`) are used at face value and not separately defined. Storage decisions and the physical schema live in the architecture layer — see [A08 § 8.1, Domain model and persistence](../arch/A08-cross-cutting-concepts.md#81-domain-model-and-persistence) — and in code, not here.
 
 ![D1 Information Model](diagrams-png/d1-information-model.png)
 
@@ -117,7 +117,7 @@ The repository is fixed at the host level by configuration. Issues live within t
 
 ## D1.3 Out of Scope for D1
 
-- **Physical schema** — table layouts, column types, indexes, migrations: architecture concern, not D1.
+- **Physical schema** — table layouts, column types, indexes, migrations: architecture concern documented in [A08 § 8.1, Domain model and persistence](../arch/A08-cross-cutting-concepts.md#81-domain-model-and-persistence), not D1.
 - **Session and framework-internal storage** — sessions, jobs queue, cache: not domain information.
 - **Host configuration** — per-type prompt and extra-field shape, GitHub credentials and target repository, OpenAI model identifiers: spec-level constants of the running system, not D1 entities. Inspected via UC-12.
 - **Transient API payloads** to OpenAI — request/response are transformations, not entities; their *outputs* enter `VoiceNote` (transcript, processed content) and that is where they are modelled.

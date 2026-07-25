@@ -130,7 +130,7 @@ services:
 
 ---
 
-## Decision: Option 3 -- Apache + synchronous processing
+## Decision: Option 3 -- Docker Compose with Apache + synchronous processing
 
 **Rationale:**
 
@@ -174,7 +174,7 @@ services:
 **Consequences:**
 - Dockerfile uses `php:8.5-apache` base image, no `cron` package installed
 - `docker-compose.yml` has 2 services: `app` and `node`
-- No `cron` service, no `routes/console.php`, no scheduler configuration
+- No application scheduler or queue-processing command; the stock `routes/console.php` is unrelated to the processing pipeline
 - No `/cron/work` endpoint, no `CronController`, no `VerifyCronAuth` middleware
 - No job classes -- controllers call services directly
 - `NoteStatus` has 4 values: `recorded`, `processed`, `sent`, `error`

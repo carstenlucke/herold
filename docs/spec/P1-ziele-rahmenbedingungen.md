@@ -79,7 +79,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 | CON-3g-01 | Existing hosting (no budget for dedicated infrastructure) |
 | CON-3g-02 | OpenAI API costs unmanaged (low single-user volume) |
 
-Technology choices (language, framework, database product, build toolchain, local development tooling, dependency versions) are *design decisions* and live in [`docs/arch/`](../arch/); items pending ADR capture are tracked in [`docs/arch/arch-backlog.md`](../arch/arch-backlog.md).
+Technology choices (language, framework, database product, build toolchain, local development tooling, dependency versions) are *design decisions* and live in [`docs/arch/`](../arch/); architecturally significant choices and their rationale are recorded in [chapter 9 — Architecture Decisions](../arch/A09-architecture-decisions.md).
 
 ---
 

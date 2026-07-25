@@ -2,7 +2,7 @@
 
 ## Context
 
-Herold is a Laravel 13 monolith with a Vue 3 frontend. The central question: how do Laravel (server) and Vue (client) communicate? The app serves two consumer types: a human user (browser) and AI agents (CLI/curl). The architecture must support both without duplicating code.
+Herold is a Laravel 13 monolith with a Vue 3 frontend. The central question is how Laravel (server) and Vue (client) communicate for the operator-facing browser UI. ADR-003 subsequently established that AI agents interact with GitHub rather than Herold, so no agent-facing application API is required.
 
 ---
 
@@ -12,7 +12,7 @@ Herold is a Laravel 13 monolith with a Vue 3 frontend. The central question: how
 
 **Pros:**
 - Clear separation: backend = API, frontend = SPA
-- A single API for both browser and agents
+- A reusable API for any future non-browser consumer
 - Frontend could theoretically be swapped to a different backend
 
 **Cons:**
@@ -60,8 +60,8 @@ Herold is a Laravel 13 monolith with a Vue 3 frontend. The central question: how
 - Significantly less boilerplate than a classic SPA
 
 **Cons:**
-- Agents cannot use Inertia endpoints directly (Inertia responses are not plain JSON)
-- Requires separate `api.php` routes for the agent API (Sanctum token auth)
+- Inertia responses are not a general-purpose public JSON API
+- A future non-browser consumer would require a deliberate additional interface
 - Inertia is an additional concept that needs to be understood
 - Server-side rendering (SSR) is possible but more complex than with a pure Vue SPA
 
@@ -77,7 +77,7 @@ Herold is a Laravel 13 monolith with a Vue 3 frontend. The central question: how
 
 2. **Vue for complex UI:** Audio recording (MediaRecorder, waveform, pause/resume) and the interactive preview (editable transcript, status polling) require a reactive frontend framework. Blade + Alpine (Option 2) would hit its limits.
 
-3. **Clean separation browser vs. agent:** The browser UI runs via Inertia (`web.php`, session auth). The agent API runs via separate endpoints (`api.php`, Sanctum token auth). No mixing, no compromises.
+3. **No speculative API:** The browser UI runs via Inertia (`web.php`, session auth). ADR-003 keeps agents outside Herold's boundary, so adding `api.php`, Sanctum, and a second authentication model would be unused infrastructure.
 
 4. **Existing experience:** Vue 3 Composition API + Vuetify are known from the StudPlus project. Inertia eliminates the part that was most effort-intensive there (API layer + Axios interceptors + frontend auth).
 
@@ -93,7 +93,7 @@ Herold is a Laravel 13 monolith with a Vue 3 frontend. The central question: how
 
 **Consequences:**
 - Browser UI routes in `web.php` with `Inertia::render()`
-- Agent API routes in `api.php` with JSON responses + Sanctum
+- No browser JSON API and no agent API; ADR-003 routes agent interaction through GitHub
 - Vue pages under `resources/js/Pages/` follow the controller structure
 - No vue-router -- navigation via `<Link>` and `router.visit()` from Inertia
 - Forms via `useForm()` from Inertia (automatic validation, CSRF, redirects)

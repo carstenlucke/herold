@@ -12,7 +12,7 @@ The deployment view maps the building blocks of [chapter 5](A05-building-block-v
 
 *Source: [`diagrams/a07-deployment-prod.plantuml`](diagrams/a07-deployment-prod.plantuml).*
 
-**Motivation.** [TECH-01](A02-architecture-constraints.md#21-technical-constraints)/[ORG-03](A02-architecture-constraints.md#22-organisational-constraints): existing shared hosting, no infrastructure budget. Everything Herold needs at runtime is Apache, PHP 8.5 with `pdo_sqlite`/`mbstring`/`xml`, HTTPS at the provider edge, outbound HTTPS egress, and a writable file area — exactly the precondition set of [S3.2](../spec/S3-inbetriebnahme.md#s32-host-preconditions).
+**Motivation.** [TECH-01](A02-architecture-constraints.md#21-technical-constraints)/[ORG-03](A02-architecture-constraints.md#22-organisational-constraints): existing shared hosting, no infrastructure budget. The single deployable selected by [ADR-004](A09-architecture-decisions.md#adr-004-laravel-monolith-as-a-single-deployable-application-platform) needs only Apache, PHP 8.5 with `pdo_sqlite`/`mbstring`/`xml`, HTTPS at the provider edge, outbound HTTPS egress, and a writable file area — exactly the precondition set of [S3.2](../spec/S3-inbetriebnahme.md#s32-host-preconditions).
 
 **Nodes and channels.**
 
@@ -20,7 +20,7 @@ The deployment view maps the building blocks of [chapter 5](A05-building-block-v
 |---------|-------------|
 | Web edge | Provider-terminated HTTPS at a stable URL; required for `MediaRecorder` availability and credential transport. Apache's DocumentRoot points to `public/`; `public/.htaccess` is the standard Laravel front controller (rewrite to `index.php`, `Authorization` header pass-through). |
 | Application runtime | Apache + PHP 8.5, invoked per request. No cron, no queue worker, no container runtime ([CON-3b-01](../spec/P1-constraints.md#con-3b-01-shared-hosting-production), [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing)). |
-| Persistent surfaces | Per [S3.3](../spec/S3-inbetriebnahme.md#s33-persistent-state-surfaces): the SQLite file `database/data/database.sqlite`, the audio store `storage/app/private/audio/`, the redacted log under `storage/logs/`, the manually placed `.env`, and — transiently — the recovery drop point `storage/app/private/.herold-recovery`. None of these is ever part of an upload. |
+| Persistent surfaces | Per [S3.3](../spec/S3-inbetriebnahme.md#s33-persistent-state-surfaces): the [ADR-005](A09-architecture-decisions.md#adr-005-sqlite-as-embedded-persistence) SQLite file `database/data/database.sqlite`, the audio store `storage/app/private/audio/`, the redacted log under `storage/logs/`, the manually placed `.env`, and — transiently — the recovery drop point `storage/app/private/.herold-recovery`. None of these is ever part of an upload. |
 | Deploy channel | FTPS, exercised by the release workflow ([§ 7.2](#72-infrastructure-level-2--release-pipeline)); the target must carry the `.herold-deploy-root` marker file, otherwise the mirror aborts before touching anything. |
 | Maintenance channel | Limited SSH for one-off actions only: `php artisan migrate --force` after schema-bearing releases ([ORG-06](A02-architecture-constraints.md#22-organisational-constraints)), first-commissioning bootstrap ([S3.4](../spec/S3-inbetriebnahme.md#s34-first-commissioning)). |
 | Outbound | HTTPS to `api.openai.com` and `api.github.com` — the only egress the pipeline needs ([chapter 3](A03-context-and-scope.md#32-technical-context)). |
@@ -40,7 +40,7 @@ The deployment view maps the building blocks of [chapter 5](A05-building-block-v
 | Service | Image / build | Role |
 |---------|---------------|------|
 | `app` | Built from the local `Dockerfile` on `php:8.5-apache`: `mod_rewrite`, `pdo_sqlite`, Composer 2.8, DocumentRoot → `public/`, custom entrypoint. Port `8080 → 80`; source tree bind-mounted to `/var/www/html`; `./database/data` bind-mounted for the SQLite file. | The same Apache + `.htaccess` + PHP surface as production. `docker-entrypoint.sh` fixes ownership (`gosu www-data`), runs `php artisan migrate --force`, then starts Apache — migrations are automatic in dev, deliberately manual in production. |
-| `node` | `node:24-alpine`, named volume for `node_modules`, port `5173`. | Vite dev server with HMR (`npm run dev`). Build-time only; mirrors the fact that Node is absent from the production runtime ([TECH-12](A02-architecture-constraints.md#21-technical-constraints)). |
+| `node` | `node:24-alpine`, named volume for `node_modules`, port `5173`. | Vite dev server with HMR (`npm run dev`). Build-time only; production receives static assets per [ADR-006](A09-architecture-decisions.md#adr-006-off-host-frontend-build-with-vite). |
 
 Remaining dev/prod deltas are known and accepted: bind-mounted source instead of a release artefact, Vite dev server instead of built assets, automatic instead of manual migrations, and Docker's Linux userland instead of the provider's. The webserver, PHP version, rewrite rules, and database engine are identical.
 
@@ -54,7 +54,7 @@ Remaining dev/prod deltas are known and accepted: bind-mounted source instead of
 
 **Trigger and gate.** Pushing a `v*` tag triggers `.github/workflows/deploy.yml`; the job runs only when the repository variable `ENABLE_FTP_DEPLOY` is `'true'`. Credentials (`FTP_HOST`, `FTP_USER`, `FTP_PASSWORD`) are GitHub Actions secrets; `FTP_BASE_PATH` is a repository variable, validated non-empty before use.
 
-**Deployment artefact.** The off-host build ([S3.5](../spec/S3-inbetriebnahme.md#s35-ongoing-releases)) assembles everything the host cannot produce itself:
+**Deployment artefact.** The off-host build selected by [ADR-006](A09-architecture-decisions.md#adr-006-off-host-frontend-build-with-vite) and specified operationally in [S3.5](../spec/S3-inbetriebnahme.md#s35-ongoing-releases) assembles everything the host cannot produce itself:
 
 | Content of the artefact | Origin | Building block ([§ 5.1](A05-building-block-view.md#51-whitebox-overall-system)) |
 |--------------------------|--------|------------------------------------------------------------------------------|

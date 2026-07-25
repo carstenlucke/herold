@@ -36,7 +36,7 @@ The figure below shows the complete decomposition at a glance — the refinement
 | **Overview diagram** | Figure above; source [`diagrams/a05-building-blocks.plantuml`](diagrams/a05-building-blocks.plantuml). |
 | **Contained building blocks** | Six blocks — table below, described as black boxes in §§ 5.1.1–5.1.6. |
 | **Local relationships** | The cross-block interfaces — table below. |
-| **Design decisions** | One Laravel monolith, one deployable ([ADR-001](A09-architecture-decisions.md#adr-001-inertiajs-as-frontend-bridge-no-separate-api-layer-for-the-browser-ui), [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing)). The cut lines inside it follow the four-layer strategy of [§ 4.2](A04-solution-strategy.md#42-top-level-decomposition) and are chosen along the two portability seams demanded by [QG-04](A01-introduction-and-goals.md#12-quality-goals) (AI provider) and [TECH-05](A02-architecture-constraints.md#21-technical-constraints) (GitHub), and along the Inertia bridge that separates browser-executed from server-executed code without introducing an API tier. |
+| **Design decisions** | One Laravel monolith, one deployable ([ADR-004](A09-architecture-decisions.md#adr-004-laravel-monolith-as-a-single-deployable-application-platform)); Inertia separates browser-executed from server-executed code without introducing an API tier ([ADR-001](A09-architecture-decisions.md#adr-001-inertiajs-as-frontend-bridge-no-separate-api-layer-for-the-browser-ui)). The cut lines inside the monolith follow the four-layer strategy of [§ 4.2](A04-solution-strategy.md#42-top-level-decomposition) and the portability seams demanded by [QG-04](A01-introduction-and-goals.md#12-quality-goals) (AI provider) and [TECH-05](A02-architecture-constraints.md#21-technical-constraints) (GitHub). |
 | **Rejected alternatives** | SPA against a separate JSON API tier, Blade + Alpine ([ADR-001](A09-architecture-decisions.md#adr-001-inertiajs-as-frontend-bridge-no-separate-api-layer-for-the-browser-ui)); queue/cron-based processing ([ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing)); local ticket store plus agent memory ([ADR-003](A09-architecture-decisions.md#adr-003-github-issues-as-sole-ticket-store)). |
 | **References** | Runtime: [chapter 6](A06-runtime-view.md). Deployment: [chapter 7](A07-deployment-view.md). Cross-cutting rules: [chapter 8](A08-cross-cutting-concepts.md). |
 | **Open issues** | `Middleware/VerifyApiKey` belongs to no block's behaviour — [D-06](A11-risks-and-technical-debts.md#112-technical-debts). |
@@ -58,7 +58,7 @@ The figure below shows the complete decomposition at a glance — the refinement
 |-----------|---------|----------|
 | Inertia page protocol | UI Shell ↔ Web Edge | Server-driven page props over HTTPS; no separate JSON API for the browser (ADR-001). Two deliberate exceptions: `GET /types` (prompt-stripped type catalogue as JSON) and `GET /notes/{note}/audio` (audio streaming). |
 | Audio upload | UI Shell → Web Edge | `POST /notes` as `multipart/form-data` (`audio` blob + `type` + `metadata`), validated by `StoreVoiceNoteRequest` ([§ 8.3](A08-cross-cutting-concepts.md#83-validation)). |
-| AI seam | Web Edge / Domain Services → Integration Adapters | `transcribe(string $audioPath): string` and `chat(string $systemPrompt, string $userMessage, float $temperature): array` — the two operations behind which the AI provider is replaceable ([QG-04](A01-introduction-and-goals.md#12-quality-goals)); refined in [§ 5.3.1](#531-whitebox-aiservice). |
+| AI seam | Web Edge / Domain Services → Integration Adapters | `transcribe(string $audioPath): string` and `chat(string $systemPrompt, string $userMessage, float $temperature): array` — the application-owned boundary of [ADR-007](A09-architecture-decisions.md#adr-007-application-owned-ai-adapter-over-laravel-http), behind which the AI provider is replaceable; refined in [§ 5.3.1](#531-whitebox-aiservice). |
 | Ticket seam | Web Edge → Integration Adapters | `createIssue(string $title, string $body, array $labels): array{number, html_url}` — the one-way push of [S1.5](../spec/S1-nachbarsysteme.md#s15--nb-04--github-issues-api). |
 | Persistence access | Web Edge, Domain Services → Persistence | Eloquent model API and the `local` storage disk; no other block writes durable state. |
 | Type catalogue | all server-side blocks → `config/herold.php` | Per-type bindings (label, icon, `github_label`, `extra_fields`, `preprocessing_prompt`); the single resolution point of [N2.2](../spec/N2-querschnittskonzepte.md#n22-type-driven-configuration), detailed in [§ 8.2](A08-cross-cutting-concepts.md#82-type-driven-configuration). |
@@ -74,7 +74,7 @@ The UI Shell is *served by* the deployable but *executes in* the browser; the de
 | **Interface(s) provided** | The operator-facing UI. |
 | **Interface(s) required** | The Inertia page protocol, the audio upload, and the two JSON/streaming endpoints of the Web Edge — nothing else; every server contact goes through the Web Edge. |
 | **Quality/performance** | One codebase for desktop and mobile ([NFR-10a-01](../spec/N1-nichtfunktional.md#10a-appearance-requirements)); no client store — every mutation round-trips ([§ 8.10](A08-cross-cutting-concepts.md#810-ui-architecture)). |
-| **Dependencies** | Browser with `MediaRecorder`/`getUserMedia` on an HTTPS origin ([NFR-13a-01](../spec/N1-nichtfunktional.md#13a-expected-physical-environment)); Vite/Node at build time only. |
+| **Dependencies** | Browser with `MediaRecorder`/`getUserMedia` on an HTTPS origin ([NFR-13a-01](../spec/N1-nichtfunktional.md#13a-expected-physical-environment)); Vite/Node at build time only ([ADR-006](A09-architecture-decisions.md#adr-006-off-host-frontend-build-with-vite)). |
 | **Code artefacts** | `resources/js/` (built into `public/build/` at release time). |
 | **Fulfilled requirements** | [NFR-10a-01](../spec/N1-nichtfunktional.md#10a-appearance-requirements), [NFR-11a-01](../spec/N1-nichtfunktional.md#11a-ease-of-use-requirements), [NFR-13a-01](../spec/N1-nichtfunktional.md#13a-expected-physical-environment). |
 | **Variability** | New dialogue = one page plus its route; new message types need no UI change, because label, icon, and extra fields arrive from the type catalogue; two switchable Vuetify themes. |
@@ -118,7 +118,7 @@ The UI Shell is *served by* the deployable but *executes in* the browser; the de
 
 | Blackbox | Content |
 |----------|---------|
-| **Purpose/Responsibility** | The only code that knows external endpoints, payload shapes, and credentials — one logical seam per neighbour: transcription (NB-02), generation (NB-03), ticket dispatch (NB-04). Both adapter classes use Laravel's `Http` facade; no vendor SDK. |
+| **Purpose/Responsibility** | The only code that knows external endpoints, payload shapes, and credentials — one logical seam per neighbour: transcription (NB-02), generation (NB-03), ticket dispatch (NB-04). Both adapter classes use Laravel's `Http` facade; [ADR-007](A09-architecture-decisions.md#adr-007-application-owned-ai-adapter-over-laravel-http) records why no AI/vendor SDK is currently used. |
 | **Interface(s) provided** | The AI seam and the ticket seam (see the interface table above). |
 | **Interface(s) required** | Credentials and repository coordinates from `config/herold.php`; HTTPS egress to `api.openai.com` and `api.github.com`. |
 | **Quality/performance** | Timeouts are the only guardrail (120 s transcription, 30 s GitHub); availability is the providers' ([R-01](A11-risks-and-technical-debts.md#111-risks)); a missing credential fails at construction. |
@@ -127,14 +127,14 @@ The UI Shell is *served by* the deployable but *executes in* the browser; the de
 | **Fulfilled requirements** | [NFR-14c-01](../spec/N1-nichtfunktional.md#14c-adaptability-requirements), [NFR-15b-01](../spec/N1-nichtfunktional.md#15b-integrity-requirements); realises [S1.3](../spec/S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api)–[S1.5](../spec/S1-nachbarsysteme.md#s15--nb-04--github-issues-api). |
 | **Variability** | A provider swap replaces an adapter body behind unchanged signatures ([QG-04](A01-introduction-and-goals.md#12-quality-goals)); credentials, base URL, and repository target are configuration — model identifiers are not. |
 | **Tests** | Both seams are replaced by container-injected doubles in the acceptance suite, which doubles as proof of substitutability ([§ 8.11](A08-cross-cutting-concepts.md#811-development-and-test-concept)). |
-| **Open issues** | Model identifiers hard-coded — [R-07](A11-risks-and-technical-debts.md#111-risks), [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(f); no automated test against the real providers — [D-03](A11-risks-and-technical-debts.md#112-technical-debts). |
+| **Open issues** | Model identifiers hard-coded — [R-07](A11-risks-and-technical-debts.md#111-risks), [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(e); no automated test against the real providers — [D-03](A11-risks-and-technical-debts.md#112-technical-debts). |
 | **Refined in** | [§ 5.2.4](#524-whitebox-integration-adapters), then [§ 5.3.1](#531-whitebox-aiservice). |
 
 ### 5.1.5 Blackbox Persistence
 
 | Blackbox | Content |
 |----------|---------|
-| **Purpose/Responsibility** | Owns all durable state: the `VoiceNote` and `User` Eloquent models, the `NoteStatus` enum, the SQLite schema (incl. the users-singleton trigger), and the private audio file store. |
+| **Purpose/Responsibility** | Owns all durable state: the `VoiceNote` and `User` Eloquent models, the `NoteStatus` enum, the SQLite schema selected by [ADR-005](A09-architecture-decisions.md#adr-005-sqlite-as-embedded-persistence) (incl. the users-singleton trigger), and the private audio file store. |
 | **Interface(s) provided** | Eloquent model API and `Storage` disk `local`. |
 | **Interface(s) required** | None (leaf block). |
 | **Quality/performance** | One SQLite file with single-writer semantics, sized for single-user load ([CON-3a-04](../spec/P1-constraints.md#con-3a-04-single-user-system)); audio stays outside the document root and is streamed, never served statically. |
@@ -283,10 +283,10 @@ Local relationships:
 | **Overview diagram** | Figure above; source [`diagrams/a05-l2-integration-adapters.plantuml`](diagrams/a05-l2-integration-adapters.plantuml). |
 | **Contained building blocks** | Two classes carrying three seams — table below. |
 | **Local relationships** | Table below; the only HTTPS calls Herold makes to neighbours. There is no relationship between the two classes. |
-| **Design decisions** | Three logical seams — one per neighbour NB-02/NB-03/NB-04 ([S1.3](../spec/S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api)–[S1.5](../spec/S1-nachbarsysteme.md#s15--nb-04--github-issues-api)) — realised in two classes: the two OpenAI seams share credential and base URL and therefore live in one class, `AIService`; the GitHub seam is its own class. |
-| **Rejected alternatives** | One class per seam — deferred, not excluded (see [§ 5.3.1](#531-whitebox-aiservice)); vendor SDKs — unnecessary weight for three endpoints. |
+| **Design decisions** | Three logical seams — one per neighbour NB-02/NB-03/NB-04 ([S1.3](../spec/S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api)–[S1.5](../spec/S1-nachbarsysteme.md#s15--nb-04--github-issues-api)) — realised in two classes: the two OpenAI seams share credential and base URL and therefore live in one class, `AIService`; the GitHub seam is its own class. The AI class owns direct Laravel HTTP integration per [ADR-007](A09-architecture-decisions.md#adr-007-application-owned-ai-adapter-over-laravel-http). |
+| **Rejected alternatives** | One class per seam — deferred, not excluded (see [§ 5.3.1](#531-whitebox-aiservice)); generic/provider AI SDKs — reconsidered only if they preserve both application-owned seams ([issue #41](https://github.com/carstenlucke/herold/issues/41)). |
 | **References** | [S1.3](../spec/S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api)–[S1.5](../spec/S1-nachbarsysteme.md#s15--nb-04--github-issues-api), [N2.5](../spec/N2-querschnittskonzepte.md#n25-failure-handling), [§ 8.11](A08-cross-cutting-concepts.md#811-development-and-test-concept). |
-| **Open issues** | Hard-coded model identifiers — [R-07](A11-risks-and-technical-debts.md#111-risks); the SDK named in [TECH-08](A02-architecture-constraints.md#21-technical-constraints) is not the one used — [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(e). |
+| **Open issues** | Hard-coded model identifiers — [R-07](A11-risks-and-technical-debts.md#111-risks), [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(e); possible migration to `laravel/ai` — [issue #41](https://github.com/carstenlucke/herold/issues/41). |
 
 Contained black boxes (all under `app/Services/`):
 
@@ -321,10 +321,10 @@ Level 3 opens the one level-2 black box whose inner structure carries an archite
 | **Overview diagram** | Figure above; source [`diagrams/a05-l3-aiservice.plantuml`](diagrams/a05-l3-aiservice.plantuml). |
 | **Contained building blocks** | Two seams plus shared plumbing — table below. |
 | **Local relationships** | Both seams use the shared plumbing and neither knows the other; each calls its own OpenAI endpoint (see the contracts below). |
-| **Design decisions** | The spec treats transcription (NB-02, [S1.3](../spec/S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api)) and generation (NB-03, [S1.4](../spec/S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api)) as distinct neighbours, and [NFR-14c-01](../spec/N1-nichtfunktional.md#14c-adaptability-requirements) demands that each be replaceable independently. Inside the class the two seams share nothing but the Bearer credential and the base URL — a provider switch cuts along exactly these lines, so the seams are documented as separate building blocks even though both are methods of `app/Services/AIService.php` today. |
+| **Design decisions** | The spec treats transcription (NB-02, [S1.3](../spec/S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api)) and generation (NB-03, [S1.4](../spec/S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api)) as distinct neighbours, and [NFR-14c-01](../spec/N1-nichtfunktional.md#14c-adaptability-requirements) demands that each be replaceable independently. Inside the class the two seams share only the Bearer credential, base URL, and Laravel HTTP transport selected by [ADR-007](A09-architecture-decisions.md#adr-007-application-owned-ai-adapter-over-laravel-http). A provider switch cuts along these method boundaries even though both are methods of `app/Services/AIService.php` today. |
 | **Rejected alternatives** | One class per seam — it would duplicate credential handling for no present gain, but becomes mandatory the moment the two seams stop sharing a provider (e.g. transcription moves to a local model); until then the shared-class realisation is the simpler, equally seam-faithful choice. |
 | **References** | [S1.3](../spec/S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api), [S1.4](../spec/S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [chapter 6](A06-runtime-view.md). |
-| **Open issues** | Both model identifiers are hard-coded in the seams instead of being host-configured — [R-07](A11-risks-and-technical-debts.md#111-risks), [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(f). |
+| **Open issues** | Both model identifiers are hard-coded in the seams instead of being host-configured — [R-07](A11-risks-and-technical-debts.md#111-risks), [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(e). |
 
 Contained black boxes:
 

@@ -4,7 +4,7 @@ Detailed mandated constraints referenced from [`P1-ziele-rahmenbedingungen.md`](
 
 Based on the [Volere Requirements Specification Template](https://www.volere.org/templates/volere-requirements-specification-template/), Section 3 — Mandated Constraints (Robertson & Robertson). Only sections relevant to Herold are included.
 
-This annex captures only constraints that are externally mandated or otherwise non-negotiable at spec level. Technology choices (language, framework, database product, build toolchain, local development tooling, dependency versions) are *design decisions* taken inside the constraint space and live in [`docs/arch/`](../arch/); items previously misclassified as constraints and now awaiting ADR work are tracked in [`docs/arch/arch-backlog.md`](../arch/arch-backlog.md).
+This annex captures only constraints that are externally mandated or otherwise non-negotiable at spec level. Technology choices (language, framework, database product, build toolchain, local development tooling, dependency versions) are *design decisions* taken inside the constraint space and live in [`docs/arch/`](../arch/); architecturally significant choices and their rationale are recorded in [chapter 9 — Architecture Decisions](../arch/A09-architecture-decisions.md).
 
 ---
 
@@ -20,7 +20,7 @@ The system uses a database technology that imposes no significant deployment eff
 
 Herold supports exactly one operator account. Multi-user, multi-tenant, and agent-account models are out of scope. The single-instance property is enforced at the persistence layer; the concrete enforcement mechanism is an architecture concern.
 
-**Rationale:** Herold is a personal tool for a single operator. Multi-user would add authentication complexity (roles, permissions, account management) with no benefit. Agents interact with GitHub, not with Herold (see [ADR-003](../arch/003-github-issues-as-ticket-store.md)).
+**Rationale:** Herold is a personal tool for a single operator. Multi-user would add authentication complexity (roles, permissions, account management) with no benefit. Agents interact with GitHub, not with Herold (see [ADR-003](../arch/A09-architecture-decisions.md#adr-003-github-issues-as-sole-ticket-store)).
 
 ---
 
@@ -36,7 +36,7 @@ The production environment is shared hosting. The application must run within th
 - Out-of-band file-store write access (e.g. via FTP) for deployment and for the recovery channel of [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access)
 - Optional limited shell access for one-off maintenance only
 
-The application must not depend on any of the missing facilities. See [ADR-002](../arch/002-dev-prod-parity.md).
+The application must not depend on any of the missing facilities. See [ADR-002](../arch/A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing).
 
 **Rationale:** Existing hosting infrastructure; no budget for a dedicated server (CON-3g-01).
 
@@ -58,7 +58,7 @@ Tickets are stored as GitHub Issues in a private repository. Access uses a fine-
 
 ### CON-3c-03: Local AI Agents (Claude Code, OpenCode, …)
 
-Local coding agents consume tickets exclusively via GitHub (`gh` CLI or GitHub API). Agents do not interact with Herold directly — Herold is a one-way voice-to-issue dispatcher. Agents manage their own memory locally via file-based mechanisms (e.g., `CLAUDE.md`). See [ADR-003](../arch/003-github-issues-as-ticket-store.md).
+Local coding agents consume tickets exclusively via GitHub (`gh` CLI or GitHub API). Agents do not interact with Herold directly — Herold is a one-way voice-to-issue dispatcher. Agents manage their own memory locally via file-based mechanisms (e.g., `CLAUDE.md`). See [ADR-003](../arch/A09-architecture-decisions.md#adr-003-github-issues-as-sole-ticket-store).
 
 **Rationale:** Agents already have native GitHub support. No custom API, no agent-side credentials issued by Herold, no agent onboarding required.
 
