@@ -1,0 +1,40 @@
+@startuml a07-deployment-dev
+!theme plain
+
+title Deployment View — Development (Docker Compose)
+
+node "Developer machine (macOS)" as devbox {
+
+  node "docker compose" as compose {
+    node "app\n(built from Dockerfile,\nphp:8.5-apache + pdo_sqlite,\nmod_rewrite, Composer 2.8)" as app {
+      artifact "Bind mount .:/var/www/html\n(live source tree)" as src
+    }
+    node "node\n(node:24-alpine,\nnpm run dev ~-~- ~-~-host)" as nodec {
+      artifact "Vite dev server\n(HMR)" as vite
+    }
+  }
+
+  folder "./database/data\n(bind mount → SQLite)" as devdb
+  folder "node_modules\n(named volume)" as nmod
+
+  [Browser\nlocalhost:8080] as devbrowser
+}
+
+cloud "OpenAI / GitHub APIs" as ext
+
+devbrowser --> app : HTTP :8080 → :80
+devbrowser --> nodec : HMR / assets :5173
+app --> devdb : SQLite file
+nodec --> nmod : deps
+app --> ext : HTTPS egress\n(real credentials from .env)
+
+note bottom of app
+  docker-entrypoint.sh: chown data dirs,
+  then "gosu www-data php artisan migrate --force",
+  then apache2-foreground.
+  Same Apache + .htaccess as production
+  (dev/prod parity, ADR-002); migrations are
+  automatic here, manual via SSH in production.
+end note
+
+@enduml

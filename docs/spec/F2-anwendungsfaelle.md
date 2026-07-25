@@ -265,7 +265,7 @@ The four use cases in this group form the supported segment of the business proc
 - **Streaming the audio recording.** Step inside [UC-10](#uc-10--view-a-voice-note), not a goal in itself.
 - **Re-process and re-dispatch on failure.** Operator simply repeats [UC-06](#uc-06--process-voice-note) or [UC-08](#uc-08--dispatch-voice-note); the status machine ([D2.5](D2-datentypen.md#d25-notestatusdt)) makes retries safe.
 - **Issue triage, labelling beyond the type label, comments, or closure on the GitHub side.** Outside Herold (F1.3; P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md)).
-- **Scheduled jobs, background workers, batch processing.** Herold has none (B2 not applicable; [ADR-002](../arch/ARCHITECTURE_DECISIONS.md); P1 non-goal [NG-04](P1-ziele-rahmenbedingungen.md) *Asynchronous processing*).
+- **Scheduled jobs, background workers, batch processing.** Herold has none (B2 not applicable; [ADR-002](../arch/A09-architecture-decisions.md); P1 non-goal [NG-04](P1-ziele-rahmenbedingungen.md) *Asynchronous processing*).
 - **Multi-operator collaboration.** Forbidden by [CON-3a-04](P1-constraints.md) *Single-User System*.
 
 ---

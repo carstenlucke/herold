@@ -1,0 +1,56 @@
+@startuml a07-release-pipeline
+!theme plain
+
+title Deployment View — Release pipeline (.github/workflows/deploy.yml)
+
+start
+:Operator pushes tag ""v*"";
+if (vars.ENABLE_FTP_DEPLOY == 'true'?) then (yes)
+  partition "Build (GitHub Actions runner)" {
+    :checkout;
+    :setup PHP 8.5 (pdo_sqlite, mbstring, xml)
+    setup Node 24;
+    :composer install ~-~-no-dev ~-~-optimize-autoloader;
+    :npm ci && npm run build;
+    :verify public/build exists;
+  }
+  partition "Preflight" {
+    :install lftp;
+    :validate FTP_BASE_PATH non-empty;
+    if (remote "".herold-deploy-root"" marker present?) then (yes)
+    else (no)
+      :abort — wrong or unprovisioned target;
+      stop
+    endif
+  }
+  partition "Upload (FTPS)" {
+    :lftp mirror ~-~-reverse ~-~-delete
+    ssl-force, certificate verification on;
+    note right
+      Uploads code incl. ""vendor/"" and
+      ""public/build/"" (host has no
+      Composer/Node).
+      Excludes persistent surfaces
+      (.env, database/data/, storage/…)
+      and dev/docs/test material.
+    end note
+  }
+  if (release contains a migration?) then (yes)
+    :operator runs via SSH:
+    ""php artisan migrate --force"";
+    note right
+      Point of no return (S3.6) —
+      snapshot before migrating
+      (scripts/backup.sh).
+    end note
+  else (no)
+  endif
+  :post-release smoke test:
+  record → process → send (S3.5);
+  stop
+else (no)
+  :workflow skipped;
+  stop
+endif
+
+@enduml

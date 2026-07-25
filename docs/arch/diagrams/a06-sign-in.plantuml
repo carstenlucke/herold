@@ -1,0 +1,51 @@
+@startuml a06-sign-in
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Runtime View — Sign in with inline first-time TOTP enrolment (UC-01 / UC-02)
+
+actor Operator as op
+participant "Auth/Login.vue\n(+ TotpSetup / TotpVerify)" as ui
+participant "AuthController" as auth
+database "Persistence\nSQLite users\n(singleton row)" as db
+
+op -> ui : open /login
+ui -> auth : GET /login → showLogin
+auth --> ui : step = "key"
+
+op -> ui : enter API key
+ui -> auth : POST /login/key (throttle:5,1)
+auth -> db : User::sole()
+auth -> auth : hash_equals(api_key_hash,\nsha256(input))
+
+alt key rejected
+  auth -> auth : Log::warning(+ source IP)
+  auth --> ui : back with error
+else key verified
+  auth -> auth : session: auth.key_verified = true,\nauth.user_id
+  alt first sign-in — no confirmed TOTP
+    auth -> auth : generateTotpSecret()\n(160-bit random → Base32)
+    auth -> db : store totp_secret\n(encrypted cast)
+    auth --> ui : step = "totp_setup"\n+ otpauth:// provisioning URI
+    op -> ui : scan QR (rendered client-side),\nenter first code
+    ui -> auth : POST /login/totp/confirm
+    auth -> auth : verifyTotpCode()\nRFC 6238, ±1 step drift,\nhash_equals
+    auth -> db : totp_confirmed_at = now()
+    auth -> auth : Auth::login + session regenerate,\nforget auth.* flags
+    auth --> ui : redirect → dashboard
+  else returning sign-in
+    auth --> ui : step = "totp"
+    op -> ui : enter current code
+    ui -> auth : POST /login/totp (throttle:5,1)
+    auth -> auth : verifyTotpCode()
+    alt code rejected
+      auth -> auth : Log::warning(+ source IP)
+      auth --> ui : back with error
+    else code verified
+      auth -> auth : Auth::login + session regenerate,\nforget auth.* flags
+      auth --> ui : redirect → intended | dashboard
+    end
+  end
+end
+
+@enduml

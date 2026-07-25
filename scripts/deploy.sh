@@ -118,7 +118,6 @@ lftp -c "
     --exclude ^README\.md$ \
     --exclude ^adr/ \
     --exclude ^docs/ \
-    --exclude ^prompts/ \
     --exclude ^poc-ui/ \
     --exclude ^icons/ \
     --exclude ^srs/ \

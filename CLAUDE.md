@@ -2,22 +2,23 @@
 
 ## Project
 
-Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inertia.js + Vue 3 + Vuetify 4. See `prompts/herold-spec.prompt.md` for full specification, `DESIGN.md` for UI design guidelines, and `docs/arch/ARCHITECTURE_DECISIONS.md` for ADRs.
+Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inertia.js + Vue 3 + Vuetify 4. See `docs/spec/` for the full specification (Siedersleben building blocks, index in `docs/spec/README.md`), `DESIGN.md` for UI design guidelines, and `docs/arch/A09-architecture-decisions.md` for ADRs.
 
 ## Stack
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| Laravel | 13.4.x | First-party AI SDK (`laravel/ai`) |
+| Laravel | 13.4.x | HTTP client used behind the application-owned AI adapter |
 | PHP | 8.5 | Docker image: `php:8.5-apache` |
-| Composer | 2.9.x | |
+| Composer | 2.8.x | Build image; production artefact includes `vendor/` |
 | Vue.js | 3.5.x | Composition API |
-| TypeScript | 6.x | |
+| TypeScript | Vite-transpiled source | No standalone TypeScript compiler is pinned |
 | Vuetify | 4.x | MD3, CSS Cascade Layers |
 | Inertia.js | 3.x | Laravel + Vue adapters |
 | Vite | 8.x | Rolldown bundler (Rust) |
 | Node.js | 24 LTS | Build only, not runtime |
 | SQLite | 3.51.x | |
+| AI client | Laravel HTTP client | Provider details confined to `AIService`; see ADR-007 |
 | TOTP (home-rolled) | — | `users.totp_secret` (encrypted) + `users.totp_confirmed_at` |
 
 ## Architecture
@@ -25,7 +26,7 @@ Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inerti
 - **Backend:** Laravel 13 monolith handling web routes, session auth, and processing orchestration.
 - **Frontend:** Inertia.js + Vue 3 + Vuetify as the browser UI layer.
 - **Persistence:** SQLite for application data (notes, states, metadata, outbound issue references) plus local file storage for uploaded audio.
-- **AI integration:** OpenAI APIs for speech-to-text and text generation; behavior is driven by configured message types and prompts.
+- **AI integration:** OpenAI APIs are called through the application-owned `AIService` adapter using Laravel's HTTP client; behavior is driven by configured message types and prompts.
 - **Ticket target:** GitHub Issues as external sink (one-way push only). No local issue lifecycle management and no agent control API.
 - **Operations:** Migrations are executed manually via SSH (`php artisan migrate --force`), never during the HTTP request path.
 
@@ -65,4 +66,4 @@ Voice-based task dispatcher for local AI agents. Laravel 13 monolith with Inerti
 - **Documentation (README, ADRs, docs/):** English
 - **UI text (labels, buttons, messages):** English
 - **Git commits:** conventional commit messages in English
-- **Exception:** `prompts/herold-spec.prompt.md` remains in German (project specification, written collaboratively in German)
+- **Exception:** `docs/spec/SIEDERSLEBEN.md` remains in German (method primer quoting Siedersleben's original block terminology)

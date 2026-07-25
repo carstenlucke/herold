@@ -1,0 +1,47 @@
+@startuml a05-building-blocks
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' Same palette as a03-technical-context: internal = blue accent,
+' external = amber, person = green.
+UpdateElementStyle("component", $bgColor="#1168BD", $fontColor="#FFFFFF", $borderColor="#0B4884")
+UpdateElementStyle("external_system", $bgColor="#F2C14E", $fontColor="#1A1A1A", $borderColor="#9C7A1A")
+UpdateElementStyle("person", $bgColor="#3B7A57", $fontColor="#FFFFFF", $borderColor="#26513A")
+
+HIDE_STEREOTYPE()
+
+title Building Block View — Level 1 (whitebox Herold, one deployable)
+
+Person(operator, "Operator", "Browser on desktop or mobile")
+
+System_Boundary(herold, "Herold — Laravel monolith") {
+  Component(ui, "UI Shell", "Vue 3 + Inertia + Vuetify", "resources/js/ — entry point (app.ts), layout, pages, components, composables, shared types; runs in the operator's browser, served by the same deployable")
+  Component(edge, "Web Edge", "Laravel routing + HTTP layer", "routes/web.php, app/Http/ — controllers, form request validation, middleware, session auth gate, rate limits")
+  Component(domain, "Domain Services", "Plain PHP services", "app/Services/ — PreprocessingService, IssueContentSanitizer, MessageTypeRegistry")
+  Component(adapters, "Integration Adapters", "Http facade, one seam per neighbour", "app/Services/ — AIService (transcribe, chat), GitHubService (createIssue)")
+  Component(persistence, "Persistence", "Eloquent on SQLite + file store", "app/Models/ (VoiceNote, User), app/Enums/NoteStatus, database/migrations/, storage/app/private/audio/")
+  Component(logging, "Log Redaction", "Monolog tap", "app/Logging/ — RedactSecrets installs SecretRedactionProcessor on every log channel")
+}
+
+System_Ext(whisper, "OpenAI Transcription API (NB-02)", "audio/transcriptions")
+System_Ext(chat, "OpenAI Chat Completion API (NB-03)", "chat/completions")
+System_Ext(github, "GitHub Issues API (NB-04)", "repos/{owner}/{repo}/issues")
+
+Rel(operator, ui, "Records, reviews, dispatches", "HTTPS")
+Rel(ui, edge, "Inertia page visits, form posts,\nmultipart audio upload, audio streaming", "HTTPS")
+Rel(edge, domain, "Orchestrates per request", "method calls")
+Rel(edge, adapters, "transcribe(), createIssue()", "method calls")
+Rel(domain, adapters, "chat()", "method calls")
+Rel(edge, persistence, "Reads/writes notes, user, audio", "Eloquent / Storage")
+Rel(domain, persistence, "Updates processed content", "Eloquent")
+Rel(adapters, whisper, "Audio bytes → transcript", "HTTPS, multipart")
+Rel(adapters, chat, "Prompt + transcript → title/body JSON", "HTTPS, JSON")
+Rel(adapters, github, "Title, sanitised body, label → number/url", "HTTPS, JSON")
+
+note right of logging
+  Passive building block: taps the
+  ""single""/""daily""/""stderr"" channels
+  (config/logging.php) and masks secrets
+  in every entry emitted by the others.
+end note
+
+@enduml

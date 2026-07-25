@@ -1,0 +1,30 @@
+@startuml a05-l3-aiservice
+!theme plain
+skinparam componentStyle rectangle
+
+title Building Block View — Level 3: Whitebox "AIService" (the two AI seams)
+
+package "AIService (whitebox) — app/Services/AIService.php" {
+  [Transcription seam\ntranscribe(string audioPath): string] as tseam
+  [Generation seam\nchat(string system, string user,\nfloat temp = 0.3): array] as gseam
+  [Shared plumbing\nBearer key from config('herold.openai.api_key'),\nbaseUrl https://api.openai.com/v1,\nfail-fast constructor] as shared
+}
+
+cloud "OpenAI Transcription API\nPOST /v1/audio/transcriptions\nmodel gpt-4o-transcribe (NB-02)" as whisper
+cloud "OpenAI Chat Completion API\nPOST /v1/chat/completions\nmodel gpt-5.4-mini (NB-03)" as chat
+
+tseam ..> shared
+gseam ..> shared
+tseam --> whisper : multipart audio +\nresponse_format text,\ntimeout 120 s
+gseam --> chat : JSON, response_format\njson_object, temperature 0.3;\nrequires title + body keys
+
+note bottom of shared
+  NB-02 and NB-03 are distinct neighbours (S1.3 / S1.4)
+  and QG-04 demands replaceability per seam. Today both
+  seams are methods of one class sharing credential and
+  base URL; a provider switch cuts along exactly these
+  two seam lines. Model identifiers are hard-coded —
+  risk R-07 / debt D-07(f).
+end note
+
+@enduml

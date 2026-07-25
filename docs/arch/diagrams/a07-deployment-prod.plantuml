@@ -1,0 +1,60 @@
+@startuml a07-deployment-prod
+!theme plain
+
+title Deployment View — Production (shared hosting)
+
+node "Operator device\n(desktop / smartphone)" as device {
+  artifact "Browser\nUI Shell (built JS/CSS assets)\nMediaRecorder" as browser
+}
+
+cloud "Hosting provider edge" as edge {
+  [HTTPS termination] as tls
+}
+
+node "Shared host" as host {
+  node "Apache + PHP 8.5\n(DocumentRoot → public/)" as apache {
+    artifact "Release artefact\napp/ bootstrap/ config/ database/migrations/\npublic/ (+ public/build/) resources/ routes/\nvendor/ .htaccess" as code
+  }
+
+  folder "Persistent surfaces\n(never overwritten by deployment)" as persist {
+    database "database/data/\ndatabase.sqlite" as sqlite
+    folder "storage/app/private/\naudio/{ulid}.{webm|ogg|m4a}\n.herold-recovery (transient)" as audio
+    folder "storage/logs/\n(redacted app log)" as logs
+    file ".env\n(HEROLD_API_KEY, OPENAI_API_KEY,\nHEROLD_GITHUB_TOKEN, GITHUB_OWNER/REPO)" as env
+    file ".herold-deploy-root\n(deploy target marker)" as marker
+  }
+}
+
+cloud "OpenAI API\napi.openai.com" as openai
+cloud "GitHub API\napi.github.com" as github
+
+node "GitHub Actions runner\n(deploy workflow)" as ci
+node "Operator via SSH\n(one-off maintenance)" as ssh
+
+browser --> tls : HTTPS
+tls --> apache : HTTP (provider-internal)
+code --> sqlite : PDO sqlite
+code --> audio : Storage 'local' disk
+code --> logs : Monolog (redaction tap)
+code ..> env : config at request time
+apache --> openai : HTTPS egress\n(transcribe, chat)
+apache --> github : HTTPS egress\n(createIssue)
+ci --> host : FTPS — lftp mirror\n~-~-reverse ~-~-delete
+ssh --> host : php artisan migrate --force\n(manual, out-of-band)
+
+note bottom of persist
+  Excluded from every FTPS mirror:
+  .env, database/data/, storage/app/private/,
+  storage/logs/, framework session/cache dirs.
+  The mirror aborts unless .herold-deploy-root
+  exists at the target.
+end note
+
+note right of apache
+  No cron, no queue worker,
+  no container runtime (CON-3b-01).
+  All processing synchronous
+  per HTTP request (ADR-002).
+end note
+
+@enduml

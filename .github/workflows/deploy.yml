@@ -97,6 +97,7 @@ jobs:
               --exclude ^storage/framework/sessions/ \
               --exclude ^storage/framework/cache/ \
               --exclude ^tests/ \
+              --exclude ^backups/ \
               --exclude ^Dockerfile$ \
               --exclude ^docker-compose\.yml$ \
               --exclude ^docker-entrypoint\.sh$ \
@@ -112,7 +113,6 @@ jobs:
               --exclude ^README\.md$ \
               --exclude ^adr/ \
               --exclude ^docs/ \
-              --exclude ^prompts/ \
               --exclude ^poc-ui/ \
               --exclude ^icons/ \
               --exclude ^srs/ \

@@ -1,0 +1,34 @@
+@startuml a06-capture
+!theme plain
+skinparam sequenceMessageAlign center
+
+title Runtime View — Capture a voice note (UC-05)
+
+actor Operator as op
+participant "Recording/Create.vue\n+ AudioRecorder.vue\n+ useAudioRecorder.ts" as ui
+participant "routes/web.php\n(auth, throttle:10,60)" as route
+participant "StoreVoiceNoteRequest" as req
+participant "VoiceNoteController\n::store" as ctrl
+database "Persistence\nSQLite voice_notes" as db
+participant "Persistence\naudio store\nstorage/app/private/audio/" as fs
+
+op -> ui : tap Record
+ui -> ui : getUserMedia({audio})\nMediaRecorder.start(250)\nmime: webm;opus → webm → ogg;opus
+op -> ui : tap Stop, tap Save
+ui -> ui : chunks → Blob →\nFile("recording.webm")
+ui -> route : POST /notes\nmultipart (type, audio, metadata)
+route -> req : validate
+req -> req : audio: mimetypes + max 25 MB\ntype: in config('herold.types') keys\nmetadata: per-type extra_fields rules;\nunknown keys stripped in validated()
+
+alt validation fails
+  req --> ui : 422 — field errors\n(nothing persisted)
+else validation passes
+  req -> ctrl : validated()
+  ctrl -> db : INSERT VoiceNote\n(ULID id, status = recorded,\ntype, metadata)
+  ctrl -> fs : storeAs("audio/{ulid}.{webm|ogg|m4a}")
+  ctrl -> db : UPDATE audio_path
+  ctrl --> ui : redirect → notes.show
+  ui --> op : detail view, status "Recorded"
+end
+
+@enduml

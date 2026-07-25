@@ -252,9 +252,9 @@ The cross-cutting sanitisation strategy — including the policy of running [F3.
 - Code, comments, variable names: English
 - Documentation (README, ADRs, docs/): English
 - Git commits: English (conventional commits)
-- Exception: the original German project specification source remains in German.
+- Exception: the Siedersleben method primer (`SIEDERSLEBEN.md`) remains in German so that the original block terminology is quoted verbatim.
 
-**Fit Criterion:** No German text appears in the UI, codebase, or documentation, except in the original German project specification source.
+**Fit Criterion:** No German text appears in the UI, codebase, or documentation, except in the Siedersleben method primer.
 
 ---
 

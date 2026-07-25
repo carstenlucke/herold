@@ -1,0 +1,40 @@
+@startuml a03-technical-context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+' Distinct fill colours: internal system is the dark accent, the
+' external-system swatch is shifted clearly away from it so the
+' two are unmistakable at a glance.
+UpdateElementStyle("system", $bgColor="#1168BD", $fontColor="#FFFFFF", $borderColor="#0B4884")
+UpdateElementStyle("external_system", $bgColor="#F2C14E", $fontColor="#1A1A1A", $borderColor="#9C7A1A")
+UpdateElementStyle("person", $bgColor="#3B7A57", $fontColor="#FFFFFF", $borderColor="#26513A")
+
+HIDE_STEREOTYPE()
+
+title Technical Context — Herold (channels, protocols, credentials)
+
+Person(operator, "Operator", "NB-01 — browser on desktop or mobile,\nMediaRecorder-capable")
+
+System(herold, "Herold", "Voice-to-issue dispatcher\nApache + PHP 8.5 on a shared host")
+
+Boundary(openai, "OpenAI") {
+  System_Ext(whisper, "Whisper API (NB-02)", "Speech-to-text (REST)")
+  System_Ext(chat, "Chat Completion API (NB-03)", "Title + body generation (REST)")
+}
+
+System_Ext(github, "GitHub Issues API (NB-04)", "REST — sole ticket sink")
+System_Ext(agents, "Local AI agents (NB-05)", "Claude Code, OpenCode, …")
+
+Rel(operator, herold, "Records, reviews, dispatches", "HTTPS\nInertia.js pages + multipart upload\nSession cookie (API key + TOTP)")
+Rel(herold, whisper, "transcribe(audio)", "HTTPS, multipart\nOpenAI API key (server-only)")
+Rel(herold, chat, "generate(prompt, transcript)", "HTTPS, JSON\nOpenAI API key (server-only)")
+Rel(herold, github, "createIssue(title, body, label)", "HTTPS, JSON\nFine-grained PAT (server-only)")
+Rel(agents, github, "Read, comment, close,\noptionally open new issues", "gh CLI / GitHub REST")
+
+note as Legend
+  **Element colours**
+  <back:#3B7A57>   </back> Person (the operator)
+  <back:#1168BD>   </back> This system — Herold (black box)
+  <back:#F2C14E>   </back> External system
+end note
+
+@enduml

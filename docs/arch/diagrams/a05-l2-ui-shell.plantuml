@@ -1,0 +1,36 @@
+@startuml a05-l2-ui-shell
+!theme plain
+skinparam linetype ortho
+skinparam componentStyle rectangle
+
+title Building Block View — Level 2: Whitebox "UI Shell" (resources/js/)
+
+[app.ts\ncreateInertiaApp + createVuetify\n(heroldDark / heroldLight)] as app
+
+[Layouts/ (×1)\nresponsive chrome:\nnav drawer / bottom nav] as layout
+
+[Pages/ (×10)\none page per dialogue (B1)] as pages
+
+[Components/ (×5)\nreusable widgets] as comps
+
+[Composables/ (×2)\naudio capture,\npipeline actions] as compo
+
+[Types/\nInertia prop contracts\n(compile-time only)] as types
+
+' Level-1 neighbour of this whitebox (blackbox here) —
+' the only server contact of the UI Shell (§ 5.1.1)
+rectangle "Web Edge (L1)" as edge #EEEEEE
+
+app --> layout : resolves pages\ninto
+layout --> pages
+pages --> comps
+comps --> compo
+pages --> compo
+pages ..> types
+layout ..> types
+
+app --> edge : Inertia page visits,\nform posts (HTTPS)
+pages --> edge : multipart audio upload,\naudio streaming
+compo --> edge : POST /notes/{id}/\nprocess · send
+
+@enduml

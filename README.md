@@ -16,7 +16,7 @@ This project serves as a **demonstration project** for two courses in the [B.Sc.
 
 ```
 Voice    -->  Transcription   -->  LLM Processing   -->  GitHub Issue  -->  Local Agent
-(Browser)     (OpenAI Whisper)     (Title, Structure)     (typed)           (via gh + Cron)
+(Browser)     (OpenAI API)          (Title, Structure)     (typed)           (via gh)
 ```
 
 Herold is the interface between human and AI agent swarm: you speak, Herold translates into structured tasks, your agents execute them.
@@ -27,10 +27,10 @@ Herold is the interface between human and AI agent swarm: you speak, Herold tran
 - **Automatic Transcription** via OpenAI Whisper
 - **LLM Preprocessing** -- generates titles, structures content, cleans up speech artifacts
 - **Typed Tickets** -- different message types with distinct processing pipelines
-- **GitHub Issues** as ticket system (private repo, labels for type + status)
-- **Agent Memory API** -- shared memory for local agents (SQLite-based)
-- **Dual Auth** -- browser (API key + TOTP) and agents (Sanctum bearer tokens)
-- **Queue-based Processing** -- UI is not blocked during API calls
+- **GitHub Issues** as the sole ticket system (private repo, labels for type)
+- **Browser Authentication** with API key + TOTP
+- **Synchronous Processing** inside the operator's HTTP request; no queue, cron, or worker
+- **Native Agent Workflow** through GitHub and the `gh` CLI; no Herold agent API
 
 ## Message Types
 
@@ -42,11 +42,12 @@ Herold is the interface between human and AI agent swarm: you speak, Herold tran
 
 New types can be added via a config entry in `config/herold.php` -- no code changes required.
 
-## Ticket-Lifecycle
+## Downstream Ticket Lifecycle
+
+Herold's responsibility ends after creating the GitHub issue. Agents and the operator may apply their own GitHub label convention, for example:
 
 ```
 status:open  -->  status:in_progress  -->  status:done  -->  status:verified
-(App)             (Agent)                  (Agent)           (Mensch)
 ```
 
 ## Tech Stack
@@ -58,11 +59,11 @@ status:open  -->  status:in_progress  -->  status:done  -->  status:verified
 | Frontend | Vue 3 + Inertia.js 3 | 3.5 / 3.0 |
 | UI | Vuetify | 4.0 |
 | Build | Vite (Rolldown) | 8.0 |
-| AI | Laravel AI SDK (`laravel/ai`) | 0.4 |
-| Transcription | OpenAI Whisper API | |
+| AI client | Application-owned adapter over Laravel HTTP | Laravel 13.4 |
+| Transcription | OpenAI API | |
 | Tickets | GitHub Issues API | |
-| Auth (Browser) | API Key + TOTP | laragear/two-factor 4.0 |
-| Auth (Agents) | Laravel Sanctum | |
+| Auth (Browser) | API Key + home-rolled TOTP | RFC 6238/4226 |
+| Auth (Agents) | None — agents use GitHub via `gh` | |
 | Database | SQLite | 3.51 |
 | Infrastructure | Docker Compose | 5.1 |
 
@@ -116,40 +117,17 @@ docker compose down
 rm database/data/database.sqlite
 ```
 
-## Agent-API
+## Agent Workflow
 
-Local agents authenticate with Sanctum bearer tokens (created via the Settings page).
+Herold exposes no agent-facing API. Local agents consume and update the dispatched tickets directly through GitHub:
 
 ```bash
-# Memories lesen
-curl -H "Authorization: Bearer herold_..." \
-     http://localhost:8080/api/memories?scope=global
-
-# Memory speichern
-curl -X POST -H "Authorization: Bearer herold_..." \
-     -H "Content-Type: application/json" \
-     -d '{"scope":"global","category":"learning","content":"...","source":"claude-code"}' \
-     http://localhost:8080/api/memories
-
-# Tickets lesen
-curl -H "Authorization: Bearer herold_..." \
-     http://localhost:8080/api/tickets?status=open
-
-# Ticket-Status aendern
-curl -X PATCH -H "Authorization: Bearer herold_..." \
-     -H "Content-Type: application/json" \
-     -d '{"status":"in_progress"}' \
-     http://localhost:8080/api/tickets/42/status
+gh issue list
+gh issue view <number>
+gh issue comment <number> --body "..."
 ```
 
-### Token Scopes
-
-| Scope | Description |
-|-------|-------------|
-| `memory:read` | Read and search memories |
-| `memory:write` | Create and delete memories |
-| `tickets:read` | List tickets |
-| `tickets:status` | Update ticket status |
+Authentication and agent-specific memory remain outside Herold.
 
 ## Project Structure
 
@@ -160,11 +138,11 @@ herold/
     arch/                   # Architecture decisions index
     spec/                   # Specification, NFRs, constraints, data model
   app/
-    Http/Controllers/       # Web + API controllers
-    Models/                 # VoiceNote, Memory, User
-    Services/               # AIService, GitHubService, MemoryService, PreprocessingService
-    Jobs/                   # TranscribeAudio, PreprocessTranscript, CreateGitHubIssue
-    Enums/                  # NoteStatus, MessageType, MemoryScope, MemoryCategory
+    Http/Controllers/       # Operator-facing web controllers
+    Models/                 # VoiceNote, User
+    Services/               # Pipeline logic and external adapters
+    Logging/                # Secret-redacting log processors
+    Enums/                  # NoteStatus
   config/herold.php         # Message type registry + app config
   resources/js/
     Pages/                  # Inertia/Vue pages
@@ -172,7 +150,7 @@ herold/
     Composables/            # Vue composition functions
   routes/
     web.php                 # Browser routes (session auth)
-    api.php                 # Agent API routes (Sanctum token auth)
+    console.php             # Stock Artisan console route
 ```
 
 ## License

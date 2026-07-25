@@ -1,0 +1,37 @@
+@startuml a05-l2-web-edge
+!theme plain
+skinparam componentStyle rectangle
+
+title Building Block View — Level 2: Whitebox "Web Edge"
+
+package "Web Edge (whitebox) — routes/web.php + app/Http/" {
+  [routes/web.php\nroute table, auth group,\nper-route throttles] as routes
+  [Controllers/ (×4)\none per dialogue area;\nnotes controller = pipeline orchestrator] as ctrl
+  [Requests/ (×1)\ncapture validation] as req
+  [Middleware/ (×2)\nsecurity headers (wired),\nAPI-key guard (unwired)] as mw
+}
+
+' Level-1 neighbours of this whitebox (blackboxes here)
+rectangle "UI Shell (L1)" as ui #EEEEEE
+rectangle "Domain Services (L1)" as domain #EEEEEE
+rectangle "Integration Adapters (L1)" as adapters #EEEEEE
+rectangle "Persistence (L1)" as persistence #EEEEEE
+file "config/herold.php" as cfg
+
+ui --> routes : HTTPS — Inertia visits, form posts,\nmultipart upload, audio streaming
+routes --> ctrl : one route group\nper controller
+mw .. routes : appended to the\nweb group
+ctrl ..> req : validates capture via
+req ..> cfg : type keys +\nextra-field rules
+ctrl --> domain : preprocessing, sanitisation,\ntype catalogue
+ctrl --> adapters : transcription seam (Process),\nticket seam (Send)
+ctrl --> persistence : note CRUD, status, audio path;\nuser record, dashboard aggregates
+ctrl ..> cfg : github target\n(settings view)
+
+note bottom of mw
+  One of the two middleware classes is wired
+  nowhere (dead code, A11 D-06); the session
+  ""auth"" guard is the single gate.
+end note
+
+@enduml

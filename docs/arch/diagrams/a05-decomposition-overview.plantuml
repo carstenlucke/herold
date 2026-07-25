@@ -1,0 +1,120 @@
+@startuml a05-decomposition-overview
+!theme plain
+skinparam defaultTextAlignment center
+skinparam ranksep 50
+skinparam nodesep 30
+
+title Building Block View — decomposition overview (refinement levels 0 → 3)
+
+' ---------- Level 0: context (blackbox Herold) ----------
+rectangle "Level 0 — system context (chapter 3)" as L0 {
+  actor "Operator\n(NB-01)" as op
+  folder "Herold" as sys0 #DDDDDD
+  folder "OpenAI\nTranscription API\n(NB-02)" as nb02
+  folder "OpenAI\nChat Completion API\n(NB-03)" as nb03
+  folder "GitHub\nIssues API\n(NB-04)" as nb04
+  folder "Local AI agents\n(NB-05)" as nb05
+
+  op <-r-> sys0
+  sys0 --> nb02
+  sys0 --> nb03
+  sys0 --> nb04
+  nb05 -l-> nb04
+  nb02 -[hidden]r-> nb03
+  nb03 -[hidden]r-> nb04
+  nb04 -[hidden]r-> nb05
+}
+
+' ---------- Level 1: whitebox Herold ----------
+package "Level 1 — Herold (whitebox, § 5.1)" as L1 {
+  folder "UI Shell" as ui1 #DDDDDD
+  folder "Web Edge" as edge1 #DDDDDD
+  folder "Domain\nServices" as dom1 #DDDDDD
+  folder "Integration\nAdapters" as ad1 #DDDDDD
+  folder "Persistence" as per1 #DDDDDD
+  folder "Log\nRedaction" as log1 #DDDDDD
+
+  ui1 -r-> edge1
+  edge1 -r-> dom1
+  dom1 -r-> ad1
+  edge1 --> ad1
+  edge1 -d-> per1
+  dom1 -d-> per1
+  per1 -[hidden]r-> log1
+}
+
+sys0 -[dashed]d-> L1 : refined
+
+' ---------- Level 2: one whitebox per opened level-1 blackbox ----------
+package "Level 2 — UI Shell\n(whitebox, § 5.2.1)" as L2ui {
+  folder "app.ts" as f_app #DDDDDD
+  folder "Layouts (×1)" as f_layout #DDDDDD
+  folder "Pages (×10)" as f_pages #DDDDDD
+  folder "Components (×5)" as f_comp #DDDDDD
+  folder "Composables (×2)" as f_compo #DDDDDD
+  folder "Types" as f_types #DDDDDD
+
+  f_app -[hidden]d-> f_layout
+  f_layout -[hidden]d-> f_pages
+  f_pages -[hidden]d-> f_comp
+  f_comp -[hidden]d-> f_compo
+  f_compo -[hidden]d-> f_types
+}
+
+package "Level 2 — Web Edge\n(whitebox, § 5.2.2)" as L2edge {
+  folder "routes/web.php" as f_routes #DDDDDD
+  folder "Controllers (×4)" as f_ctrl #DDDDDD
+  folder "Requests (×1)" as f_req #DDDDDD
+  folder "Middleware (×2)" as f_mw #DDDDDD
+
+  f_routes -[hidden]d-> f_ctrl
+  f_ctrl -[hidden]d-> f_req
+  f_req -[hidden]d-> f_mw
+}
+
+package "Level 2 — Domain Services\n(whitebox, § 5.2.3)" as L2dom {
+  folder "PreprocessingService" as f_prep #DDDDDD
+  folder "IssueContentSanitizer" as f_sani #DDDDDD
+  folder "MessageTypeRegistry" as f_reg #DDDDDD
+
+  f_prep -[hidden]d-> f_sani
+  f_sani -[hidden]d-> f_reg
+}
+
+package "Level 2 — Integration Adapters\n(whitebox, § 5.2.4)" as L2ad {
+  folder "AIService" as f_ai #DDDDDD
+  folder "GitHubService" as f_gh #DDDDDD
+
+  f_ai -[hidden]d-> f_gh
+}
+
+' keep the four level-2 whiteboxes in one horizontal band,
+' fully below the level-1 whitebox
+L2ui -[hidden]r-> L2edge
+L2edge -[hidden]r-> L2dom
+L2dom -[hidden]r-> L2ad
+per1 -[hidden]d-> L2ui
+per1 -[hidden]d-> L2edge
+log1 -[hidden]d-> L2dom
+log1 -[hidden]d-> L2ad
+
+ui1 -[dashed]d-> L2ui : refined
+edge1 -[dashed]d-> L2edge : refined
+dom1 -[dashed]d-> L2dom : refined
+ad1 -[dashed]d-> L2ad : refined
+
+' ---------- Level 3: the AI seams ----------
+package "Level 3 — AIService\n(whitebox, § 5.3.1)" as L3 {
+  folder "Transcription seam\ntranscribe()" as f_tseam #DDDDDD
+  folder "Generation seam\nchat()" as f_gseam #DDDDDD
+  folder "Shared plumbing" as f_shared #DDDDDD
+
+  f_tseam -[hidden]r-> f_gseam
+  f_tseam -[dashed]d-> f_shared
+  f_gseam -[dashed]d-> f_shared
+}
+
+f_gh -[hidden]d-> L3
+f_ai -[dashed]d-> L3 : refined
+
+@enduml

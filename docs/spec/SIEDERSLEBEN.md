@@ -56,20 +56,22 @@ Hilfsmittel zum Verständnis des Dokuments.
 
 Bewertung der Relevanz jedes Bausteins für das Projekt Herold inklusive Quelle für vorhandenes Material und vorgesehener Zieldatei.
 
+> **Hinweis:** Die Spalte *Quelle* dokumentiert den Stand bei Erstellung dieser Einschätzung. Die dort mehrfach genannte ursprüngliche deutschsprachige Projektspezifikation ist inzwischen vollständig in die Bausteine überführt und aus dem Repository entfernt worden; sie ist nur noch über die Git-Historie erreichbar.
+
 ### 1. Projektgrundlagen
 
 | Baustein | Relevant | Quelle | Zieldatei |
 |----------|----------|--------|-----------|
-| **P1 – Ziele und Rahmenbedingungen** | Ja | `prompts/herold-spec.prompt.md` (Zielsetzung) | `P1-ziele-rahmenbedingungen.md` (+ Anhang `P1-constraints.md`) |
-| **P2 – Architekturüberblick** | Ja | `CLAUDE.md` (Architecture), `docs/arch/ARCHITECTURE_DECISIONS.md` | `P2-architekturueberblick.md` |
+| **P1 – Ziele und Rahmenbedingungen** | Ja | ursprüngliche Projektspezifikation (Zielsetzung) | `P1-ziele-rahmenbedingungen.md` (+ Anhang `P1-constraints.md`) |
+| **P2 – Architekturüberblick** | Ja | `CLAUDE.md` (Architecture), `docs/arch/A09-architecture-decisions.md` | `P2-architekturueberblick.md` |
 
 ### 2. Abläufe und Funktionen
 
 | Baustein | Relevant | Quelle | Zieldatei |
 |----------|----------|--------|-----------|
-| **F1 – Geschäftsprozesse** | Ja (schlank, ein Hauptprozess „Sprachnotiz → Issue") | `prompts/herold-spec.prompt.md`, `CLAUDE.md` (Pipeline) | `F1-geschaeftsprozesse.md` |
-| **F2 – Anwendungsfälle** | Ja | Vue-Pages, Routes, `prompts/herold-spec.prompt.md` | `F2-anwendungsfaelle.md` |
-| **F3 – Anwendungsfunktionen** | Ja | Controller, Services, `prompts/herold-spec.prompt.md` | `F3-anwendungsfunktionen.md` |
+| **F1 – Geschäftsprozesse** | Ja (schlank, ein Hauptprozess „Sprachnotiz → Issue") | ursprüngliche Projektspezifikation, `CLAUDE.md` (Pipeline) | `F1-geschaeftsprozesse.md` |
+| **F2 – Anwendungsfälle** | Ja | Vue-Pages, Routes, ursprüngliche Projektspezifikation | `F2-anwendungsfaelle.md` |
+| **F3 – Anwendungsfunktionen** | Ja | Controller, Services, ursprüngliche Projektspezifikation | `F3-anwendungsfunktionen.md` |
 
 ### 3. Daten
 
@@ -140,5 +142,5 @@ docs/spec/
 ## Offene Entscheidungen
 
 1. **Umbenennung vorhandener Dateien** in das `Bx-…`-Schema (`DATA_MODEL.md`, `GLOSSARY.md`, `non-functional-requirements.md`, `constraints.md`) — oder belassen und nur aus dem Wurzeldokument verlinken?
-2. **Sprache der Bausteindokumente** — Deutsch (passt zu Siedersleben und `prompts/herold-spec.prompt.md`) oder Englisch (passt zu CLAUDE.md-Regel „Documentation in English")?
+2. **Sprache der Bausteindokumente** — Deutsch (passt zu Siedersleben und zur ursprünglichen Projektspezifikation) oder Englisch (passt zu CLAUDE.md-Regel „Documentation in English")?
 3. **Bausteinauswahl** oben — Zustimmung, Streichungen oder Ergänzungen?
