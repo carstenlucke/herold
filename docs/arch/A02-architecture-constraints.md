@@ -4,7 +4,7 @@ Constraints fix the non-negotiable design space for the architect. They come fro
 
 - **Externally mandated constraints** from the specification — see [`../spec/P1-constraints.md`](../spec/P1-constraints.md) (Volere § 3) and the cultural / standards requirements in [`../spec/N1-nichtfunktional.md`](../spec/N1-nichtfunktional.md) (§ 16, § 17).
 - **Inherited technology decisions** that are now binding for further design. Architecturally significant ones are captured as ADRs in [`A09-architecture-decisions.md`](A09-architecture-decisions.md); the binding facts are summarised here.
-- **Project-wide conventions** governing the spec/arch split, documentation structure, and source-tree hygiene — see [`../../CLAUDE.md`](../../CLAUDE.md) and [`../README.md`](../README.md).
+- **Project-wide conventions** governing the spec/arch split, documentation structure, and source-tree hygiene — see [`../README.md`](../README.md) and [`../spec/README.md`](../spec/README.md). For the conventions in § 2.3, this chapter is itself the normative source; tooling configuration merely restates them.
 
 The tables below are the architect's working index; detailed rationale stays in the linked sources.
 
@@ -41,8 +41,8 @@ For technology stack choices marked as inherited (TECH-08 through TECH-12), the 
 | ORG-03 | Existing hosting; no infrastructure budget | No funds for a dedicated server or managed cloud infrastructure. Mandated by [`CON-3g-01`](../spec/P1-constraints.md#con-3g-01-existing-hosting). |
 | ORG-04 | OpenAI API costs not actively managed | Single-user volume is low; no per-request cost-optimisation work is in scope. Mandated by [`CON-3g-02`](../spec/P1-constraints.md#con-3g-02-api-costs). |
 | ORG-05 | No deadline; incremental development | Personal project, no fixed milestones. See [`P1-constraints.md § 3f`](../spec/P1-constraints.md#3f-schedule-constraints). |
-| ORG-06 | Database migrations are operator-driven via SSH | `php artisan migrate --force` is executed manually out-of-band, never during the HTTP request path. Stated in [`../../CLAUDE.md`](../../CLAUDE.md). |
-| ORG-07 | Deployment via FTP from CI | Release tags trigger a GitHub Actions workflow that uploads build artefacts via FTP/TLS. Stated in [`../../CLAUDE.md`](../../CLAUDE.md) and [`../../FTP_DEPLOYMENT.md`](../../FTP_DEPLOYMENT.md). |
+| ORG-06 | Database migrations are operator-driven via SSH | `php artisan migrate --force` is executed manually out-of-band, never during the HTTP request path. Follows from TECH-01 (no deployment hooks, no scheduler on the host); the SSH step is part of the release procedure in [`../../FTP_DEPLOYMENT.md`](../../FTP_DEPLOYMENT.md). |
+| ORG-07 | Deployment via FTP from CI | Release tags trigger a GitHub Actions workflow that uploads build artefacts via FTP/TLS. Consequence of TECH-01 (out-of-band file-store write access is the only deployment channel); procedure documented in [`../../FTP_DEPLOYMENT.md`](../../FTP_DEPLOYMENT.md). |
 
 ---
 
@@ -50,10 +50,10 @@ For technology stack choices marked as inherited (TECH-08 through TECH-12), the 
 
 | ID | Constraint | Description / Source |
 |----|------------|----------------------|
-| CONV-01 | Language: English everywhere except the original spec source | UI text, code, comments, identifiers, documentation, and git commits in English; the German specification source (`prompts/herold-spec.prompt.md`) is the only exception. Mandated by [`NFR-16a-01`](../spec/N1-nichtfunktional.md#16a-cultural-requirements). |
+| CONV-01 | Language: English everywhere except the method primer | UI text, code, comments, identifiers, documentation, and git commits in English. The only exception is [`../spec/SIEDERSLEBEN.md`](../spec/SIEDERSLEBEN.md), which stays German to keep Siedersleben's original block terminology verbatim. Mandated by [`NFR-16a-01`](../spec/N1-nichtfunktional.md#16a-cultural-requirements). |
 | CONV-02 | Conventional Commits | All commits match `type(scope): description`. Mandated by [`NFR-17b-01`](../spec/N1-nichtfunktional.md#17b-standards-compliance). |
-| CONV-03 | Spec/arch split is binding | Code-level detail (file paths, class names, library APIs, codecs, SQL, migration steps) does **not** belong in `docs/spec/`. It lives in `docs/arch/` or in the code itself. Stated in [`../../CLAUDE.md`](../../CLAUDE.md) and [`../../docs/README.md`](../../docs/README.md). |
+| CONV-03 | Spec/arch split is binding | Code-level detail (file paths, class names, library APIs, codecs, SQL, migration steps) does **not** belong in `docs/spec/`. It lives in `docs/arch/` or in the code itself. Stated in [`../README.md`](../README.md) and [`../spec/README.md`](../spec/README.md). |
 | CONV-04 | Specification follows the Siedersleben building-block model | Two-letter block codes (`P1`, `F2`, `D1`, …), one file per block. Orchestrated in [`../spec/README.md`](../spec/README.md) and [`../spec/SIEDERSLEBEN.md`](../spec/SIEDERSLEBEN.md). |
 | CONV-05 | Architecture documentation follows arc42 9.0 | One file per chapter; numbered file prefix `A<NN>-…`; arc42 numbering inside files (`# 1`, `## 1.1`, …). Orchestrated in [`README.md`](README.md). |
 | CONV-06 | Diagrams as versioned PlantUML sources | Sources in `*/diagrams/`, rendered PNGs in the sibling `*/diagrams-png/`. Regenerated via [`../../scripts/generate-diagrams.sh`](../../scripts/generate-diagrams.sh). Schema changes update [`diagrams/relational-datamodel.plantuml`](diagrams/) in the same change set. |
-| CONV-07 | Documentation kept in sync with code | Non-trivial code changes identify and update the affected spec/arch blocks in the same change set — the spec is implementation-free, but it must reflect the current system. Stated in [`../../CLAUDE.md`](../../CLAUDE.md). |
+| CONV-07 | Documentation kept in sync with code | Non-trivial code changes identify and update the affected spec/arch blocks in the same change set — the spec is implementation-free, but it must reflect the current system. Deviations are tracked as debt in [`A11-risks-and-technical-debts.md`](A11-risks-and-technical-debts.md). |

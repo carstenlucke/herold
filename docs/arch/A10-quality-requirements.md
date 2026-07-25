@@ -31,7 +31,7 @@ The quality tree below refines *quality* along the ISO 25010 categories that mat
 | | [NFR-15b-02](../spec/N1-nichtfunktional.md#15b-integrity-requirements) No prompts surfaced to the browser | B | QG-05 | Prompt kept out of Inertia props ([chapter 8](A08-cross-cutting-concepts.md)) |
 | | [NFR-15b-03](../spec/N1-nichtfunktional.md#15b-integrity-requirements) Secret redaction in logs | B | QG-05 | Logging concept ([chapter 8](A08-cross-cutting-concepts.md)) |
 | | [NFR-15b-04](../spec/N1-nichtfunktional.md#15b-integrity-requirements) Issue content sanitisation | A | QG-05 | Sanitiser at every persistence/dispatch boundary ([chapter 8](A08-cross-cutting-concepts.md)) |
-| **Cultural / Compliance** | [NFR-16a-01](../spec/N1-nichtfunktional.md#16a-cultural-requirements) English everywhere (except the German spec source) | B | — | Convention [CONV-01](A02-architecture-constraints.md#23-conventions) |
+| **Cultural / Compliance** | [NFR-16a-01](../spec/N1-nichtfunktional.md#16a-cultural-requirements) English everywhere (except the German method primer) | B | — | Convention [CONV-01](A02-architecture-constraints.md#23-conventions) |
 | | [NFR-17b-01](../spec/N1-nichtfunktional.md#17b-standards-compliance) Conventional Commits | B | — | Convention [CONV-02](A02-architecture-constraints.md#23-conventions) |
 
 Deliberately absent branches — accessibility (deferred), internationalisation, capacity, safety, audit, legal — are recorded with their rationale in N1 itself; they are omissions by decision, not oversight.
