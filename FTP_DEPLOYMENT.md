@@ -110,7 +110,7 @@ Everything except:
 | `tests/`, `phpunit.xml`, `vitest.config.ts` | Test infrastructure |
 | `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh` | Local dev only |
 | `package.json`, `package-lock.json`, `vite.config.ts` | Build config, not runtime |
-| `docs/`, `prompts/`, `scripts/`, `backups/` | Documentation and tooling |
+| `docs/`, `scripts/`, `backups/` | Documentation and tooling |
 | `CLAUDE.md`, `AGENTS.md`, `DESIGN.md`, `README.md` | Project docs |
 | `adr/`, `poc-ui/`, `icons/`, `srs/`, `sh/` | Development artifacts |
 
