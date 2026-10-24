@@ -104,9 +104,9 @@ class VoiceNoteController extends Controller
     public function update(Request $request, VoiceNote $note)
     {
         $rules = [
-            'transcript' => 'nullable|string',
+            'transcript' => 'nullable|string|max:500000',
             'processed_title' => 'nullable|string|max:255',
-            'processed_body' => 'nullable|string',
+            'processed_body' => 'nullable|string|max:65536',
             'metadata' => 'nullable|array',
         ];
 

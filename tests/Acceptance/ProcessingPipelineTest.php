@@ -328,4 +328,28 @@ class ProcessingPipelineTest extends TestCase
         $this->assertEquals('Edited Title', $note->processed_title);
         $this->assertEquals('Edited body', $note->processed_body);
     }
+
+    public function test_oversized_note_fields_are_rejected_on_edit(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'general',
+            'status' => NoteStatus::PROCESSED,
+            'audio_path' => 'audio/test.webm',
+            'transcript' => 'Original transcript',
+            'processed_title' => 'Original Title',
+            'processed_body' => 'Original body',
+        ]);
+
+        $this->actingAs($this->user)
+            ->put("/notes/{$note->id}", [
+                'transcript' => str_repeat('a', 500001),
+                'processed_title' => 'Edited Title',
+                'processed_body' => str_repeat('a', 65537),
+            ])
+            ->assertSessionHasErrors(['transcript', 'processed_body']);
+
+        $note->refresh();
+        $this->assertEquals('Original transcript', $note->transcript);
+        $this->assertEquals('Original body', $note->processed_body);
+    }
 }

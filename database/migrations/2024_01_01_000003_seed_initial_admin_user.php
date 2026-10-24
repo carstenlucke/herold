@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -24,7 +25,7 @@ return new class extends Migration
         DB::table('users')->insert([
             'name' => 'Herold',
             'email' => $adminEmail,
-            'password' => bcrypt('password'),
+            'password' => bcrypt(Str::random(64)),
             'api_key_hash' => hash('sha256', $apiKey),
             'created_at' => now(),
             'updated_at' => now(),

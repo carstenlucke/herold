@@ -67,6 +67,13 @@ class AuthenticationTest extends TestCase
             ->assertSessionHasErrors();
     }
 
+    public function test_non_numeric_totp_code_is_rejected(): void
+    {
+        $this->withSession(['auth.key_verified' => true, 'auth.user_id' => $this->user->id])
+            ->post('/login/totp', ['totp_code' => 'abcdef'])
+            ->assertSessionHasErrors('totp_code');
+    }
+
     public function test_login_rate_limiting_on_key_verification(): void
     {
         for ($i = 0; $i < 5; $i++) {

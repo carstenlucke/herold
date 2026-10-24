@@ -45,6 +45,7 @@ The catalogue is closed at the spec level. Adding a cross-cutting concept is a s
 
 - Validation is *strict*: missing required slots, type-incorrect values, and unknown slot names all fail.
 - Validation is *schema-driven*: the schema is the slot inventory declared for the bound `MessageTypeDT` in [D2.7](D2-datentypen.md#d27-typespecificdata).
+- Validation is *bounded*: free-text content (transcript, title, body) has a maximum length. The body bound follows the issue-body limit of GitHub Issues, so an accepted body stays dispatchable; the transcript bound leaves ample headroom for transcripts of admissible recordings and only cuts off abusive input.
 - Validation is performed at the boundary that accepts the input. Nothing is persisted before the input is accepted; on rejection the offending fields are surfaced to the operator. The dialogue layer ([B1](B1-dialogspezifikation.md)) cites where each violation appears on screen — *how* it is computed lives here.
 - The audio recording itself is not validated against this schema; its format and size constraints are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation* and apply at the upload boundary that feeds [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api).
 
