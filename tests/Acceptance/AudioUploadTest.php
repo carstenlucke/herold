@@ -203,6 +203,17 @@ class AudioUploadTest extends TestCase
         $this->assertDatabaseCount('voice_notes', 0);
     }
 
+    public function test_capture_page_exposes_metadata_slot_limits(): void
+    {
+        $this->actingAs($this->user)
+            ->get('/notes/create')
+            ->assertInertia(fn ($page) => $page
+                ->component('Recording/Create')
+                ->where('maxTextSlotLength', MessageTypeRegistry::MAX_TEXT_SLOT_LENGTH)
+                ->where('maxUrlSlotLength', MessageTypeRegistry::MAX_URL_SLOT_LENGTH)
+            );
+    }
+
     public function test_obsidian_type_works_without_vault(): void
     {
         $audio = UploadedFile::fake()->create('recording.webm', 1024, 'audio/webm');

@@ -26,6 +26,8 @@
           :label="field.label"
           :type="field.type === 'url' ? 'url' : 'text'"
           :rules="field.required ? [rules.required] : []"
+          :counter="field.type === 'url' ? props.maxUrlSlotLength : props.maxTextSlotLength"
+          :error-messages="metadataError(field.name)"
           variant="filled"
           color="primary"
           class="mb-2"
@@ -47,6 +49,7 @@
               prepend-inner-icon="mdi-calendar"
               class="mb-2"
               :rules="field.required ? [rules.required] : []"
+              :error-messages="metadataError(field.name)"
             />
           </template>
           <v-date-picker
@@ -102,6 +105,8 @@ import AudioRecorder from '../../Components/AudioRecorder.vue'
 
 const props = defineProps<{
   types: Record<string, MessageType>
+  maxTextSlotLength: number
+  maxUrlSlotLength: number
 }>()
 
 const selectedType = ref(Object.keys(props.types)[0] ?? 'general')
@@ -143,6 +148,10 @@ const canSave = computed(() => {
 
   return true
 })
+
+function metadataError(fieldName: string): string | undefined {
+  return (form.errors as Record<string, string | undefined>)[`metadata.${fieldName}`]
+}
 
 const rules = {
   required: (v: string) => !!v || 'This field is required',

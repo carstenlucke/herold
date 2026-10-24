@@ -48,6 +48,8 @@ class VoiceNoteController extends Controller
     {
         return Inertia::render('Recording/Create', [
             'types' => $this->typeRegistry->all(),
+            'maxTextSlotLength' => MessageTypeRegistry::MAX_TEXT_SLOT_LENGTH,
+            'maxUrlSlotLength' => MessageTypeRegistry::MAX_URL_SLOT_LENGTH,
         ]);
     }
 
