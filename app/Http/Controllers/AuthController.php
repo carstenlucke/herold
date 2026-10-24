@@ -97,7 +97,7 @@ class AuthController extends Controller
     public function confirmTotp(Request $request)
     {
         $request->validate([
-            'totp_code' => 'required|string|size:6',
+            'totp_code' => 'required|digits:6',
         ]);
 
         if (! $request->session()->get('auth.key_verified')) {
@@ -126,7 +126,7 @@ class AuthController extends Controller
     public function verifyTotp(Request $request)
     {
         $request->validate([
-            'totp_code' => 'required|string|size:6',
+            'totp_code' => 'required|digits:6',
         ]);
 
         if (! $request->session()->get('auth.key_verified')) {

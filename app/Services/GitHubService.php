@@ -7,6 +7,16 @@ use RuntimeException;
 
 class GitHubService
 {
+    /**
+     * Maximum issue body length (characters) accepted by the GitHub Issues API.
+     */
+    public const MAX_BODY_LENGTH = 65536;
+
+    /**
+     * Maximum issue title length (characters); stays within the GitHub Issues API title limit.
+     */
+    public const MAX_TITLE_LENGTH = 255;
+
     private string $token;
 
     private string $owner;

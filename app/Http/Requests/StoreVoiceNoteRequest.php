@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\MessageTypeRegistry;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,25 +21,7 @@ class StoreVoiceNoteRequest extends FormRequest
             'metadata' => ['nullable', 'array'],
         ];
 
-        $typeConfig = config("herold.types.{$this->input('type')}");
-
-        foreach ($typeConfig['extra_fields'] ?? [] as $field) {
-            $fieldRules = [];
-
-            if ($field['required']) {
-                $fieldRules[] = 'required';
-            } else {
-                $fieldRules[] = 'nullable';
-            }
-
-            $fieldRules[] = match ($field['type']) {
-                'url' => 'url',
-                'date' => 'date_format:Y-m-d',
-                default => 'string',
-            };
-
-            $rules["metadata.{$field['name']}"] = $fieldRules;
-        }
+        $rules += $this->typeRegistry()->metadataRules((string) $this->input('type'));
 
         return $rules;
     }
@@ -55,10 +38,7 @@ class StoreVoiceNoteRequest extends FormRequest
         }
 
         if (! empty($validated['metadata']) && isset($validated['type'])) {
-            $typeConfig = config("herold.types.{$validated['type']}");
-            $allowedKeys = collect($typeConfig['extra_fields'] ?? [])
-                ->pluck('name')
-                ->all();
+            $allowedKeys = $this->typeRegistry()->slotNames($validated['type']);
 
             $validated['metadata'] = array_intersect_key(
                 $validated['metadata'],
@@ -71,5 +51,10 @@ class StoreVoiceNoteRequest extends FormRequest
         }
 
         return $validated;
+    }
+
+    private function typeRegistry(): MessageTypeRegistry
+    {
+        return app(MessageTypeRegistry::class);
     }
 }

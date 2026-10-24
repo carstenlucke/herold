@@ -94,6 +94,31 @@ class GitHubTicketTest extends TestCase
         $this->assertNotNull($note->error_message);
     }
 
+    public function test_send_rejects_body_exceeding_github_limit_before_dispatch(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'general',
+            'status' => NoteStatus::PROCESSED,
+            'audio_path' => 'audio/test.webm',
+            'transcript' => 'Transcript',
+            'processed_title' => 'Title',
+            'processed_body' => str_repeat('a', GitHubService::MAX_BODY_LENGTH + 1),
+        ]);
+
+        $github = Mockery::mock(GitHubService::class);
+        $github->shouldNotReceive('createIssue');
+
+        $this->app->instance(GitHubService::class, $github);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/send")
+            ->assertSessionHasErrors('processed_body');
+
+        $note->refresh();
+        $this->assertEquals(NoteStatus::PROCESSED, $note->status);
+        $this->assertNull($note->github_issue_number);
+    }
+
     public function test_sent_note_preserves_github_link(): void
     {
         $note = VoiceNote::create([

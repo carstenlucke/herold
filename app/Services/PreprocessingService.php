@@ -4,12 +4,14 @@ namespace App\Services;
 
 use App\Enums\NoteStatus;
 use App\Models\VoiceNote;
+use Illuminate\Support\Facades\Validator;
 use RuntimeException;
 
 class PreprocessingService
 {
     public function __construct(
         private readonly AIService $aiService,
+        private readonly MessageTypeRegistry $typeRegistry,
     ) {}
 
     public function process(VoiceNote $note): void
@@ -39,7 +41,8 @@ class PreprocessingService
         $result = $this->aiService->chat($systemPrompt, $userMessage);
 
         $updateData = [
-            'processed_title' => $result['title'],
+            // Generated content bypasses the edit boundary, so it is bounded here
+            'processed_title' => mb_substr($result['title'], 0, GitHubService::MAX_TITLE_LENGTH),
             'processed_body' => $result['body'],
             'status' => NoteStatus::PROCESSED,
         ];
@@ -51,7 +54,7 @@ class PreprocessingService
 
         foreach ($extraFields as $field) {
             $fieldName = $field['name'];
-            if (! empty($result[$fieldName])) {
+            if (! empty($result[$fieldName]) && $this->isValidSlotValue($note->type, $fieldName, $result[$fieldName])) {
                 $metadata[$fieldName] = $result[$fieldName];
                 $metadataChanged = true;
             }
@@ -62,5 +65,18 @@ class PreprocessingService
         }
 
         $note->update($updateData);
+    }
+
+    /**
+     * AI-extracted slot values must satisfy the same rules as operator input; invalid ones are dropped.
+     */
+    private function isValidSlotValue(string $type, string $fieldName, mixed $value): bool
+    {
+        $key = "metadata.{$fieldName}";
+
+        return Validator::make(
+            ['metadata' => [$fieldName => $value]],
+            [$key => $this->typeRegistry->metadataRules($type)[$key]],
+        )->passes();
     }
 }
