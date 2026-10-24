@@ -86,6 +86,7 @@ class VoiceNoteController extends Controller
         return Inertia::render('Notes/Show', [
             'note' => $note,
             'types' => $this->typeRegistry->all(),
+            'maxBodyLength' => GitHubService::MAX_BODY_LENGTH,
         ]);
     }
 
@@ -105,32 +106,13 @@ class VoiceNoteController extends Controller
     {
         $rules = [
             'transcript' => 'nullable|string|max:500000',
-            'processed_title' => 'nullable|string|max:255',
-            'processed_body' => 'nullable|string|max:65536',
+            'processed_title' => 'nullable|string|max:'.GitHubService::MAX_TITLE_LENGTH,
+            'processed_body' => 'nullable|string|max:'.GitHubService::MAX_BODY_LENGTH,
             'metadata' => 'nullable|array',
         ];
 
-        $typeConfig = config("herold.types.{$note->type}");
-        $allowedKeys = [];
-
-        foreach ($typeConfig['extra_fields'] ?? [] as $field) {
-            $fieldRules = [];
-
-            if ($field['required']) {
-                $fieldRules[] = 'required';
-            } else {
-                $fieldRules[] = 'nullable';
-            }
-
-            $fieldRules[] = match ($field['type']) {
-                'url' => 'url',
-                'date' => 'date_format:Y-m-d',
-                default => 'string',
-            };
-
-            $rules["metadata.{$field['name']}"] = $fieldRules;
-            $allowedKeys[] = $field['name'];
-        }
+        $rules += $this->typeRegistry->metadataRules($note->type);
+        $allowedKeys = $this->typeRegistry->slotNames($note->type);
 
         $validated = $request->validate($rules);
 
@@ -201,6 +183,14 @@ class VoiceNoteController extends Controller
 
         try {
             $body = $sanitizer->sanitizeAndWrap($note);
+
+            // The composed body (sanitised body + metadata section) must fit GitHub's limit;
+            // reject before dispatch so the note stays processed and editable.
+            if (mb_strlen($body) > GitHubService::MAX_BODY_LENGTH) {
+                return redirect()->route('notes.show', $note)
+                    ->withErrors(['processed_body' => 'Issue body exceeds GitHub\'s limit of '
+                        .GitHubService::MAX_BODY_LENGTH.' characters. Shorten the body or metadata.']);
+            }
 
             $typeConfig = config("herold.types.{$note->type}");
             $labels = [];

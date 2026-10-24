@@ -38,7 +38,7 @@ The physical schema is the SQLite realisation of the D1 information model:
 | [`RecoveryToken`](../spec/D1-datenmodell.md#recoverytoken) | Deliberately **not** a table: the file `.herold-recovery` on the `local` disk. `token` = file content, `placedAt` = file mtime ([§ 6.5](A06-runtime-view.md#65-recover-access)). |
 | [`GitHubIssue` / `GitHubRepository`](../spec/D1-datenmodell.md#d12-ticket-data) | Not persisted — owned by GitHub. Herold stores only the back-references `github_issue_number` and `github_issue_url` on `voice_notes`. Repository coordinates come from configuration, not data. |
 
-**Framework remnants.** `users.password` (seeded with the bcrypt hash of a random, discarded 64-character value), `remember_token`, `email_verified_at`, and the stock `password_reset_tokens`, `cache*`, `jobs*` tables exist as Laravel scaffolding but participate in no Herold flow (debt [D-02](A11-risks-and-technical-debts.md#112-technical-debts)). Sessions are first-class, though: the `sessions` table backs the session guard of § 8.4.
+**Framework remnants.** `users.password` (holds the bcrypt hash of a random, discarded 64-character value — set by the seed migration, and rotated on earlier installs by `rotate_seeded_admin_password`), `remember_token`, `email_verified_at`, and the stock `password_reset_tokens`, `cache*`, `jobs*` tables exist as Laravel scaffolding but participate in no Herold flow (debt [D-02](A11-risks-and-technical-debts.md#112-technical-debts)). Sessions are first-class, though: the `sessions` table backs the session guard of § 8.4.
 
 **[Migrations](https://laravel.com/docs/13.x/migrations#running-migrations)** run out-of-band (`php artisan migrate --force`) — automatically at container start in dev, manually via SSH in production ([§ 7.1.2](A07-deployment-view.md#712-development--docker-compose), [ORG-06](A02-architecture-constraints.md#22-organisational-constraints)). The initial migration set also *seeds* the singleton operator row from `HEROLD_API_KEY` ([S3.4](../spec/S3-inbetriebnahme.md#s34-first-commissioning) step 5).
 
@@ -81,10 +81,11 @@ Realisation of [N2.3](../spec/N2-querschnittskonzepte.md#n23-validation) — str
 | Boundary | Validator | Rules | On failure |
 |----------|-----------|-------|------------|
 | **Browser (convenience)** | `Recording/Create.vue` | Vuetify `:rules` mark required metadata slots inline; the `canSave` computed keeps *Save* disabled until an audio blob exists and every required slot is filled; date slots are picker-driven (read-only text field), so a malformed date cannot be typed. | Inline field hint / disabled button. Never authoritative. |
-| **Operator input — capture** | `StoreVoiceNoteRequest` (`POST /notes`), a [form request](https://laravel.com/docs/13.x/validation#form-request-validation) | `audio`: required, `file`, `mimetypes:audio/webm,video/webm,audio/ogg,audio/mp4`, max 25 600 KB (= the 25 MB of [NFR-15a-03](../spec/N1-nichtfunktional.md#15a-access-requirements)); `type`: `Rule::in` over the configured type keys; per-slot rules derived from the type's `extra_fields` (`url` → `url`, `date` → `date_format:Y-m-d`, else `string`; `required` flag honoured). `validated()` additionally intersects `metadata` against the declared slot names — unknown keys dropped, so nothing undeclared ever reaches the JSON column. | 422 field errors, surfaced inline by Inertia; nothing persisted. |
-| **Operator input — edit** | `VoiceNoteController::update` (`PUT /notes/{note}`) | Free-text rules for `transcript` (max 500 000), `processed_title` (max 255), `processed_body` (max 65 536 — GitHub's issue-body limit); identical per-slot rule construction and key-intersection filter, evaluated against the note's *bound* type. | 422, as above. |
+| **Operator input — capture** | `StoreVoiceNoteRequest` (`POST /notes`), a [form request](https://laravel.com/docs/13.x/validation#form-request-validation) | `audio`: required, `file`, `mimetypes:audio/webm,video/webm,audio/ogg,audio/mp4`, max 25 600 KB (= the 25 MB of [NFR-15a-03](../spec/N1-nichtfunktional.md#15a-access-requirements)); `type`: `Rule::in` over the configured type keys; per-slot rules derived from the type's `extra_fields` by `MessageTypeRegistry::metadataRules` (`url` → `url` + max 2 048, `date` → `date_format:Y-m-d`, else `string` + max 255; `required` flag honoured). `validated()` additionally intersects `metadata` against the declared slot names — unknown keys dropped, so nothing undeclared ever reaches the JSON column. | 422 field errors, surfaced inline by Inertia; nothing persisted. |
+| **Operator input — edit** | `VoiceNoteController::update` (`PUT /notes/{note}`) | Free-text rules for `transcript` (max 500 000), `processed_title` (max `GitHubService::MAX_TITLE_LENGTH` = 255), `processed_body` (max `GitHubService::MAX_BODY_LENGTH` = 65 536 — GitHub's issue-body limit); the same `metadataRules` / `slotNames` derivation and key-intersection filter, evaluated against the note's *bound* type. Edit-form fields render these errors inline. | 422, as above. |
+| **Dispatch — composed issue body** | `VoiceNoteController::send` (`POST /notes/{note}/send`) | The sanitised, metadata-wrapped body (`IssueContentSanitizer::sanitizeAndWrap`) is length-checked against `GitHubService::MAX_BODY_LENGTH` before any GitHub call — this also covers AI-generated bodies that never passed the edit boundary. | Field error on `processed_body`; no external call, note stays `processed`. |
 | **Operator input — authentication** | `AuthController` | TOTP code is format-checked first (`digits:6`); API key, TOTP code, and recovery secret are then verified as credentials (`hash_equals`, RFC 6238 drift window) — see [§ 8.4](#84-authentication-and-session). | Uniform rejection (error flash / 404), throttled, logged with source IP. |
-| **Machine input — AI responses** | `AIService`, `PreprocessingService` | Non-2xx responses from both OpenAI endpoints throw; `chat()` structurally validates the returned payload — it must decode to a JSON object carrying `title` **and** `body`; `PreprocessingService` rejects notes whose `type` has no config entry. | `RuntimeException` → the [§ 8.6](#86-failure-handling) path (`status = error`, inputs preserved). |
+| **Machine input — AI responses** | `AIService`, `PreprocessingService` | Non-2xx responses from both OpenAI endpoints throw; `chat()` structurally validates the returned payload — it must decode to a JSON object carrying `title` **and** `body`; `PreprocessingService` rejects notes whose `type` has no config entry, truncates the generated `title` to `GitHubService::MAX_TITLE_LENGTH` (255), and keeps an extracted slot value only if it passes the slot's `metadataRules` — invalid values are dropped, an existing operator value stays. | `RuntimeException` → the [§ 8.6](#86-failure-handling) path (`status = error`, inputs preserved). |
 | **Configuration** | Adapter constructors | `AIService` / `GitHubService` fail fast when their API key/token is unset — see [§ 8.8](#88-secret-handling). | `RuntimeException` before any external call. |
 
 [Rate limits](https://laravel.com/docs/13.x/routing#rate-limiting) complement validation at the same boundaries: `throttle:10,60` on capture (deviation from the spec's 20/h — [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(c)), `throttle:5,1` on both sign-in factors, `throttle:5,60` on recovery. Validation rejections never touch `status`/`error_message` ([§ 8.6](#86-failure-handling)).
@@ -113,7 +114,27 @@ const canSave = computed(() => {
 
 Everything here is repeated server-side; a browser check may be relaxed or removed without weakening the system.
 
-**Operator input — capture.** A [form request](https://laravel.com/docs/13.x/validation#form-request-validation) with two parts: static rules for the fixed fields, dynamic rules built from the type's `extra_fields`, and an overridden `validated()` that drops undeclared `metadata` keys (`app/Http/Requests/StoreVoiceNoteRequest.php`):
+**Operator input — capture.** A [form request](https://laravel.com/docs/13.x/validation#form-request-validation) with two parts: static rules for the fixed fields, dynamic rules built from the type's `extra_fields`, and an overridden `validated()` that drops undeclared `metadata` keys (`app/Http/Requests/StoreVoiceNoteRequest.php`). The per-slot derivation lives in one place, `MessageTypeRegistry::metadataRules`, shared by capture and edit:
+
+```php
+public function metadataRules(string $type): array
+{
+    $rules = [];
+
+    foreach ($this->get($type)['extra_fields'] ?? [] as $field) {
+        $rules["metadata.{$field['name']}"] = [
+            $field['required'] ? 'required' : 'nullable',
+            ...match ($field['type']) {
+                'url' => ['url', 'max:'.self::MAX_URL_SLOT_LENGTH],      // 2 048
+                'date' => ['date_format:Y-m-d'],
+                default => ['string', 'max:'.self::MAX_TEXT_SLOT_LENGTH], // 255
+            },
+        ];
+    }
+
+    return $rules;
+}
+```
 
 ```php
 public function rules(): array
@@ -124,48 +145,37 @@ public function rules(): array
         'metadata' => ['nullable', 'array'],
     ];
 
-    foreach (config("herold.types.{$this->input('type')}.extra_fields", []) as $field) {
-        $rules["metadata.{$field['name']}"] = [
-            $field['required'] ? 'required' : 'nullable',
-            match ($field['type']) {
-                'url' => 'url',
-                'date' => 'date_format:Y-m-d',
-                default => 'string',
-            },
-        ];
-    }
-
-    return $rules;
+    return $rules + $this->typeRegistry()->metadataRules((string) $this->input('type'));
 }
 
 public function validated($key = null, $default = null): mixed
 {
     $validated = parent::validated($key, $default);
-    // … intersect $validated['metadata'] with the declared slot names (allow-list) …
+    // … intersect $validated['metadata'] with slotNames($validated['type']) (allow-list) …
     return $validated;
 }
 ```
 
 Two invariants make this the template: rules are *derived from config*, and the allow-list intersection is applied **after** validation, so an undeclared key that happens to pass its rules still never reaches the JSON column.
 
-**Operator input — edit.** Same construction, but inline in the controller and against the note's *bound* type rather than a submitted one — the type is immutable after capture and must not be re-derived from request input (`VoiceNoteController::update`):
+**Operator input — edit.** Same derivation, but against the note's *bound* type rather than a submitted one — the type is immutable after capture and must not be re-derived from request input (`VoiceNoteController::update`):
 
 ```php
 $rules = [
-    'transcript' => 'nullable|string',
-    'processed_title' => 'nullable|string|max:255',
-    'processed_body' => 'nullable|string',
+    'transcript' => 'nullable|string|max:500000',
+    'processed_title' => 'nullable|string|max:'.GitHubService::MAX_TITLE_LENGTH,
+    'processed_body' => 'nullable|string|max:'.GitHubService::MAX_BODY_LENGTH,
     'metadata' => 'nullable|array',
 ];
 
-foreach (config("herold.types.{$note->type}.extra_fields", []) as $field) {
-    $rules["metadata.{$field['name']}"] = [ /* … as above … */ ];
-    $allowedKeys[] = $field['name'];
-}
+$rules += $this->typeRegistry->metadataRules($note->type);
+$allowedKeys = $this->typeRegistry->slotNames($note->type);
 
 $validated = $request->validate($rules);
 $validated['metadata'] = array_intersect_key($validated['metadata'] ?? [], array_flip($allowedKeys)) ?: null;
 ```
+
+The edit form's body counter takes its maximum from the `maxBodyLength` page prop (`GitHubService::MAX_BODY_LENGTH`), so browser hint and server bound cannot drift apart.
 
 **Operator input — authentication.** Shape validation (`required|string`) is only the pre-filter; the actual check is a credential comparison in constant time, and the failure path is *uniform, logged, and non-informative* — the same message regardless of which part was wrong (`AuthController::verifyKey`):
 
@@ -376,7 +386,7 @@ Sanitisation is deliberately a **single, late gate** in the note lifecycle: noth
 |-----------------|-----------------------------|--------------------------|
 | **Capture** (→ `recorded`) | Audio bytes and typed metadata slots enter. | None — inputs are validated and key-filtered ([§ 8.3](#83-validation)) but not content-filtered; a free-text slot may legally contain markup. Audio is opaque binary: never rendered as markup, only played back via the authenticated streaming route ([§ 8.9](#89-audio-capture-and-storage)). |
 | **Process — transcription** | Audio leaves to the Transcription API (NB-02); a plain-text transcript returns. | None — the transcript is persisted verbatim. It is source material the operator must be able to review and correct; fidelity beats filtering here. |
-| **Process — generation** (→ `processed`) | Transcript, metadata, and (per type) the current date leave to the Chat Completion API (NB-03); `title`, `body`, and extracted slot values return. | None in either direction. The outbound guards at this boundary are of a different kind: the system prompt comes exclusively from server-side config, and the response is forced into JSON mode and structurally validated ([§ 8.3](#83-validation)). The returned content is persisted **raw** — see the deviation below. |
+| **Process — generation** (→ `processed`) | Transcript, metadata, and (per type) the current date leave to the Chat Completion API (NB-03); `title`, `body`, and extracted slot values return. | None in either direction. The outbound guards at this boundary are of a different kind: the system prompt comes exclusively from server-side config, and the response is forced into JSON mode and structurally validated ([§ 8.3](#83-validation)). The returned content is length-bounded and its extracted slot values are rule-checked ([§ 8.3](#83-validation)), but otherwise persisted **raw** — see the deviation below. |
 | **Review & edit** (`processed`) | The operator edits transcript, title, body, metadata. | None — edits are validated ([§ 8.3](#83-validation)) and persisted raw. The operator deliberately reviews and edits the verbatim intermediate, not a filtered rendition of it. |
 | **Dispatch** (→ `sent`) | Title, body, and metadata leave to GitHub (NB-04). | **The gate.** `IssueContentSanitizer::sanitizeAndWrap` sanitises `processed_body` and every metadata value individually; `processed_title` passes unaltered (GitHub renders titles as literal text, so the hidden-instruction carriers listed below cannot conceal themselves there). |
 

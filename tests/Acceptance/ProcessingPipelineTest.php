@@ -6,6 +6,8 @@ use App\Enums\NoteStatus;
 use App\Models\User;
 use App\Models\VoiceNote;
 use App\Services\AIService;
+use App\Services\GitHubService;
+use App\Services\MessageTypeRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -223,6 +225,102 @@ class ProcessingPipelineTest extends TestCase
         $this->assertEquals('Research', $note->metadata['vault']);
     }
 
+    public function test_process_truncates_oversized_generated_title(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'general',
+            'status' => NoteStatus::RECORDED,
+            'audio_path' => 'audio/test.webm',
+        ]);
+
+        Storage::put('audio/test.webm', 'fake-audio-content');
+
+        $aiService = Mockery::mock(AIService::class);
+        $aiService->shouldReceive('transcribe')
+            ->andReturn('A rambling note.');
+        $aiService->shouldReceive('chat')
+            ->once()
+            ->andReturn([
+                'title' => str_repeat('ä', GitHubService::MAX_TITLE_LENGTH + 50),
+                'body' => 'A rambling note.',
+            ]);
+
+        $this->app->instance(AIService::class, $aiService);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/process")
+            ->assertRedirect();
+
+        $note->refresh();
+        $this->assertEquals(NoteStatus::PROCESSED, $note->status);
+        $this->assertEquals(GitHubService::MAX_TITLE_LENGTH, mb_strlen($note->processed_title));
+    }
+
+    public function test_process_drops_invalid_extracted_slot_values(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'todo',
+            'status' => NoteStatus::RECORDED,
+            'audio_path' => 'audio/test.webm',
+            'metadata' => ['deadline' => '2026-04-20'],
+        ]);
+
+        Storage::put('audio/test.webm', 'fake-audio-content');
+
+        $aiService = Mockery::mock(AIService::class);
+        $aiService->shouldReceive('transcribe')
+            ->andReturn('Buy groceries by next Friday.');
+        $aiService->shouldReceive('chat')
+            ->once()
+            ->andReturn([
+                'title' => 'Buy groceries',
+                'body' => 'Buy groceries by next Friday.',
+                'deadline' => 'next friday',
+            ]);
+
+        $this->app->instance(AIService::class, $aiService);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/process")
+            ->assertRedirect();
+
+        $note->refresh();
+        $this->assertEquals(NoteStatus::PROCESSED, $note->status);
+        $this->assertEquals('2026-04-20', $note->metadata['deadline']);
+    }
+
+    public function test_process_drops_oversized_extracted_text_slot(): void
+    {
+        $note = VoiceNote::create([
+            'type' => 'obsidian',
+            'status' => NoteStatus::RECORDED,
+            'audio_path' => 'audio/test.webm',
+        ]);
+
+        Storage::put('audio/test.webm', 'fake-audio-content');
+
+        $aiService = Mockery::mock(AIService::class);
+        $aiService->shouldReceive('transcribe')
+            ->andReturn('Note for my research vault.');
+        $aiService->shouldReceive('chat')
+            ->once()
+            ->andReturn([
+                'title' => 'Research note',
+                'body' => 'Note for my research vault.',
+                'vault' => str_repeat('a', MessageTypeRegistry::MAX_TEXT_SLOT_LENGTH + 1),
+            ]);
+
+        $this->app->instance(AIService::class, $aiService);
+
+        $this->actingAs($this->user)
+            ->post("/notes/{$note->id}/process")
+            ->assertRedirect();
+
+        $note->refresh();
+        $this->assertEquals(NoteStatus::PROCESSED, $note->status);
+        $this->assertNull($note->metadata);
+    }
+
     public function test_todo_deadline_is_validated_on_update(): void
     {
         $note = VoiceNote::create([
@@ -258,6 +356,27 @@ class ProcessingPipelineTest extends TestCase
 
         $note->refresh();
         $this->assertEquals('https://www.youtube.com/watch?v=dQw4w9WgXcQ', $note->metadata['youtube_url']);
+    }
+
+    public function test_url_metadata_slot_is_length_bounded_on_update(): void
+    {
+        $url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+        $note = VoiceNote::create([
+            'type' => 'youtube',
+            'status' => NoteStatus::PROCESSED,
+            'processed_title' => 'Test',
+            'processed_body' => 'Test body',
+            'metadata' => ['youtube_url' => $url],
+        ]);
+
+        $this->actingAs($this->user)
+            ->put("/notes/{$note->id}", [
+                'metadata' => ['youtube_url' => $url.'&t='.str_repeat('1', MessageTypeRegistry::MAX_URL_SLOT_LENGTH)],
+            ])
+            ->assertSessionHasErrors('metadata.youtube_url');
+
+        $note->refresh();
+        $this->assertEquals($url, $note->metadata['youtube_url']);
     }
 
     public function test_store_validation_scoped_to_selected_type(): void

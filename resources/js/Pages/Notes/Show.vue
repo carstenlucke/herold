@@ -141,6 +141,8 @@
               variant="filled"
               color="primary"
               :readonly="!isEditing"
+              :counter="isEditing ? 255 : undefined"
+              :error-messages="editForm.errors.processed_title"
               class="mb-3"
             />
 
@@ -153,6 +155,7 @@
                 variant="filled"
                 color="primary"
                 :readonly="!isEditing"
+                :error-messages="metadataError(field.name)"
                 class="mb-3"
               />
             </template>
@@ -174,6 +177,7 @@
                     readonly
                     prepend-inner-icon="mdi-calendar"
                     :disabled="!isEditing"
+                    :error-messages="metadataError(field.name)"
                     class="mb-3"
                   />
                 </template>
@@ -194,6 +198,8 @@
               rows="5"
               auto-grow
               :readonly="!isEditing"
+              :counter="isEditing ? props.maxBodyLength : undefined"
+              :error-messages="editForm.errors.processed_body"
             />
 
             <!-- Edit actions -->
@@ -361,6 +367,7 @@ import TranscriptEditor from '../../Components/TranscriptEditor.vue'
 const props = defineProps<{
   note: VoiceNote
   types: Record<string, MessageType>
+  maxBodyLength: number
 }>()
 
 const { isProcessing, error: processingError, process, send, clearError } = useProcessing()
@@ -464,6 +471,10 @@ watch(() => props.note, (note) => {
     editForm.metadata = { ...(note.metadata ?? {}) } as Record<string, string>
   }
 }, { deep: true })
+
+function metadataError(fieldName: string): string | undefined {
+  return (editForm.errors as Record<string, string | undefined>)[`metadata.${fieldName}`]
+}
 
 function startEditing() {
   editForm.processed_title = props.note.processed_title ?? ''

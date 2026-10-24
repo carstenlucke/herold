@@ -5,6 +5,7 @@ namespace Tests\Acceptance;
 use App\Enums\NoteStatus;
 use App\Models\User;
 use App\Models\VoiceNote;
+use App\Services\MessageTypeRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -185,6 +186,21 @@ class AudioUploadTest extends TestCase
 
         $note = VoiceNote::latest()->first();
         $this->assertEquals('Work', $note->metadata['vault']);
+    }
+
+    public function test_text_metadata_slot_is_length_bounded(): void
+    {
+        $audio = UploadedFile::fake()->create('recording.webm', 1024, 'audio/webm');
+
+        $this->actingAs($this->user)
+            ->post('/notes', [
+                'audio' => $audio,
+                'type' => 'obsidian',
+                'metadata' => ['vault' => str_repeat('a', MessageTypeRegistry::MAX_TEXT_SLOT_LENGTH + 1)],
+            ])
+            ->assertSessionHasErrors('metadata.vault');
+
+        $this->assertDatabaseCount('voice_notes', 0);
     }
 
     public function test_obsidian_type_works_without_vault(): void
