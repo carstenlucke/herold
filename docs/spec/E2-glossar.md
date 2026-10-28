@@ -32,29 +32,21 @@ This project. A single-user, voice-to-issue dispatcher with a thin browser UI; t
 
 Mathematical shorthand for *if and only if* — a biconditional. "*A* iff *B*" means *A* implies *B* and *B* implies *A*. Used in D2 to state slot-presence conditions (e.g. "a slot is required iff marked required") so the rule is symmetric: the property holds in exactly those cases, not merely in those cases.
 
-### Issue Content Sanitizer
+### Issue Content Sanitization
 
-The application function that renders active markup inert in the dispatched issue body and visually delimits untrusted (operator-derived) content from application-generated structure (NFR-15b-04). Its purpose is to neutralise prompt-injection attempts before they enter the context of any local AI agent that later reads the issue.
+The integrity requirement [NFR-15b-04](N1-nichtfunktional.md) on the dispatched issue body: active markup is rendered inert, untrusted (operator-derived) content is visually delimited from application-generated structure, and prompt-engineering material is excluded. Rendering markup inert is the job of the application function [AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) *Markdown Sanitisation*; the delimiting is part of composing the issue ([N2.7](N2-querschnittskonzepte.md#n27-content-sanitisation)). Its purpose is to neutralise prompt-injection attempts before they enter the context of any local AI agent that later reads the issue.
 
 ### Markdown
 
-Lightweight markup language using plain-text formatting (`# Heading`, `**bold**`, `- list`). Herold's `processed_body` is always Markdown- formatted, matching GitHub Issues' native format.
+Lightweight markup language using plain-text formatting (`# Heading`, `**bold**`, `- list`). The generated body of a voice note (`VoiceNote.processedBody`) is always Markdown-formatted, matching GitHub Issues' native format.
 
 ### Message Type
 
 A category of voice note. The set of categories is fixed by the spec as the `MessageTypeDT` enumeration (see [D2.4](D2-datentypen.md#d24-messagetypedt)): `general`, `youtube`, `diary`, `obsidian`, `todo`. The metadata slot inventory per category is also spec-level (see [D2.7](D2-datentypen.md#d27-typespecificdata)). For each value the host configures the human-readable label, icon, GitHub label, and preprocessing prompt; introducing a new category requires both a spec extension (new enum value, new slot row) and a corresponding host-configuration entry.
 
-### MIME Type
-
-Media type identifier (IETF RFC 6838) used to declare the format of a transferred resource. Herold uses MIME types to gate accepted audio uploads (NFR-15a-03).
-
-### Monolith
-
-A single deployable application that contains all responsibilities (web, domain logic, persistence). Herold is structured as a monolith; the concrete platform is an architecture concern.
-
 ### Note Status
 
-The lifecycle state of a voice note. Values: `recorded`, `processed`, `sent`. The three states are sufficient because processing is synchronous (no intermediate background states); failures are captured in the orthogonal `errorMessage` flag rather than as a separate state (see [D2.5](D2-datentypen.md#d25-notestatusdt)).
+The lifecycle state of a voice note. Values: `recorded`, `processed`, `sent`. The three states are sufficient because each step completes while the operator waits (no intermediate states); failures are captured in the orthogonal `errorMessage` flag rather than as a separate state (see [D2.5](D2-datentypen.md#d25-notestatusdt)).
 
 ### Operator
 
@@ -62,7 +54,7 @@ The single human user of Herold. There is exactly one operator account; multi-us
 
 ### Out-of-band
 
-Outside the application's regular request/response path. An out-of-band action uses a separate channel — direct access to the host file store or shell, or hand-edited host configuration — rather than the browser UI or an HTTP endpoint. The opposite is *in-band*: through the application itself. The term originates in telecommunications, where in-band signalling shares the channel with payload data and out-of-band signalling uses a separate channel. Herold uses out-of-band channels for host configuration (per-type prompt, label, icon, GitHub label), credential placement, and the recovery flow (UC-03).
+Outside the application's regular use through the browser. An out-of-band action uses a separate channel — direct access to the host file store or shell, or hand-edited host configuration — rather than the browser UI. The opposite is *in-band*: through the application itself. The term originates in telecommunications, where in-band signalling shares the channel with payload data and out-of-band signalling uses a separate channel. Herold uses out-of-band channels for host configuration (per-type prompt, label, icon, GitHub label), credential placement, and the recovery flow (UC-03).
 
 ### Pipeline
 
@@ -70,7 +62,7 @@ The three-step flow `Record → Process → Send`. Each step completes while the
 
 ### Prompt Injection
 
-An attack class in which untrusted input contains instructions intended to influence a downstream LLM (here: a local agent reading the GitHub issue). Mitigated by the Issue Content Sanitizer.
+An attack class in which untrusted input contains instructions intended to influence a downstream LLM (here: a local agent reading the GitHub issue). Mitigated by Issue Content Sanitization (NFR-15b-04).
 
 ### Recovery
 

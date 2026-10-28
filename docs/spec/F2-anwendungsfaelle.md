@@ -66,10 +66,10 @@ The constraint note attached to the *Herold* boundary records the system-wide pr
 |---------|---------|
 | **Identifier** | UC-02 |
 | **Name** | Enrol second factor |
-| **Description** | Operator binds a confirmed TOTP secret to the account, so the second factor is available to [UC-01](#uc-01--sign-in) from this point on (including the in-flight first sign-in, if [UC-02](#uc-02--enrol-second-factor) was reached as part of it). |
+| **Description** | Operator binds a confirmed TOTP secret to the account, so the second factor is available to [UC-01](#uc-01--sign-in) from this point on (including the first sign-in still in progress, if [UC-02](#uc-02--enrol-second-factor) was reached as part of it). |
 | **Trigger** | [UC-01](#uc-01--sign-in) step 4 found no confirmed TOTP secret bound to the account — on the first sign-in, or on the first sign-in after [UC-03](#uc-03--recover-access) has unbound the second factor. |
 | **Actors** | Operator (primary). |
-| **Precondition** | The first factor has been verified within an in-flight [UC-01](#uc-01--sign-in) and no confirmed TOTP secret is currently bound to the account. |
+| **Precondition** | The first factor has been verified within a [UC-01](#uc-01--sign-in) still in progress and no confirmed TOTP secret is currently bound to the account. |
 | **Postcondition** | A confirmed TOTP secret is bound to the account (`Operator.totpSecret` and `Operator.totpConfirmedAt` populated). |
 | **Result** | Fresh TOTP secret bound to the account, captured by the operator in an authenticator app of their choice. |
 | **Main scenario** | 1. System generates a fresh TOTP secret and binds it provisionally to the account.<br>2. System displays the secret in a form an authenticator app can capture (scannable provisioning information and the raw secret as fallback).<br>3. Operator registers the secret in their authenticator app.<br>4. Operator enters a confirmation code produced by the authenticator from the new secret.<br>5. System verifies the confirmation code and marks the secret confirmed.<br><br>![UC-02 Enrol second factor — main scenario](diagrams-png/f2-uc02-enrol-totp.png) |
@@ -137,8 +137,8 @@ The four use cases in this group form the supported segment of the business proc
 | **Trigger** | Operator wants the recorded audio turned into structured note content. |
 | **Actors** | Operator (primary); OpenAI Whisper API (supporting); OpenAI Chat Completion API (supporting). |
 | **Precondition** | A voice note exists at status `recorded`. |
-| **Postcondition** | Note at status `processed` with structured content (title, body, optional extra fields) attached; transcript not retained. |
-| **Main scenario** | 1. Operator opens the note's detail view (see [UC-10](#uc-10--view-a-voice-note)).<br>2. Operator triggers processing.<br>3. System transcribes the audio via [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) *Whisper API*.<br>4. System resolves the message type ([D2.4](D2-datentypen.md#d24-messagetypedt)) and generates structured content from the transcript via [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) *Chat Completion API*.<br>5. System sanitises the generated markdown ([AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation)) and persists the structured content.<br>6. System transitions the note to status `processed` ([D2.5](D2-datentypen.md#d25-notestatusdt)).<br><br>![UC-06 Process voice note — main scenario](diagrams-png/f2-uc06-process-note.png) |
+| **Postcondition** | Note at status `processed` with structured content (title, body, optional extra fields) attached; the transcript is retained with the note ([D1.1](D1-datenmodell.md#voicenote)). |
+| **Main scenario** | 1. Operator opens the note's detail view (see [UC-10](#uc-10--view-a-voice-note)).<br>2. Operator triggers processing.<br>3. System transcribes the audio via [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) *Whisper API*.<br>4. System resolves the message type ([D2.4](D2-datentypen.md#d24-messagetypedt)) and generates structured content from the transcript via [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) *Chat Completion API*.<br>5. System sanitises the generated markdown ([AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation)) and persists the transcript together with the structured content.<br>6. System transitions the note to status `processed` ([D2.5](D2-datentypen.md#d25-notestatusdt)).<br><br>![UC-06 Process voice note — main scenario](diagrams-png/f2-uc06-process-note.png) |
 | **Alternative scenarios** | *Operator leaves the page during processing:* completion is not guaranteed. On return, the operator finds the note either at status `processed` or still at status `recorded`; in the latter case the operator repeats [UC-06](#uc-06--process-voice-note). |
 | **Exception scenarios** | - *Transcription fails:* the note remains `recorded`; the operator is informed and may retry per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*.<br>- *Content generation fails:* same as above. |
 | **Qualities** | [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*; [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*. |
@@ -199,12 +199,12 @@ The four use cases in this group form the supported segment of the business proc
 |---------|---------|
 | **Identifier** | UC-10 |
 | **Name** | View a voice note |
-| **Description** | Operator inspects a single note: status, type, timestamps, structured content, and (if dispatched) issue reference; may play back the audio recording. |
+| **Description** | Operator inspects a single note: status, type, timestamps, transcript and structured content (once processed), and (if dispatched) issue reference; may play back the audio recording. |
 | **Trigger** | Operator wants to inspect a single note. |
 | **Actors** | Operator (primary). |
 | **Precondition** | Authenticated session; the selected note exists. |
 | **Postcondition** | No state change. |
-| **Main scenario** | 1. System renders the note's detail view: status, type, timestamps, structured content (if any), issue reference (if `sent`).<br>2. Operator may play back the audio recording (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)). |
+| **Main scenario** | 1. System renders the note's detail view: status, type, timestamps, transcript and structured content (if any), issue reference (if `sent`).<br>2. Operator may play back the audio recording (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)). |
 | **Alternative scenarios** | - *Operator triggers processing:* continues with [UC-06](#uc-06--process-voice-note) *Process voice note* (status `recorded`).<br>- *Operator edits the content:* continues with [UC-07](#uc-07--edit-generated-content) *Edit generated content* (status `processed`).<br>- *Operator dispatches the note:* continues with [UC-08](#uc-08--dispatch-voice-note) *Dispatch voice note* (status `processed`).<br>- *Operator triggers delete:* continues with [UC-11](#uc-11--delete-a-voice-note) *Delete a voice note* (any status). |
 
 ### UC-11 — Delete a voice note
@@ -218,8 +218,9 @@ The four use cases in this group form the supported segment of the business proc
 | **Actors** | Operator (primary). |
 | **Precondition** | Authenticated session; the selected note exists, in any status. |
 | **Postcondition** | Note and its audio document are gone. The dispatched GitHub issue (if any) remains in place. |
-| **Main scenario** | 1. Operator opens the note's detail view (see [UC-10](#uc-10--view-a-voice-note)).<br>2. Operator triggers delete.<br>3. System asks the operator to confirm, since the action is irreversible.<br>4. Operator confirms.<br>5. System removes the note record and its audio document (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)).<br><br>![UC-11 Delete a voice note — main scenario](diagrams-png/f2-uc11-delete-note.png) |
+| **Main scenario** | 1. Operator opens the note's detail view (see [UC-10](#uc-10--view-a-voice-note)).<br>2. Operator triggers delete.<br>3. System asks the operator to confirm, since the action is irreversible.<br>4. Operator confirms.<br>5. System removes the note record and its audio document as one all-or-nothing step (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)).<br><br>![UC-11 Delete a voice note — main scenario](diagrams-png/f2-uc11-delete-note.png) |
 | **Alternative scenarios** | - *Operator cancels at the confirmation step:* nothing changes. |
+| **Exception scenarios** | - *Removal fails:* nothing is removed — the note and its audio document both remain; the operator is informed and may retry. |
 | **Qualities** | Deletion is one-way and local-only — Herold does not touch the GitHub issue (F1.3; P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md) *Local ticket lifecycle*). |
 
 ### UC-13 — View dashboard

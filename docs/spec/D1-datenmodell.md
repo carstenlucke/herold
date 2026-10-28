@@ -21,14 +21,14 @@ Information Herold itself owns and persists.
 
 ### VoiceNote
 
-The central entity. One row per captured voice note from recording through dispatch.
+The central entity. One instance per captured voice note from recording through dispatch.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
 | `id` | Identifier | Stable, time-sortable. |
 | `type` | MessageTypeDT | The bound message type. See [D2.4](D2-datentypen.md#d24-messagetypedt). |
 | `status` | NoteStatusDT | See [D2.5](D2-datentypen.md#d25-notestatusdt). |
-| `audioPath` | Text [0..1] | Locator into the local audio store. Set on capture; cleared together with the row by UC-11. Subject to [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*. |
+| `audioPath` | Text [0..1] | Locator into the local audio store. Set on capture; removed together with the note by UC-11. Subject to [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*. |
 | `transcript` | Text [0..1] | Set after [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) returns. Length-bounded per [N2.3](N2-querschnittskonzepte.md#n23-validation). |
 | `processedTitle` | Text [0..1] | Set after [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) returns; editable in [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content). Length-bounded per [N2.3](N2-querschnittskonzepte.md#n23-validation). |
 | `processedBody` | Markdown [0..1] | Set after [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) returns; editable in [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content); sanitised per [NFR-15b-04](N1-nichtfunktional.md); length-bounded per [N2.3](N2-querschnittskonzepte.md#n23-validation). |
@@ -46,10 +46,10 @@ The central entity. One row per captured voice note from recording through dispa
 
 **Audio document invariants.**
 
-- `audioPath` is set on capture ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note)) and bound to the row for its entire lifetime; the audio is streamable for that whole lifetime ([UC-10](F2-anwendungsfaelle.md#uc-10--view-a-voice-note)).
+- `audioPath` is set on capture ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note)) and bound to the note for its entire lifetime; the audio can be played back for that whole lifetime ([UC-10](F2-anwendungsfaelle.md#uc-10--view-a-voice-note)).
 - There is no scheduled pruning, no retention timer, and no `processed`-triggered cleanup. Format and size constraints at the upload boundary are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*.
-- The audio is removed together with the row by [UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note); removal is irreversible.
-- The audio never exists without its owning `VoiceNote`. A `VoiceNote` row without an audio document exists only transiently during deletion.
+- The audio is removed together with the note by [UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note) as one all-or-nothing step: either both are gone or neither is. Removal is irreversible.
+- The audio never exists without its owning `VoiceNote`, and a `VoiceNote` without its audio document is never observable.
 
 ![D1 Audio document — lifecycle](diagrams-png/d1-audio-lifecycle-states.png)
 
