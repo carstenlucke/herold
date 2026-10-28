@@ -137,7 +137,7 @@ The four use cases in this group form the supported segment of the business proc
 | **Trigger** | Operator wants the recorded audio turned into structured note content. |
 | **Actors** | Operator (primary); OpenAI Whisper API (supporting); OpenAI Chat Completion API (supporting). |
 | **Precondition** | A voice note exists at status `recorded`. |
-| **Postcondition** | Note at status `processed` with structured content (title, body, optional extra fields) attached; transcript not retained. |
+| **Postcondition** | Note at status `processed` with structured content (title, body, optional extra fields) attached; the transcript is retained with the note ([D1.1](D1-datenmodell.md#voicenote)). |
 | **Main scenario** | 1. Operator opens the note's detail view (see [UC-10](#uc-10--view-a-voice-note)).<br>2. Operator triggers processing.<br>3. System transcribes the audio via [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) *Whisper API*.<br>4. System resolves the message type ([D2.4](D2-datentypen.md#d24-messagetypedt)) and generates structured content from the transcript via [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) *Chat Completion API*.<br>5. System sanitises the generated markdown ([AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation)) and persists the structured content.<br>6. System transitions the note to status `processed` ([D2.5](D2-datentypen.md#d25-notestatusdt)).<br><br>![UC-06 Process voice note — main scenario](diagrams-png/f2-uc06-process-note.png) |
 | **Alternative scenarios** | *Operator leaves the page during processing:* completion is not guaranteed. On return, the operator finds the note either at status `processed` or still at status `recorded`; in the latter case the operator repeats [UC-06](#uc-06--process-voice-note). |
 | **Exception scenarios** | - *Transcription fails:* the note remains `recorded`; the operator is informed and may retry per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*.<br>- *Content generation fails:* same as above. |
@@ -199,12 +199,12 @@ The four use cases in this group form the supported segment of the business proc
 |---------|---------|
 | **Identifier** | UC-10 |
 | **Name** | View a voice note |
-| **Description** | Operator inspects a single note: status, type, timestamps, structured content, and (if dispatched) issue reference; may play back the audio recording. |
+| **Description** | Operator inspects a single note: status, type, timestamps, transcript and structured content (once processed), and (if dispatched) issue reference; may play back the audio recording. |
 | **Trigger** | Operator wants to inspect a single note. |
 | **Actors** | Operator (primary). |
 | **Precondition** | Authenticated session; the selected note exists. |
 | **Postcondition** | No state change. |
-| **Main scenario** | 1. System renders the note's detail view: status, type, timestamps, structured content (if any), issue reference (if `sent`).<br>2. Operator may play back the audio recording (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)). |
+| **Main scenario** | 1. System renders the note's detail view: status, type, timestamps, transcript and structured content (if any), issue reference (if `sent`).<br>2. Operator may play back the audio recording (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)). |
 | **Alternative scenarios** | - *Operator triggers processing:* continues with [UC-06](#uc-06--process-voice-note) *Process voice note* (status `recorded`).<br>- *Operator edits the content:* continues with [UC-07](#uc-07--edit-generated-content) *Edit generated content* (status `processed`).<br>- *Operator dispatches the note:* continues with [UC-08](#uc-08--dispatch-voice-note) *Dispatch voice note* (status `processed`).<br>- *Operator triggers delete:* continues with [UC-11](#uc-11--delete-a-voice-note) *Delete a voice note* (any status). |
 
 ### UC-11 — Delete a voice note

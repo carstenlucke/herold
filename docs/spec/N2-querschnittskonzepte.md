@@ -16,7 +16,7 @@ Every concept below is *referenced* — never *defined* — by at least two othe
 | [N2.5](#n25-failure-handling) | Failure handling | Synchronous; on neighbour failure the entity status does not advance, `errorMessage` is populated, the operator retries explicitly. |
 | [N2.6](#n26-logging) | Logging | Structured operational and security event log; never carries secrets, transcripts, or operator-derived content. |
 | [N2.7](#n27-content-sanitisation) | Content sanitisation | Operator-derived content is untrusted and is neutralised at every persistence and dispatch boundary. |
-| [N2.8](#n28-secret-handling) | Secret handling | Secrets are server-only, never browser-bound, never logged, never round-tripped; verification is constant-time. |
+| [N2.8](#n28-secret-handling) | Secret handling | Secrets stay within Herold, never reach the browser, never logged, never round-tripped; verification is constant-time. |
 
 The catalogue is closed at the spec level. Adding a cross-cutting concept is a spec change; tightening the strategy of an existing concept is the more common case.
 
@@ -93,7 +93,7 @@ The catalogue is closed at the spec level. Adding a cross-cutting concept is a s
 
 - *Two event categories.* Operational events (pipeline progress, neighbour-call outcomes, failure reasons) are keyed by `VoiceNote.id` ([D1.1](D1-datenmodell.md#voicenote)). Security events (authentication outcomes, rate-limit triggers, recovery-token rejections per [NFR-15a-04](N1-nichtfunktional.md)) carry source IP and timestamp and are emitted at the gate described in [N2.4](#n24-authentication-and-session).
 - *Reference, never embed.* An operational entry references a `VoiceNote` by its `id`; it does not embed the `transcript`, the generated content, or the captured audio. Diagnostic depth is achieved through the entity itself, not through the log.
-- *Redaction is a hard rule.* The operator's API key, the operator's TOTP secret, third-party API tokens (the OpenAI API key, the GitHub Personal Access Token), and any session or bearer token must be masked before the entry leaves the application. This is the binding requirement [NFR-15b-03](N1-nichtfunktional.md) *Secret Redaction in Logs* and is enforced uniformly, regardless of the call site. Framework-level secrets (e.g. session signing keys) inherit the same rule via the chosen runtime's redaction conventions; their concrete handling is an architecture concern.
+- *Redaction is a hard rule.* The operator's API key, the operator's TOTP secret, third-party API tokens (the OpenAI API key, the GitHub Personal Access Token), and any session credential must be masked before the entry leaves the application. This is the binding requirement [NFR-15b-03](N1-nichtfunktional.md) *Secret Redaction in Logs* and is enforced uniformly, regardless of the call site. The application's own secrets inherit the same rule; their concrete handling is an architecture concern.
 - *No operator-derived content.* The transcript, the generated title and body, the per-`MessageTypeDT` slot values, and the operator's edits never appear in log entries. They are *referenced* by `VoiceNote.id`.
 - *No personal-data trail.* Source IP appears only on security-event entries (failed sign-in, lockout, recovery-token rejection); operational entries do not carry it.
 
@@ -123,7 +123,7 @@ The catalogue is closed at the spec level. Adding a cross-cutting concept is a s
 **Strategy.**
 
 - *One type tag, one set of rules.* Every secret is typed as `OpaqueSecret` ([D2.6](D2-datentypen.md#d26-opaquesecret)). The handling rules — never rendered, never logged, never round-tripped, constant-time verification — attach to the type, not to the call site. A consumer that holds an `OpaqueSecret` cannot opt out.
-- *Server-only.* External API credentials never leave the server ([NFR-15b-01](N1-nichtfunktional.md)). The browser never observes them in any request or response.
+- *Kept within Herold.* Third-party credentials never leave Herold ([NFR-15b-01](N1-nichtfunktional.md)). The browser never observes them in anything it sends or receives.
 - *Configured prompts are not secrets, but follow the same channel.* Per-`MessageTypeDT` preprocessing prompts must not be transmitted to the browser ([NFR-15b-02](N1-nichtfunktional.md)). [UC-12](F2-anwendungsfaelle.md#uc-12--view-settings) surfaces only the operator-pickable attributes (label, icon, GitHub label, slot schema).
 - *Verification, not retrieval.* The operator's API key is presented at sign-in and verified against the stored hash; it is never retrieved. The TOTP secret is enrolled once and verified per code; the raw value is never read back. Recovery flows *replace*, never *reveal* — the only exception is the freshly minted API key shown exactly once at the end of [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access).
 - *Constant-time comparison.* Any equality check that decides authentication or recovery success runs in constant time, on the byte representation of the value ([D2.6](D2-datentypen.md#d26-opaquesecret), [NFR-15a-01](N1-nichtfunktional.md)).

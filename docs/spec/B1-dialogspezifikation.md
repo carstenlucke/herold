@@ -148,7 +148,7 @@ The screenshots embedded in this section are rendered from the static mockups in
 |-------|------|---------|---------|
 | Brand identity (logo, product name, tagline) | display | — | Static. |
 | Step indicator (two dots, first active) | display | — | Reflects start-of-flow position; not operator-editable. |
-| API Key | input (mandatory) | `Operator.apiKeyHash` (verification target; the entered value is hashed and compared in constant time per [D2.6](D2-datentypen.md#d26-opaquesecret), it is never persisted in clear) | — |
+| API Key | input (mandatory) | `Operator.apiKeyHash` (verification target; handled per [D2.6](D2-datentypen.md#d26-opaquesecret) *OpaqueSecret*, never stored in clear) | — |
 
 ##### GUI Dynamik
 
@@ -190,7 +190,7 @@ The screenshots embedded in this section are rendered from the static mockups in
 | Brand identity (logo, product name, tagline) | display | — | Static. |
 | Step indicator (two dots, second active) | display | — | Reflects mid-flow position; not operator-editable. |
 | Instruction text | display | — | "Enter the 6-digit code from your authenticator app." |
-| TOTP Code | input (mandatory) | `Operator.totpSecret` (verification target; the entered code is computed against the stored shared secret in constant time per [D2.6](D2-datentypen.md#d26-opaquesecret)) | — |
+| TOTP Code | input (mandatory) | `Operator.totpSecret` (verification target; the entered code is verified against the stored shared secret per [D2.6](D2-datentypen.md#d26-opaquesecret)) | — |
 
 ##### GUI Dynamik
 
@@ -270,7 +270,7 @@ The screenshots embedded in this section are rendered from the static mockups in
 | **Entry points** | Reached from [DLG-01](#dlg-01--sign-in-first-factor) or [DLG-02](#dlg-02--second-factor-verification) via the *Recover Access* link. |
 | **Layout regions** | Brand header; instruction text describing the out-of-band precondition (operator must have placed a recovery token on the host); single-column form region with the recovery-secret field; primary action; back link to [DLG-01](#dlg-01--sign-in-first-factor). |
 | **Outcomes** | *Redemption succeeds:* no session is established; the bound second factor is unbound, a fresh API key is generated, and the screen transitions to [DLG-05](#dlg-05--recovery-result) to display it.<br>*Redemption fails (no token present, token expired, or entered string does not match):* remains on [DLG-04](#dlg-04--recovery) with a single generic rejection that does not disclose which condition was hit; rate-limited and logged. |
-| **Validation** | Dialogue-level: secret field must not be empty. The token's existence, age, and content are checked server-side and surface here as one undifferentiated rejection per [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access) exception scenarios. |
+| **Validation** | Dialogue-level: secret field must not be empty. The token's existence, age, and content are checked by Herold and surface here as one undifferentiated rejection per [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access) exception scenarios. |
 | **Empty / loading / error states** | *Loading* per *Synchronous operation feedback* ([§B1.4.3](#b143-synchronous-operation-feedback)); *error* per *Synchronous error handling*, but with the generic-rejection wording stipulated by [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access). |
 | **Qualities** | [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout* (recovery branch); [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry*. |
 
@@ -280,7 +280,7 @@ The screenshots embedded in this section are rendered from the static mockups in
 |-------|------|---------|---------|
 | Brand identity (logo, product name, *Account Recovery* tagline) | display | — | Static. |
 | Instruction text | display | — | "Place your recovery token file on the host, then enter the secret string you wrote into it." |
-| Recovery Token | input (mandatory) | `RecoveryToken.token` (verification target; entered string is compared in constant time per [D2.6](D2-datentypen.md#d26-opaquesecret) against the operator-placed artefact, whose age is bounded by [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry*) | — |
+| Recovery Token | input (mandatory) | `RecoveryToken.token` (verification target; entered string is verified per [D2.6](D2-datentypen.md#d26-opaquesecret) against the operator-placed token, whose age is bounded by [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry*) | — |
 
 ##### GUI Dynamik
 
@@ -459,7 +459,7 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 
 - **Trigger:** Click on the *Save Voice Note* button.
 - **Preconditions:** A capture exists (state *review*); the captured audio satisfies [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation*; type-specific extra fields satisfy their declared schema per [D2.7](D2-datentypen.md#d27-typespecificdata).
-- **Effect:** Submits the recording and metadata ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) step 6). On success creates a new `VoiceNote` row with `VoiceNote.status` = `recorded`, `VoiceNote.type` set, `VoiceNote.audioPath` populated, and `VoiceNote.metadata` populated per the bound type's slot inventory; routes to [DLG-08](#dlg-08--note-detail) for the new note. On failure stays in *review* and surfaces the failure inline per *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)); validation violations surface inline per *Form validation feedback* ([§B1.4.6](#b146-form-validation-feedback)).
+- **Effect:** Submits the recording and metadata ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) step 6). On success creates a new voice note with `VoiceNote.status` = `recorded`, `VoiceNote.type` set, `VoiceNote.audioPath` populated, and `VoiceNote.metadata` populated per the bound type's slot inventory; routes to [DLG-08](#dlg-08--note-detail) for the new note. On failure stays in *review* and surfaces the failure inline per *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)); validation violations surface inline per *Form validation feedback* ([§B1.4.6](#b146-form-validation-feedback)).
 
 ---
 
@@ -488,11 +488,11 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 |-------|------|---------|---------|
 | Page title | display | — | "Dashboard". |
 | Page subtitle | display | — | "Overview of your voice notes and processing status." |
-| *Total Notes* count | display | Aggregation: count of `VoiceNote` rows | Live count. |
-| *Recorded* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.status` = `recorded` (per [D2.5](D2-datentypen.md#d25-notestatusdt)) | Live count. |
-| *Processed* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.status` = `processed` | Live count. |
-| *Sent* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.status` = `sent` | Live count. |
-| *Errors* count | display | Aggregation: count of `VoiceNote` rows where `VoiceNote.errorMessage` is non-empty (orthogonal to status — see [D2.5](D2-datentypen.md#d25-notestatusdt) *Failure handling*) | Live count. |
+| *Total Notes* count | display | Aggregation: count of voice notes | Live count. |
+| *Recorded* count | display | Aggregation: count of voice notes where `VoiceNote.status` = `recorded` (per [D2.5](D2-datentypen.md#d25-notestatusdt)) | Live count. |
+| *Processed* count | display | Aggregation: count of voice notes where `VoiceNote.status` = `processed` | Live count. |
+| *Sent* count | display | Aggregation: count of voice notes where `VoiceNote.status` = `sent` | Live count. |
+| *Errors* count | display | Aggregation: count of voice notes where `VoiceNote.errorMessage` is non-empty (orthogonal to status — see [D2.5](D2-datentypen.md#d25-notestatusdt) *Failure handling*) | Live count. |
 | Recent-notes section heading | display | — | "Recent Notes". |
 | Recent-note row — type indicator | display | `VoiceNote.type` (per [D2.4](D2-datentypen.md#d24-messagetypedt)) | — |
 | Recent-note row — title | display | `VoiceNote.processedTitle` if set, else a placeholder for the unprocessed note | — |
@@ -547,7 +547,7 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 | Page title | display | — | "Notes". |
 | Page subtitle | display | — | "All your voice notes in one place." |
 | Type filter | input (optional) | Selection narrows the list by `VoiceNote.type` (per [D2.4](D2-datentypen.md#d24-messagetypedt)) | *All* — no type narrowing. |
-| Status filter | input (optional) | Selection narrows the list by `VoiceNote.status` (per [D2.5](D2-datentypen.md#d25-notestatusdt)); the *Error* filter value selects rows where `VoiceNote.errorMessage` is non-empty (orthogonal flag, see [D2.5](D2-datentypen.md#d25-notestatusdt) *Failure handling*) | *All* — no status narrowing. |
+| Status filter | input (optional) | Selection narrows the list by `VoiceNote.status` (per [D2.5](D2-datentypen.md#d25-notestatusdt)); the *Error* filter value selects notes whose `VoiceNote.errorMessage` is non-empty (orthogonal flag, see [D2.5](D2-datentypen.md#d25-notestatusdt) *Failure handling*) | *All* — no status narrowing. |
 | Note row — type indicator | display | `VoiceNote.type` | — |
 | Note row — title | display | `VoiceNote.processedTitle` if set, else a placeholder for the unprocessed note | — |
 | Note row — snippet | display | Excerpt derived from `VoiceNote.processedBody` (or transcript when not yet processed) | — |
@@ -580,7 +580,7 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 
 - **Trigger:** Click on a page number or the next/previous chevron in the pagination control.
 - **Preconditions:** The target page exists.
-- **Effect:** Re-renders the list region in place with the matching page of `VoiceNote` rows ordered by `VoiceNote.createdAt` descending. The dialogue stays on [DLG-07](#dlg-07--notes-list).
+- **Effect:** Re-renders the list region in place with the matching page of voice notes ordered by `VoiceNote.createdAt` descending. The dialogue stays on [DLG-07](#dlg-07--notes-list).
 
 **Clear filter** (filter-induced empty state only)
 
@@ -628,7 +628,7 @@ The fields above (page title, page subtitle, *Message Type*, type-specific extra
 | **Layout regions** | Navigation chrome; back-affordance to [DLG-07](#dlg-07--notes-list); header with title, status badge, message-type indicator, and timestamp; lifecycle-stage region rendering the three stages (`recorded`, `processed`, `sent`) with the audio playback in the *recorded* stage, the structured content (transcript, generated title, generated body, type-specific extra fields per [D2.7](D2-datentypen.md#d27-typespecificdata)) in the *processed* stage — switching to an editing variant on demand — and the issue reference in the *sent* stage; danger region with the *Delete Note* action. |
 | **Outcomes** | *Process / Save / Create Ticket succeed:* the corresponding stage is updated in place; the operator stays on [DLG-08](#dlg-08--note-detail) and the next stage's affordances become available.<br>*Delete confirmed:* [DLG-07](#dlg-07--notes-list).<br>*Back to Notes:* [DLG-07](#dlg-07--notes-list). |
 | **Validation** | Dialogue-level: in editing mode, mandatory fields must be non-empty, free-text fields must stay within their length bounds, and type-specific extra fields must satisfy their declared schema. Algorithmic validation lives in [N2](N2-querschnittskonzepte.md) *Validation* (backed by [D2.7](D2-datentypen.md#d27-typespecificdata)); markdown sanitisation lives in [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation). |
-| **Empty / loading / error states** | *Loading:* *Synchronous operation feedback* ([§B1.4.3](#b143-synchronous-operation-feedback)) replaces the affected stage's actions with a progress indicator while *Process Note* or *Create Ticket* is in flight ([NFR-12a-01](N1-nichtfunktional.md)).<br>*Error:* *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)) surfaces failures of transcription, content generation, or GitHub dispatch with retry where applicable ([NFR-12d-01](N1-nichtfunktional.md)).<br>*Form validation:* dialogue-level errors render inline in the editing variant. |
+| **Empty / loading / error states** | *Loading:* *Synchronous operation feedback* ([§B1.4.3](#b143-synchronous-operation-feedback)) replaces the affected stage's actions with a progress indicator while *Process Note* or *Create Ticket* is running ([NFR-12a-01](N1-nichtfunktional.md)).<br>*Error:* *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)) surfaces failures of transcription, content generation, or GitHub dispatch with retry where applicable ([NFR-12d-01](N1-nichtfunktional.md)).<br>*Form validation:* dialogue-level errors render inline in the editing variant. |
 | **Qualities** | [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*; [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*; [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization* via [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation). |
 
 The dialogue is multi-state: `recorded`, `processed`, *editing* (a sub-state of `processed`), `sent`. The *header* and the *back-affordance* are present and identical across all four states; per state the lifecycle-stage region differs in which stages are populated and which actions are offered. The *processing* and *error* appearances are governed by the cross-cutting patterns in [§B1.4.3](#b143-synchronous-operation-feedback) and [§B1.4.4](#b144-synchronous-error-handling) respectively and are not re-tabulated as separate states.
@@ -654,13 +654,13 @@ The actions below are present in every state and not re-listed per state:
 
 - **Trigger:** Click on the play control inside the *Recorded* stage card.
 - **Preconditions:** None (the audio is bound to the `VoiceNote` for its entire lifetime per [D1](D1-datenmodell.md#voicenote) *Audio document invariants*).
-- **Effect:** Streams `VoiceNote.audioPath` from the local audio store. The dialogue does not transition.
+- **Effect:** Plays back the audio recording referenced by `VoiceNote.audioPath`. The dialogue does not transition.
 
 **Delete Note**
 
 - **Trigger:** Click on the *Delete Note* button in the danger region.
 - **Preconditions:** None — the action is offered in every state.
-- **Effect:** Opens the *Confirmation modals* pattern ([§B1.4.5](#b145-confirmation-modals)). On *Cancel* the dialogue is unchanged; on *Confirm* the system runs the synchronous deletion ([UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note)) — the `VoiceNote` row and its bound audio document are removed atomically per [D1](D1-datenmodell.md#voicenote) *Audio document invariants* — and routes to [DLG-07](#dlg-07--notes-list).
+- **Effect:** Opens the *Confirmation modals* pattern ([§B1.4.5](#b145-confirmation-modals)). On *Cancel* the dialogue is unchanged; on *Confirm* the system deletes the note ([UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note)) — the voice note and its bound audio document are removed together per [D1](D1-datenmodell.md#voicenote) *Audio document invariants* — and routes to [DLG-07](#dlg-07--notes-list).
 
 ##### GUI Statik — state `recorded`
 
@@ -677,7 +677,7 @@ The actions below are present in every state and not re-listed per state:
 
 - **Trigger:** Click on the *Process* button in the *Processed* stage card.
 - **Preconditions:** The note is in `VoiceNote.status` = `recorded`.
-- **Effect:** Triggers the synchronous transcription and content-generation pipeline ([UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note)). While the request is in flight the *Process* control is replaced by a progress indicator per *Synchronous operation feedback* ([§B1.4.3](#b143-synchronous-operation-feedback)) per [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*. On success the system populates `VoiceNote.transcript`, `VoiceNote.processedTitle`, `VoiceNote.processedBody`, and any `VoiceNote.metadata` slots resolvable from speech, advances `VoiceNote.status` to `processed`, and the dialogue re-renders in state `processed`. On failure the dialogue stays in state `recorded` and surfaces the failure inline per *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)) per [NFR-12d-01](N1-nichtfunktional.md); `VoiceNote.errorMessage` is populated and `VoiceNote.status` does not advance.
+- **Effect:** Triggers transcription and content generation ([UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note)). While the operator waits for the result the *Process* control is replaced by a progress indicator per *Synchronous operation feedback* ([§B1.4.3](#b143-synchronous-operation-feedback)) per [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*. On success the system populates `VoiceNote.transcript`, `VoiceNote.processedTitle`, `VoiceNote.processedBody`, and any `VoiceNote.metadata` slots resolvable from speech, advances `VoiceNote.status` to `processed`, and the dialogue re-renders in state `processed`. On failure the dialogue stays in state `recorded` and surfaces the failure inline per *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)) per [NFR-12d-01](N1-nichtfunktional.md); `VoiceNote.errorMessage` is populated and `VoiceNote.status` does not advance.
 
 ##### GUI Statik — state `processed`
 
@@ -702,7 +702,7 @@ The *Recorded* stage card from state `recorded` remains present and unchanged. A
 
 - **Trigger:** Click on the *Create Ticket* button in the *Sent to GitHub* stage card.
 - **Preconditions:** The note is in `VoiceNote.status` = `processed`.
-- **Effect:** Triggers the synchronous dispatch to GitHub ([UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note)). Markdown is sanitised before dispatch per [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation). While the request is in flight the *Create Ticket* control is replaced by a progress indicator per *Synchronous operation feedback* ([§B1.4.3](#b143-synchronous-operation-feedback)). On success the system creates a `GitHubIssue` from `VoiceNote.processedTitle` / `VoiceNote.processedBody` (sanitised) / the configured per-type label (per [D2.4](D2-datentypen.md#d24-messagetypedt)), populates `VoiceNote.githubIssueNumber` and `VoiceNote.githubIssueUrl`, advances `VoiceNote.status` to `sent`, and re-renders the dialogue in state `sent`. On failure the dialogue stays in state `processed`, surfaces the failure inline per *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)), populates `VoiceNote.errorMessage`, and offers the action again.
+- **Effect:** Triggers the dispatch to GitHub ([UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note)). Markdown is sanitised before dispatch per [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation). While the operator waits for the result the *Create Ticket* control is replaced by a progress indicator per *Synchronous operation feedback* ([§B1.4.3](#b143-synchronous-operation-feedback)). On success the system creates a `GitHubIssue` from `VoiceNote.processedTitle` / `VoiceNote.processedBody` (sanitised) / the configured per-type label (per [D2.4](D2-datentypen.md#d24-messagetypedt)), populates `VoiceNote.githubIssueNumber` and `VoiceNote.githubIssueUrl`, advances `VoiceNote.status` to `sent`, and re-renders the dialogue in state `sent`. On failure the dialogue stays in state `processed`, surfaces the failure inline per *Synchronous error handling* ([§B1.4.4](#b144-synchronous-error-handling)), populates `VoiceNote.errorMessage`, and offers the action again.
 
 ##### GUI Statik — state *editing*
 
@@ -822,7 +822,7 @@ When the operator addresses any authenticated screen ([DLG-06](#dlg-06--dashboar
 
 Operations that keep the operator waiting per [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing* — *Process Note* ([UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note)), *Create Ticket* ([UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note)), and the credential-verification actions in [DLG-01](#dlg-01--sign-in-first-factor)/[DLG-02](#dlg-02--second-factor-verification)/[DLG-03](#dlg-03--second-factor-enrolment)/[DLG-04](#dlg-04--recovery) — replace their triggering control with a non-interactive progress indicator and disable any other action that would interfere with the in-flight operation. The loading affordance is local to the affected stage or form region; the rest of the screen remains visible so the operator keeps context. The expected duration is the window stated in [NFR-12a-01](N1-nichtfunktional.md) — typically up to ~5 s for short notes and ~10–15 s for notes around one to two minutes. The pattern does not include an explicit cancel control, since an in-flight call to a neighbouring system cannot be cancelled meaningfully.
 
-*Example — [DLG-08](#dlg-08--note-detail) during *Process Note*: the *Processed* stage card is replaced with a progress affordance while the synchronous request is in flight; navigation chrome and surrounding stages remain visible:*
+*Example — [DLG-08](#dlg-08--note-detail) during *Process Note*: the *Processed* stage card is replaced with a progress affordance while the operator waits for the result; navigation chrome and surrounding stages remain visible:*
 
 ![Synchronous operation feedback (DLG-08 processing)](screenshots/dlg-08-note-detail-processing.png)
 
@@ -844,7 +844,7 @@ Irreversible actions — currently only *Delete Note* ([UC-11](F2-anwendungsfael
 
 ### B1.4.6 Form validation feedback
 
-Dialogue-level validation messages render inline next to the offending field (not in a global banner) and appear on submit; they do not pre-empt the operator while they are still typing. Algorithmic validation lives in [N2](N2-querschnittskonzepte.md) *Validation* and is run server-side; B1 only specifies *where* its outcome surfaces, not *how* it is computed. For the editing variant of [DLG-08](#dlg-08--note-detail) the type-specific extra fields are validated against their declared schema in [D2.7](D2-datentypen.md#d27-typespecificdata); each violating field carries its own message, the form is not submitted, and the *Save* control remains available so the operator can correct and retry.
+Dialogue-level validation messages render inline next to the offending field (not in a global banner) and appear on submit; they do not pre-empt the operator while they are still typing. Algorithmic validation lives in [N2](N2-querschnittskonzepte.md) *Validation* and is run by Herold; B1 only specifies *where* its outcome surfaces, not *how* it is computed. For the editing variant of [DLG-08](#dlg-08--note-detail) the type-specific extra fields are validated against their declared schema in [D2.7](D2-datentypen.md#d27-typespecificdata); each violating field carries its own message, the form is not submitted, and the *Save* control remains available so the operator can correct and retry.
 
 *Example — [DLG-08](#dlg-08--note-detail) editing variant for a *YouTube Transcription* note: the source-URL field has a per-field violation message ("Must be a valid `http(s)` URL"); other fields are unaffected; the *Save* control remains visible:*
 

@@ -75,11 +75,11 @@ Audio transcription, LLM preprocessing, and GitHub issue creation each complete 
 
 **NFR-12d-01: Synchronous Error Handling**
 
-If an API call (OpenAI, GitHub) fails during synchronous processing, the voice note's status does **not** advance (see [D2.5](D2-datentypen.md#d25-notestatusdt) *NoteStatusDT*); `VoiceNote.errorMessage` is populated with the failure reason. The user can manually retry from the UI via the "Process" or "Send" button; on a successful retry `errorMessage` is cleared and the documented status transition fires.
+If a call to a neighbouring system (OpenAI, GitHub) fails during processing or dispatch, the voice note's status does **not** advance (see [D2.5](D2-datentypen.md#d25-notestatusdt) *NoteStatusDT*); `VoiceNote.errorMessage` is populated with the failure reason. The user can manually retry from the UI via the "Process" or "Send" button; on a successful retry `errorMessage` is cleared and the documented status transition fires.
 
 No automatic retries. Each retry is an explicit user action. The cross-cutting failure-handling strategy is documented in [N2.5](N2-querschnittskonzepte.md#n25-failure-handling).
 
-**Fit Criterion:** Transient API failures (timeouts, 5xx) do not result in data loss. The voice note and audio file are preserved. The error message is displayed to the user.
+**Fit Criterion:** Transient failures of a neighbouring system (e.g. no response in time, temporary unavailability) do not result in data loss. The voice note and its audio recording are preserved. The error message is displayed to the user.
 
 ### 12e. Capacity Requirements
 
@@ -187,9 +187,9 @@ Both factors of the sign-in flow (UC-01) and the recovery channel (UC-03) must e
 
 **NFR-15a-03: Audio Upload Validation**
 
-Audio uploads (UC-05) must be validated server-side:
+Audio uploads (UC-05) must be validated by Herold on receipt, independently of any check in the browser:
 - Maximum file size: 25 MB.
-- Accepted formats: the common audio container/codec combinations produced by browser audio capture.
+- Accepted formats: the common audio formats produced by browser audio capture.
 - Rate limit: max 20 uploads per hour.
 
 **Fit Criterion:** An upload exceeding 25 MB or in an unaccepted format is rejected before the note is persisted. The 21st upload within one hour from the same operator is rejected.
@@ -202,21 +202,21 @@ The `RecoveryToken` (D1) must have a time-to-live of 60 minutes counted from `Re
 
 ### 15b. Integrity Requirements
 
-**NFR-15b-01: No API Keys in Frontend**
+**NFR-15b-01: No Third-Party Credentials in the Browser**
 
-All external API credentials (OpenAI, GitHub PAT) are held server-side only. The frontend never receives or transmits these credentials. The cross-cutting secret-handling strategy is [N2.8](N2-querschnittskonzepte.md#n28-secret-handling).
+All third-party credentials (OpenAI, GitHub) remain within Herold. The browser never receives or transmits them. The cross-cutting secret-handling strategy is [N2.8](N2-querschnittskonzepte.md#n28-secret-handling).
 
-**Fit Criterion:** No external API credential is observable in any request or response received by the browser.
+**Fit Criterion:** No third-party credential is observable in anything the browser sends or receives.
 
 **NFR-15b-02: No Preprocessing Prompts Surfaced to the Browser**
 
-The browser-facing view of the configuration (UC-12) must surface only those per-`MessageTypeDT` properties the operator needs to choose a type and fill its extra fields — i.e. the human-readable label, icon, GitHub label, and the extra-field schema. The configured preprocessing prompt for any `MessageTypeDT` value is server-only and must never be transmitted to the browser, neither in UC-12 nor anywhere else. Prompts are kept on a different surface from operator-derived content per [N2.7](N2-querschnittskonzepte.md#n27-content-sanitisation) and are subject to [N2.8](N2-querschnittskonzepte.md#n28-secret-handling) handling rules.
+The browser-facing view of the configuration (UC-12) must surface only those per-`MessageTypeDT` properties the operator needs to choose a type and fill its extra fields — i.e. the human-readable label, icon, GitHub label, and the extra-field schema. The configured preprocessing prompt for any `MessageTypeDT` value remains within Herold and must never be transmitted to the browser, neither in UC-12 nor anywhere else. Prompts are kept on a different surface from operator-derived content per [N2.7](N2-querschnittskonzepte.md#n27-content-sanitisation) and are subject to [N2.8](N2-querschnittskonzepte.md#n28-secret-handling) handling rules.
 
-**Fit Criterion:** No payload reaching the browser contains the contents of any configured preprocessing prompt.
+**Fit Criterion:** Nothing the browser receives contains the contents of any configured preprocessing prompt.
 
 **NFR-15b-03: Secret Redaction in Logs**
 
-Sensitive values must not appear in the application log. A redaction mechanism must mask the application's framework key, the operator's API key, third-party API tokens (OpenAI, GitHub), and any session or bearer token. Transcript contents (`VoiceNote.transcript`) must not be logged — only processing events that reference the note by `VoiceNote.id` are permitted. The cross-cutting logging concept is [N2.6](N2-querschnittskonzepte.md#n26-logging).
+Sensitive values must not appear in the application log. The application's own secret key, the operator's API key, third-party credentials (OpenAI, GitHub), and any session credential must be masked. Transcript contents (`VoiceNote.transcript`) must not be logged — only processing events that reference the note by `VoiceNote.id` are permitted. The cross-cutting logging concept is [N2.6](N2-querschnittskonzepte.md#n26-logging).
 
 **Fit Criterion:** Inspection of the application log reveals no API key, token, or transcript text.
 
@@ -234,7 +234,7 @@ The cross-cutting sanitisation strategy — including the policy of running [F3.
 
 ### 15c. Privacy Requirements
 
-*Voice recordings and transcripts are stored on the server. Single-user system, no third-party data processing beyond OpenAI API (which receives audio for transcription). No GDPR implications as it is a personal tool.*
+*Voice recordings and transcripts are stored by Herold on the host. Single-user system, no third-party data processing beyond OpenAI API (which receives audio for transcription). No GDPR implications as it is a personal tool.*
 
 ### 15d. Audit Requirements
 
