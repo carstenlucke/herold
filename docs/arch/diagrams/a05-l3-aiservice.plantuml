@@ -24,7 +24,7 @@ note bottom of shared
   seams are methods of one class sharing credential and
   base URL; a provider switch cuts along exactly these
   two seam lines. Model identifiers are hard-coded —
-  risk R-07 / debt D-07(f).
+  risk R-07 / debt D-07(e).
 end note
 
 @enduml

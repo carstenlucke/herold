@@ -28,6 +28,6 @@ else TOTP secret confirmed (subsequent sign-in)
 end
 
 SYS ->  SYS : establish authenticated session
-SYS --> OP  : redirect to dashboard
+SYS --> OP  : dashboard
 
 @enduml
