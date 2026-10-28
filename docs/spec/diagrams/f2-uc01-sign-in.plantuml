@@ -17,7 +17,7 @@ OP  ->  SYS : open Herold (no active session)
 SYS --> OP  : sign-in screen
 
 OP  ->  SYS : enter API key //(first factor)//
-SYS ->  SYS : verify API key
+SYS ->  SYS : verify against ""Operator.apiKeyHash""
 
 alt no confirmed TOTP secret bound to the account (first sign-in)
   ref over OP, SYS : UC-02 — Enrol second factor\n(inline include)

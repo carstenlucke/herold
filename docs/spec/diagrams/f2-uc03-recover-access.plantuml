@@ -19,7 +19,10 @@ SYS --> OP  : token-secret prompt
 
 OP  ->  SYS : token secret
 SYS ->  SYS : verify token secret,\nconsume recovery token
-SYS ->  SYS : unbind TOTP, rotate API key,\nestablish authenticated session
+SYS ->  SYS : unbind TOTP, rotate API key
 SYS --> OP  : new API key (shown once)
+OP  ->  SYS : return to sign-in screen
+
+note over OP, SYS : No session is established by recovery.\nThe operator continues with UC-01 using the new API key;\nUC-01 runs UC-02 inline, since no TOTP secret is bound.
 
 @enduml
