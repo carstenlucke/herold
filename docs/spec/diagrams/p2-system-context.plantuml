@@ -11,9 +11,9 @@ System_Ext(openai, "OpenAI API", "Whisper + Chat Completion")
 System_Ext(github, "GitHub Issues", "Sole ticket store")
 System_Ext(agents, "Local AI agents", "Claude Code, OpenCode, ...")
 
-Rel(operator, herold, "Records, reviews, dispatches", "HTTPS, session")
-BiRel(herold, openai, "Audio -> transcript;\nprompt -> title + body", "HTTPS, API key")
-Rel(herold, github, "Pushes issue\n(title, body, labels)", "HTTPS, fine-grained PAT")
-BiRel(agents, github, "Read, comment, close,\noptionally open new issues", "gh CLI / API")
+Rel(operator, herold, "Records, reviews, dispatches")
+BiRel(herold, openai, "Audio -> transcript;\ntranscript -> title + body")
+Rel(herold, github, "Pushes issue\n(title, body, labels)")
+BiRel(agents, github, "Read, comment, close,\noptionally open new issues")
 
 @enduml
