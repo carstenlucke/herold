@@ -18,7 +18,7 @@ SYS ->  SYS : check recovery token presence and freshness //(NFR-15a-04)//
 SYS --> OP  : token-secret prompt
 
 OP  ->  SYS : token secret
-SYS ->  SYS : verify in constant time,\ndelete recovery-token file
+SYS ->  SYS : verify token secret,\nconsume recovery token
 SYS ->  SYS : unbind TOTP, rotate API key,\nestablish authenticated session
 SYS --> OP  : new API key (shown once)
 

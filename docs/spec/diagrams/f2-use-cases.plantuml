@@ -51,10 +51,10 @@ rectangle "Herold" as HEROLD {
 ' Supporting external systems on the right, grouped near the use cases
 ' they back. Modelled as «system» nodes (not actors) — they are
 ' non-human participants Herold delegates to. OpenAI is one system
-' exposing two API endpoints used by Herold.
+' offering two services used by Herold.
 rectangle "OpenAI" <<system>> as OPENAI {
-  rectangle "Whisper API"         <<api>> as WHISPER
-  rectangle "Chat Completion API" <<api>> as CHAT
+  rectangle "Whisper API"         <<service>> as WHISPER
+  rectangle "Chat Completion API" <<service>> as CHAT
 }
 rectangle "GitHub Issues" <<system>> as GH
 

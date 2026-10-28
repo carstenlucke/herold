@@ -28,7 +28,7 @@ Status legend: ✅ done · 🚧 in progress · ⬜ unfinished.
 
 ![F2 Use Case Diagram — Herold](diagrams-png/f2-use-cases.png)
 
-The diagram shows the operator-facing surface of Herold, organised along three orthogonal axes: the four F2 sections (*Access*, *Note flow*, *Management*, *Configuration*) as package backgrounds; the two external `<<system>>` nodes Herold delegates to within individual scenarios — *OpenAI* (exposing the two `<<api>>` endpoints Whisper and Chat Completion) and *GitHub Issues*; and the per-use-case authentication state, encoded as fill colour.
+The diagram shows the operator-facing surface of Herold, organised along three orthogonal axes: the four F2 sections (*Access*, *Note flow*, *Management*, *Configuration*) as package backgrounds; the two external `<<system>>` nodes Herold delegates to within individual scenarios — *OpenAI* (with its two services, Whisper transcription and Chat Completion) and *GitHub Issues*; and the per-use-case authentication state, encoded as fill colour.
 
 The use-case relationships drawn follow directly from the textual specifications below:
 
@@ -56,7 +56,7 @@ The constraint note attached to the *Herold* boundary records the system-wide pr
 | **Actors** | Operator (primary). |
 | **Precondition** | An API key is bound to the operator account; operator possesses the API key. |
 | **Postcondition** | Authenticated session active. |
-| **Main scenario** | 1. System presents the sign-in screen.<br>2. Operator enters the API key as the first factor.<br>3. System verifies the API key against `Operator.apiKeyHash`.<br>4. If no confirmed TOTP secret is bound to the account, system runs [UC-02](#uc-02--enrol-second-factor) inline as part of this sign-in.<br>5. Otherwise, system prompts for the time-based one-time password; operator enters the current code; system verifies it against `Operator.totpSecret`.<br>6. System establishes an authenticated session.<br>7. Operator is taken to the dashboard.<br><br>![UC-01 Sign in — main scenario](diagrams-png/f2-uc01-sign-in.png) |
+| **Main scenario** | 1. System presents the sign-in screen.<br>2. Operator enters the API key as the first factor.<br>3. System verifies the API key bound to the operator account.<br>4. If no confirmed TOTP secret is bound to the account, system runs [UC-02](#uc-02--enrol-second-factor) inline as part of this sign-in.<br>5. Otherwise, system prompts for the time-based one-time password; operator enters the current code; system verifies it against `Operator.totpSecret`.<br>6. System establishes an authenticated session.<br>7. Operator is taken to the dashboard.<br><br>![UC-01 Sign in — main scenario](diagrams-png/f2-uc01-sign-in.png) |
 | **Exception scenarios** | *API key is rejected:* operator may retry within the rate limit; no session is established.<br>*TOTP code fails (subsequent sign-in):* operator may retry within the same rate limit, or pivot to [UC-03](#uc-03--recover-access).<br>*Inline enrolment fails (first sign-in):* see [UC-02](#uc-02--enrol-second-factor) exceptions; the sign-in attempt is aborted and no session is established; operator restarts [UC-01](#uc-01--sign-in) to retry. |
 | **Qualities** | [NFR-15a-01](N1-nichtfunktional.md) *Two-Factor Browser Authentication*; [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout*. |
 
@@ -86,11 +86,11 @@ The constraint note attached to the *Herold* boundary records the system-wide pr
 | **Trigger** | Operator has lost the API key, lost access to the authenticator, or both — and cannot complete [UC-01](#uc-01--sign-in). |
 | **Actors** | Operator (primary). |
 | **Precondition** | Operator has out-of-band write access to the host (e.g. via FTP) and has placed a recovery token there within the last 60 minutes (see [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry*). The token's content is a secret string of the operator's choice. |
-| **Postcondition** | Authenticated session active. The bound TOTP is unbound (`Operator.totpSecret` and `Operator.totpConfirmedAt` cleared); a fresh API key has been generated, persisted as `Operator.apiKeyHash`, and shown to the operator exactly once. The recovery-token file has been deleted. |
-| **Main scenario** | 1. Operator selects the recovery option from the sign-in screen.<br>2. System checks that a recovery token exists and has not expired (see [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry*).<br>3. Operator enters the token's secret string.<br>4. System verifies the entered string in constant time against the file's content, then deletes the recovery-token file.<br>5. System unbinds the TOTP secret, generates a fresh API key, persists its hash, and establishes an authenticated session.<br>6. System displays the new API key to the operator exactly once; the operator records it.<br><br>![UC-03 Recover access — main scenario](diagrams-png/f2-uc03-recover-access.png) |
+| **Postcondition** | Authenticated session active. The bound TOTP is unbound (`Operator.totpSecret` and `Operator.totpConfirmedAt` cleared); a fresh API key has been bound to the account, replacing the previous one, and shown to the operator exactly once. The recovery token has been consumed. |
+| **Main scenario** | 1. Operator selects the recovery option from the sign-in screen.<br>2. System checks that a recovery token exists and has not expired (see [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry*).<br>3. Operator enters the token's secret string.<br>4. System verifies the entered string against the recovery token, then consumes the token so it cannot be redeemed again.<br>5. System unbinds the TOTP secret, binds a freshly generated API key to the account, and establishes an authenticated session.<br>6. System displays the new API key to the operator exactly once; the operator records it.<br><br>![UC-03 Recover access — main scenario](diagrams-png/f2-uc03-recover-access.png) |
 | **Alternative scenarios** | - *Recovery completes:* continues with [UC-02](#uc-02--enrol-second-factor) *Enrol second factor* to re-establish the second factor before normal use resumes. |
 | **Exception scenarios** | - *No recovery token present, or token expired, or entered string does not match:* all three return the same generic rejection without disclosing which condition was hit; rejections are rate-limited and logged.<br>- *Operator closes the screen before recording the new API key in step 6:* the API key cannot be retrieved; the operator must run [UC-03](#uc-03--recover-access) again with a freshly placed recovery token. |
-| **Qualities** | [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout* (recovery branch); [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry* (60-minute time-to-live based on the file modification time). |
+| **Qualities** | [NFR-15a-02](N1-nichtfunktional.md) *Login Rate Limiting and Lockout* (recovery branch); [NFR-15a-04](N1-nichtfunktional.md) *Recovery Token Expiry* (60-minute time-to-live from the moment the token was placed). |
 
 ### UC-04 — Sign out
 
@@ -133,13 +133,13 @@ The four use cases in this group form the supported segment of the business proc
 |---------|---------|
 | **Identifier** | UC-06 |
 | **Name** | Process voice note |
-| **Description** | System turns a recorded audio note into structured content (title, body, optional extra fields) within a single synchronous request. |
+| **Description** | System turns a recorded audio note into structured content (title, body, optional extra fields) while the operator waits for the result. |
 | **Trigger** | Operator wants the recorded audio turned into structured note content. |
 | **Actors** | Operator (primary); OpenAI Whisper API (supporting); OpenAI Chat Completion API (supporting). |
 | **Precondition** | A voice note exists at status `recorded`. |
 | **Postcondition** | Note at status `processed` with structured content (title, body, optional extra fields) attached; transcript not retained. |
 | **Main scenario** | 1. Operator opens the note's detail view (see [UC-10](#uc-10--view-a-voice-note)).<br>2. Operator triggers processing.<br>3. System transcribes the audio via [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) *Whisper API*.<br>4. System resolves the message type ([D2.4](D2-datentypen.md#d24-messagetypedt)) and generates structured content from the transcript via [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) *Chat Completion API*.<br>5. System sanitises the generated markdown ([AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation)) and persists the structured content.<br>6. System transitions the note to status `processed` ([D2.5](D2-datentypen.md#d25-notestatusdt)).<br><br>![UC-06 Process voice note — main scenario](diagrams-png/f2-uc06-process-note.png) |
-| **Alternative scenarios** | *Operator leaves the page during processing:* the synchronous request continues; the operator can return and observe the result. |
+| **Alternative scenarios** | *Operator leaves the page during processing:* processing is not aborted; the operator can return and observe the result. |
 | **Exception scenarios** | - *Transcription fails:* the note remains `recorded`; the operator is informed and may retry per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*.<br>- *Content generation fails:* same as above. |
 | **Qualities** | [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*; [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*. |
 
@@ -171,7 +171,7 @@ The four use cases in this group form the supported segment of the business proc
 | **Precondition** | Note at status `processed`. |
 | **Postcondition** | Note at status `sent`; issue reference stored. |
 | **Main scenario** | 1. Operator opens the note's detail view (see [UC-10](#uc-10--view-a-voice-note)).<br>2. Operator triggers dispatch.<br>3. System composes a GitHub issue from the note using the type-resolved label ([D2.4](D2-datentypen.md#d24-messagetypedt)) and the sanitised content ([AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation)).<br>4. System pushes the issue to the configured GitHub repository via [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) *Issues API*.<br>5. System records the resulting issue reference against the note and transitions it to status `sent` ([D2.5](D2-datentypen.md#d25-notestatusdt)).<br><br>![UC-08 Dispatch voice note — main scenario](diagrams-png/f2-uc08-dispatch-note.png) |
-| **Alternative scenarios** | - *Operator leaves the page during dispatch:* the synchronous request continues; the operator can return and observe the result. |
+| **Alternative scenarios** | - *Operator leaves the page during dispatch:* dispatch is not aborted; the operator can return and observe the result. |
 | **Exception scenarios** | - *GitHub returns an error:* the note remains `processed`; the operator is informed and may retry per [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*.<br>- *Network error mid-dispatch:* same as above; the system does not assume the issue was created. |
 | **Qualities** | [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing*; [NFR-12d-01](N1-nichtfunktional.md) *Synchronous Error Handling*; [NFR-15b-04](N1-nichtfunktional.md) *Issue Content Sanitization*. |
 
@@ -199,12 +199,12 @@ The four use cases in this group form the supported segment of the business proc
 |---------|---------|
 | **Identifier** | UC-10 |
 | **Name** | View a voice note |
-| **Description** | Operator inspects a single note: status, type, timestamps, structured content, and (if dispatched) issue reference; may stream the audio recording. |
+| **Description** | Operator inspects a single note: status, type, timestamps, structured content, and (if dispatched) issue reference; may play back the audio recording. |
 | **Trigger** | Operator wants to inspect a single note. |
 | **Actors** | Operator (primary). |
 | **Precondition** | Authenticated session; the selected note exists. |
 | **Postcondition** | No state change. |
-| **Main scenario** | 1. System renders the note's detail view: status, type, timestamps, structured content (if any), issue reference (if `sent`).<br>2. Operator may stream the audio recording (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)). |
+| **Main scenario** | 1. System renders the note's detail view: status, type, timestamps, structured content (if any), issue reference (if `sent`).<br>2. Operator may play back the audio recording (lifecycle invariants per [D1.1](D1-datenmodell.md#voicenote)). |
 | **Alternative scenarios** | - *Operator triggers processing:* continues with [UC-06](#uc-06--process-voice-note) *Process voice note* (status `recorded`).<br>- *Operator edits the content:* continues with [UC-07](#uc-07--edit-generated-content) *Edit generated content* (status `processed`).<br>- *Operator dispatches the note:* continues with [UC-08](#uc-08--dispatch-voice-note) *Dispatch voice note* (status `processed`).<br>- *Operator triggers delete:* continues with [UC-11](#uc-11--delete-a-voice-note) *Delete a voice note* (any status). |
 
 ### UC-11 — Delete a voice note
@@ -262,10 +262,10 @@ The four use cases in this group form the supported segment of the business proc
 - **Transcription, content generation, GitHub dispatch.** Calls into neighbouring systems with no operator decision point — see [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api).
 - **Markdown sanitisation.** Local algorithm with no operator decision point — see [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation).
 - **Type-driven configuration resolution and per-type input validation.** Cross-cutting concepts — see [N2](N2-querschnittskonzepte.md), backed by [D2.4](D2-datentypen.md#d24-messagetypedt) and [D2.7](D2-datentypen.md#d27-typespecificdata).
-- **Streaming the audio recording.** Step inside [UC-10](#uc-10--view-a-voice-note), not a goal in itself.
+- **Playing back the audio recording.** Step inside [UC-10](#uc-10--view-a-voice-note), not a goal in itself.
 - **Re-process and re-dispatch on failure.** Operator simply repeats [UC-06](#uc-06--process-voice-note) or [UC-08](#uc-08--dispatch-voice-note); the status machine ([D2.5](D2-datentypen.md#d25-notestatusdt)) makes retries safe.
 - **Issue triage, labelling beyond the type label, comments, or closure on the GitHub side.** Outside Herold (F1.3; P1 non-goal [NG-03](P1-ziele-rahmenbedingungen.md)).
-- **Scheduled jobs, background workers, batch processing.** Herold has none (B2 not applicable; [ADR-002](../arch/A09-architecture-decisions.md); P1 non-goal [NG-04](P1-ziele-rahmenbedingungen.md) *Asynchronous processing*).
+- **Time-triggered or batch processing.** Every processing step is triggered by the operator and completes while they wait; Herold processes nothing on a schedule or in the background (B2 not applicable; P1 non-goal [NG-04](P1-ziele-rahmenbedingungen.md) *Asynchronous processing*).
 - **Multi-operator collaboration.** Forbidden by [CON-3a-04](P1-constraints.md) *Single-User System*.
 
 ---
