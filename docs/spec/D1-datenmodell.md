@@ -80,7 +80,7 @@ A single transient artefact in the local file store, placed by the operator out-
 **Multiplicity.** At most one `RecoveryToken` exists at any time. Subsequent placements overwrite the previous one.
 
 **Lifetime.**
-- Created by the operator out-of-band (e.g. via FTP).
+- Created by the operator out-of-band (direct write access to the host file store).
 - Expires 60 minutes after `placedAt` per [NFR-15a-04](N1-nichtfunktional.md).
 - Deleted by the system on successful redemption in UC-03 step 4.
 - A missing token, an expired token, and a token whose secret does not match the entered string all surface to the operator as the same generic rejection per [NFR-15a-04](N1-nichtfunktional.md).

@@ -6,7 +6,7 @@ Definition of domain and technical terms used throughout the Herold specificatio
 
 ### ADR — Architecture Decision Record
 
-A short document recording one architectural decision: context, options, chosen option, and rationale. Herold's ADRs live in [`docs/arch/`](../arch/) and are referenced from P1 and P2.
+A short document recording one architectural decision: context, options, chosen option, and rationale. Herold's ADRs live in [`docs/arch/`](../arch/) (chapter 9). The specification does not depend on individual ADRs; it only points to the architecture documentation as the place where design decisions are recorded.
 
 ### CRUD
 
@@ -22,7 +22,7 @@ A GitHub Personal Access Token scoped to a single repository and a minimal permi
 
 ### GitHub Issue
 
-The external artefact produced by Herold's pipeline. The sole ticket store; Herold pushes one-way and never reads back. See ADR-003.
+The external artefact produced by Herold's pipeline. The sole ticket store; Herold pushes one-way and never reads back. See [CON-3c-02](P1-constraints.md#con-3c-02-github-issues-api).
 
 ### Herold
 
@@ -54,7 +54,7 @@ A single deployable application that contains all responsibilities (web, domain 
 
 ### Note Status
 
-The lifecycle state of a voice note. Values: `recorded`, `processed`, `sent`. The three states are sufficient because processing is synchronous (no intermediate background states); failures are captured in the orthogonal `errorMessage` flag rather than as a separate state (see [D2.5](D2-datentypen.md#d25-notestatusdt) and ADR-002).
+The lifecycle state of a voice note. Values: `recorded`, `processed`, `sent`. The three states are sufficient because processing is synchronous (no intermediate background states); failures are captured in the orthogonal `errorMessage` flag rather than as a separate state (see [D2.5](D2-datentypen.md#d25-notestatusdt)).
 
 ### Operator
 
@@ -62,11 +62,11 @@ The single human user of Herold. There is exactly one operator account; multi-us
 
 ### Out-of-band
 
-Outside the application's regular request/response path. An out-of-band action uses a separate channel — the host file system, FTP, SSH, environment variables, or hand-edited configuration files — rather than the browser UI or an HTTP endpoint. The opposite is *in-band*: through the application itself. The term originates in telecommunications, where in-band signalling shares the channel with payload data and out-of-band signalling uses a separate channel. Herold uses out-of-band channels for host configuration (per-type prompt, label, icon, GitHub label), credential placement (`.env`), and the recovery flow (UC-03).
+Outside the application's regular request/response path. An out-of-band action uses a separate channel — direct access to the host file store or shell, or hand-edited host configuration — rather than the browser UI or an HTTP endpoint. The opposite is *in-band*: through the application itself. The term originates in telecommunications, where in-band signalling shares the channel with payload data and out-of-band signalling uses a separate channel. Herold uses out-of-band channels for host configuration (per-type prompt, label, icon, GitHub label), credential placement, and the recovery flow (UC-03).
 
 ### Pipeline
 
-The three-step request flow `Record → Process → Send`. Synchronous inside the HTTP request; see P2 and ADR-002.
+The three-step flow `Record → Process → Send`. Each step completes while the operator waits; see [NFR-12a-01](N1-nichtfunktional.md).
 
 ### Prompt Injection
 
@@ -82,7 +82,7 @@ The production environment. Provides HTTPS at the public web edge, an out-of-ban
 
 ### Synchronous Processing
 
-Strategy where Whisper, Chat Completion, and the GitHub push all run inside the HTTP request rather than in a background worker. See ADR-002.
+Strategy where Whisper, Chat Completion, and the GitHub push each complete while the operator waits for the result, rather than being deferred to background processing. See [NFR-12a-01](N1-nichtfunktional.md).
 
 ### TOTP
 
