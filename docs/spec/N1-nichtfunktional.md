@@ -55,11 +55,11 @@ The application must be usable without documentation or training. Type selection
 
 **NFR-12a-01: Synchronous Processing**
 
-Audio transcription, LLM preprocessing, and GitHub issue creation run synchronously in the HTTP request. No queue, no cron, no background jobs. See [ADR-002](../arch/002-dev-prod-parity.md).
+Audio transcription, LLM preprocessing, and GitHub issue creation each complete while the operator waits for the result of the triggering action. There is no deferred, queued, or scheduled processing ([CON-3b-01](P1-constraints.md#con-3b-01-shared-hosting-production)).
 
 - Processing time: typically up to ~5 seconds for short notes and ~10–15 seconds for notes around one to two minutes. Longer notes are not the design target — Herold dispatches voice notes capturing task intent, not meeting or lecture transcripts (see NG-09 in [P1.4](P1-ziele-rahmenbedingungen.md#out-of-scope)).
 - The UI shows a loading indicator during processing
-- Errors surface immediately in the HTTP response
+- Errors are reported to the operator immediately as the result of the triggering action
 
 **Fit Criterion:** After clicking "Process", the response returns the processed result (or an error) within 30 seconds for a note of up to ~2 minutes of audio. A loading indicator is visible throughout.
 
@@ -105,18 +105,18 @@ The application must run on standard shared hosting that provides only:
 
 - The application runtime stack required by the architecture, satisfying the low-footprint database constraint ([CON-3a-03](P1-constraints.md#con-3a-03-low-footprint-database)).
 - HTTPS provided by the hosting provider (assumption AS-03).
-- Out-of-band file-store write access (e.g. via FTP) for deployment and for the recovery channel (UC-03).
+- Out-of-band write access to the host file store for deployment and for the recovery channel (UC-03).
 - Optional limited shell access for one-off maintenance only — no scheduled jobs, no long-running workers.
 
-The application must not depend on container runtimes, cron-scheduled tasks, or background workers in production (CON-3b-01, [ADR-002](../arch/002-dev-prod-parity.md)).
+The application must not depend on container runtimes, scheduled tasks, or background workers in production ([CON-3b-01](P1-constraints.md#con-3b-01-shared-hosting-production)).
 
-**Fit Criterion:** The application can be deployed by uploading the build artefacts to the hosting account's web root via FTP-style transfer and operates correctly without scheduled jobs or background workers.
+**Fit Criterion:** The application can be deployed by uploading the build artefacts to the hosting account through out-of-band file-store write access and operates correctly without scheduled jobs or background workers.
 
 ### 13c. Partner or Collaborative Applications
 
 **NFR-13c-01: Agent Interoperability**
 
-Local AI agents (Claude Code, OpenCode) interact exclusively with the GitHub Issues neighbour ([S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api)), not with Herold. See [ADR-003](../arch/003-github-issues-as-ticket-store.md).
+Local AI agents (Claude Code, OpenCode) interact exclusively with the GitHub Issues neighbour ([S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api)), not with Herold (see [CON-3c-03](P1-constraints.md#con-3c-03-local-ai-agents-claude-code-opencode-)).
 
 - Ticket consumption: read dispatched issues and their content.
 - Status updates: comment on or relabel issues to reflect work progress.
@@ -147,7 +147,7 @@ Once the spec/code layer declares a type, all per-type bindings in the host-conf
 
 **NFR-14a-02: Out-of-Band Auth Recovery**
 
-Authentication (API key + TOTP) must be resettable without privileged shell access. The recovery channel relies on out-of-band write access to the host file store (e.g. via FTP) plus the browser; see UC-03 for the redemption flow.
+Authentication (API key + TOTP) must be resettable without privileged shell access. The recovery channel relies on out-of-band write access to the host file store plus the browser; see UC-03 for the redemption flow.
 
 **Fit Criterion:** A locked-out operator can regain access using only out-of-band file-store access and a browser; no CLI or shell commands are required on the host.
 

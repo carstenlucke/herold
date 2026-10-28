@@ -71,7 +71,7 @@ The catalogue is closed at the spec level. Adding a cross-cutting concept is a s
 
 ## N2.5 Failure handling
 
-**Concern.** The processing pipeline ([F1](F1-geschaeftsprozesse.md)) crosses three external services in succession ([S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api)) and runs synchronously inside the operator's HTTP request ([NFR-12a-01](N1-nichtfunktional.md)). Failures at any of the three boundaries must be handled the same way: visibly, without data loss, and without speculative state advancement.
+**Concern.** The processing pipeline ([F1](F1-geschaeftsprozesse.md)) crosses three external services in succession ([S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api)) and each step completes while the operator waits ([NFR-12a-01](N1-nichtfunktional.md)). Failures at any of the three boundaries must be handled the same way: visibly, without data loss, and without speculative state advancement.
 
 **Strategy.**
 
