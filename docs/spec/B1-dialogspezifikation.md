@@ -204,13 +204,13 @@ The screenshots embedded in this section are rendered from the static mockups in
 
 - **Trigger:** Click on the *Recover Access* link.
 - **Preconditions:** None.
-- **Effect:** Routes to [DLG-04](#dlg-04--recovery) to start [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access). The in-flight first-factor verification is abandoned; the recovery flow does not depend on it.
+- **Effect:** Routes to [DLG-04](#dlg-04--recovery) to start [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access). The first-factor verification already in progress is abandoned; the recovery flow does not depend on it.
 
 **Back**
 
 - **Trigger:** Click on the *Back* link.
 - **Preconditions:** None.
-- **Effect:** Routes to [DLG-01](#dlg-01--sign-in-first-factor). The in-flight sign-in is abandoned; on the next attempt the API key has to be re-entered.
+- **Effect:** Routes to [DLG-01](#dlg-01--sign-in-first-factor). The sign-in in progress is abandoned; on the next attempt the API key has to be re-entered.
 
 ---
 
@@ -650,7 +650,7 @@ The actions below are present in every state and not re-listed per state:
 - **Preconditions:** None.
 - **Effect:** Routes to [DLG-07](#dlg-07--notes-list).
 
-**Stream the audio recording**
+**Play the audio recording**
 
 - **Trigger:** Click on the play control inside the *Recorded* stage card.
 - **Preconditions:** None (the audio is bound to the `VoiceNote` for its entire lifetime per [D1](D1-datenmodell.md#voicenote) *Audio document invariants*).
@@ -660,7 +660,7 @@ The actions below are present in every state and not re-listed per state:
 
 - **Trigger:** Click on the *Delete Note* button in the danger region.
 - **Preconditions:** None — the action is offered in every state.
-- **Effect:** Opens the *Confirmation modals* pattern ([§B1.4.5](#b145-confirmation-modals)). On *Cancel* the dialogue is unchanged; on *Confirm* the system deletes the note ([UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note)) — the voice note and its bound audio document are removed together per [D1](D1-datenmodell.md#voicenote) *Audio document invariants* — and routes to [DLG-07](#dlg-07--notes-list).
+- **Effect:** Opens the *Confirmation modals* pattern ([§B1.4.5](#b145-confirmation-modals)). On *Cancel* the dialogue is unchanged; on *Confirm* the system deletes the note ([UC-11](F2-anwendungsfaelle.md#uc-11--delete-a-voice-note)) — the voice note and its bound audio document are removed as one all-or-nothing step per [D1](D1-datenmodell.md#voicenote) *Audio document invariants* — and routes to [DLG-07](#dlg-07--notes-list).
 
 ##### GUI Statik — state `recorded`
 
@@ -732,7 +732,7 @@ The *Create Ticket* control inside the *Sent to GitHub* stage card is rendered b
 
 - **Trigger:** Click on the *Cancel* link in the *Processed* stage card.
 - **Preconditions:** None.
-- **Effect:** Discards the in-flight edits and returns the dialogue to state `processed`. Persisted values are not touched.
+- **Effect:** Discards the unsaved edits and returns the dialogue to state `processed`. Persisted values are not touched.
 
 ##### GUI Statik — state `sent`
 
@@ -752,7 +752,7 @@ No forward actions are offered in this state. The note's content stages are read
 - **Preconditions:** None.
 - **Effect:** Opens `VoiceNote.githubIssueUrl` in a new tab. Herold itself does not navigate.
 
-The shared *Back to Notes*, *Stream the audio recording*, and *Delete Note* actions remain available unchanged.
+The shared *Back to Notes*, *Play the audio recording*, and *Delete Note* actions remain available unchanged.
 
 ---
 
@@ -820,7 +820,7 @@ When the operator addresses any authenticated screen ([DLG-06](#dlg-06--dashboar
 
 ### B1.4.3 Synchronous operation feedback
 
-Operations that keep the operator waiting per [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing* — *Process Note* ([UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note)), *Create Ticket* ([UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note)), and the credential-verification actions in [DLG-01](#dlg-01--sign-in-first-factor)/[DLG-02](#dlg-02--second-factor-verification)/[DLG-03](#dlg-03--second-factor-enrolment)/[DLG-04](#dlg-04--recovery) — replace their triggering control with a non-interactive progress indicator and disable any other action that would interfere with the in-flight operation. The loading affordance is local to the affected stage or form region; the rest of the screen remains visible so the operator keeps context. The expected duration is the window stated in [NFR-12a-01](N1-nichtfunktional.md) — typically up to ~5 s for short notes and ~10–15 s for notes around one to two minutes. The pattern does not include an explicit cancel control, since an in-flight call to a neighbouring system cannot be cancelled meaningfully.
+Operations that keep the operator waiting per [NFR-12a-01](N1-nichtfunktional.md) *Synchronous Processing* — *Process Note* ([UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note)), *Create Ticket* ([UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note)), and the credential-verification actions in [DLG-01](#dlg-01--sign-in-first-factor)/[DLG-02](#dlg-02--second-factor-verification)/[DLG-03](#dlg-03--second-factor-enrolment)/[DLG-04](#dlg-04--recovery) — replace their triggering control with a non-interactive progress indicator and disable any other action that would interfere with the running operation. The loading affordance is local to the affected stage or form region; the rest of the screen remains visible so the operator keeps context. The expected duration is the window stated in [NFR-12a-01](N1-nichtfunktional.md) — typically up to ~5 s for short notes and ~10–15 s for notes around one to two minutes. The pattern does not include an explicit cancel control, since a call to a neighbouring system that is already under way cannot be cancelled meaningfully.
 
 *Example — [DLG-08](#dlg-08--note-detail) during *Process Note*: the *Processed* stage card is replaced with a progress affordance while the operator waits for the result; navigation chrome and surrounding stages remain visible:*
 

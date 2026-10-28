@@ -34,7 +34,7 @@ Mathematical shorthand for *if and only if* — a biconditional. "*A* iff *B*" m
 
 ### Issue Content Sanitization
 
-The application function ([AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation)) that renders active markup inert in the dispatched issue body and visually delimits untrusted (operator-derived) content from application-generated structure (NFR-15b-04). Its purpose is to neutralise prompt-injection attempts before they enter the context of any local AI agent that later reads the issue.
+The integrity requirement [NFR-15b-04](N1-nichtfunktional.md) on the dispatched issue body: active markup is rendered inert, untrusted (operator-derived) content is visually delimited from application-generated structure, and prompt-engineering material is excluded. Rendering markup inert is the job of the application function [AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) *Markdown Sanitisation*; the delimiting is part of composing the issue ([N2.7](N2-querschnittskonzepte.md#n27-content-sanitisation)). Its purpose is to neutralise prompt-injection attempts before they enter the context of any local AI agent that later reads the issue.
 
 ### Markdown
 
@@ -62,7 +62,7 @@ The three-step flow `Record → Process → Send`. Each step completes while the
 
 ### Prompt Injection
 
-An attack class in which untrusted input contains instructions intended to influence a downstream LLM (here: a local agent reading the GitHub issue). Mitigated by Issue Content Sanitization.
+An attack class in which untrusted input contains instructions intended to influence a downstream LLM (here: a local agent reading the GitHub issue). Mitigated by Issue Content Sanitization (NFR-15b-04).
 
 ### Recovery
 

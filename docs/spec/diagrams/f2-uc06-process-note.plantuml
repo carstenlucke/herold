@@ -24,7 +24,7 @@ WHISPER --> SYS : transcript
 SYS ->  SYS     : resolve message type //(D2.4)//
 SYS ->  CHAT    : generate structured content\nfrom transcript //(S1.4)//
 CHAT --> SYS    : title, body, optional extra fields
-SYS ->  SYS     : sanitise markdown //(AF-03)//\nand persist structured content
+SYS ->  SYS     : sanitise markdown //(AF-03)//\nand persist transcript\nand structured content
 SYS ->  SYS     : transition to ""processed"" //(D2.5)//
 SYS --> OP      : updated note view
 

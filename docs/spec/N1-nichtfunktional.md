@@ -75,7 +75,7 @@ Audio transcription, LLM preprocessing, and GitHub issue creation each complete 
 
 **NFR-12d-01: Synchronous Error Handling**
 
-If a call to a neighbouring system (OpenAI, GitHub) fails during processing or dispatch, the voice note's status does **not** advance (see [D2.5](D2-datentypen.md#d25-notestatusdt) *NoteStatusDT*); `VoiceNote.errorMessage` is populated with the failure reason. The user can manually retry from the UI via the "Process" or "Send" button; on a successful retry `errorMessage` is cleared and the documented status transition fires.
+If a call to a neighbouring system (OpenAI, GitHub) fails during processing or dispatch, the voice note's status does **not** advance (see [D2.5](D2-datentypen.md#d25-notestatusdt) *NoteStatusDT*); `VoiceNote.errorMessage` is populated with the failure reason. The user can manually retry from the note detail dialogue ([B1 DLG-08](B1-dialogspezifikation.md#dlg-08--note-detail)) via the *Process Note* or *Create Ticket* action; on a successful retry `errorMessage` is cleared and the documented status transition fires.
 
 No automatic retries. Each retry is an explicit user action. The cross-cutting failure-handling strategy is documented in [N2.5](N2-querschnittskonzepte.md#n25-failure-handling).
 
@@ -216,9 +216,9 @@ The browser-facing view of the configuration (UC-12) must surface only those per
 
 **NFR-15b-03: Secret Redaction in Logs**
 
-Sensitive values must not appear in the application log. The application's own secret key, the operator's API key, third-party credentials (OpenAI, GitHub), and any session credential must be masked. Transcript contents (`VoiceNote.transcript`) must not be logged — only processing events that reference the note by `VoiceNote.id` are permitted. The cross-cutting logging concept is [N2.6](N2-querschnittskonzepte.md#n26-logging).
+Sensitive values must not appear in the application log. The application's own secret key, the operator's API key, the operator's TOTP secret, third-party credentials (OpenAI, GitHub), and any session or bearer token must be masked. Transcript contents (`VoiceNote.transcript`) must not be logged — only processing events that reference the note by `VoiceNote.id` are permitted. The cross-cutting logging concept is [N2.6](N2-querschnittskonzepte.md#n26-logging).
 
-**Fit Criterion:** Inspection of the application log reveals no API key, token, or transcript text.
+**Fit Criterion:** Inspection of the application log reveals none of the secrets listed above (no key, TOTP secret, credential, or token) and no transcript text.
 
 **NFR-15b-04: Issue Content Sanitization**
 

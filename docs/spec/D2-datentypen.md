@@ -151,7 +151,7 @@ This inventory is closed; introducing or removing a slot is a spec change. Wire 
 
 - Strict: missing required slots, slots whose value is not of the declared type, and slot names not declared for the bound `MessageTypeDT` all fail.
 - The audio recording itself is not validated here beyond presence; format and size checks at the upload boundary are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation* and apply at [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api).
-- A failed validation surfaces the offending fields to the operator; no `VoiceNote` row is created or updated until the input is accepted.
+- A failed validation surfaces the offending fields to the operator; no `VoiceNote` is created or updated until the input is accepted.
 
 **When validation runs.** On capture submission ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) Schritt 6) and on edit save ([UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content) Schritt 4), in both cases against the slot inventory above for the bound `VoiceNote.type`. The cross-cutting strategy for input validation is documented in [N2](N2-querschnittskonzepte.md) *Validation*.
 

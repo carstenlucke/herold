@@ -14,12 +14,12 @@ title Herold — D1 Audio document lifecycle (relative to its VoiceNote)
 
 state bound
 note right of bound
-  Audio is streamable for the entire
+  Audio can be played back for the entire
   lifetime of the **VoiceNote** (UC-10).
   No retention timer, no processed-triggered
   cleanup, no pruning.
 end note
 
-bound --> [*] : UC-11 Delete\n(audio + VoiceNote removed together)
+bound --> [*] : UC-11 Delete\n(audio + VoiceNote removed\ntogether, all-or-nothing)
 
 @enduml
