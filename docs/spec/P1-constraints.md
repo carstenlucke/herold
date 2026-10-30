@@ -4,7 +4,7 @@ Detailed mandated constraints referenced from [`P1-ziele-rahmenbedingungen.md`](
 
 Based on the [Volere Requirements Specification Template](https://www.volere.org/templates/volere-requirements-specification-template/), Section 3 — Mandated Constraints (Robertson & Robertson). Only sections relevant to Herold are included.
 
-This annex captures only constraints that are externally mandated or otherwise non-negotiable at spec level. Technology choices (language, framework, database product, build toolchain, local development tooling, dependency versions) are *design decisions* taken inside the constraint space and live in [`docs/arch/`](../arch/); architecturally significant choices and their rationale are recorded in [chapter 9 — Architecture Decisions](../arch/A09-architecture-decisions.md).
+This annex captures only constraints that are externally mandated or otherwise non-negotiable at spec level. The server-side language is not a choice: it is fixed by the runtime the host provides (CON-3b-01). Technology choices made within that runtime (framework, UI stack, database product, build toolchain, local development tooling, dependency versions) are *design decisions* taken inside the constraint space and live in [`docs/arch/`](../arch/); architecturally significant choices and their rationale are recorded in [chapter 9 — Architecture Decisions](../arch/A09-architecture-decisions.md).
 
 ---
 
@@ -28,10 +28,16 @@ Herold supports exactly one operator account. Multi-user, multi-tenant, and agen
 
 ### CON-3b-01: Shared Hosting (Production)
 
-The production environment is shared hosting. The application must run within the following limitations:
+The production environment is shared hosting. The host provides:
+
+- An Apache web server with per-directory configuration
+- PHP as the only server-side language runtime, invoked per HTTP request; the version is set by the hosting provider
+
+The application must run within the following limitations:
 
 - No container runtime
 - No long-running processes, no queue worker, no scheduled jobs
+- No build toolchain on the host — release artefacts must arrive runnable
 - HTTPS provided by the hosting provider
 - Out-of-band write access to the host file store for deployment and for the recovery channel of [UC-03](F2-anwendungsfaelle.md#uc-03--recover-access)
 - Optional limited shell access for one-off maintenance only

@@ -69,8 +69,8 @@ Used as the primary key type of every entity in [D1](D1-datenmodell.md): `VoiceN
 | Binding | Source | Consumed by |
 |---------|--------|-------------|
 | Slot inventory for `VoiceNote.metadata` | Spec ([D2.7](#d27-typespecificdata)) | [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) (capture form), [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content) (validation on save) |
-| Generation prompt | Host configuration (out-of-band) | [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) *Chat Completion API* |
-| GitHub label | Host configuration (out-of-band) | [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) *Issues API* |
+| Generation prompt | Host configuration (out-of-band) | [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api) *Chat Completion API* |
+| GitHub label | Host configuration (out-of-band) | [S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api) *Issues API* |
 
 **Resolution rule.** All consumers obtain these bindings through this single catalogue; message types are never hard-coded outside it. Unknown identifiers are rejected at the boundary that observes them. The configured prompt and label are visible to the operator via [UC-12](F2-anwendungsfaelle.md#uc-12--view-settings). The cross-cutting strategy for type-driven behaviour is documented in [N2](N2-querschnittskonzepte.md) *Type-driven configuration*.
 
@@ -141,16 +141,16 @@ A structured record of named typed slots whose **slot inventory is fixed at spec
 |-----------------|------|------|----------|---------|
 | `general` | — | — | — | No slots. |
 | `youtube` | `youtubeUrl` | `URL` | yes | YouTube video the note refers to. |
-| `diary` | `entryDate` | `Date` | no | Calendar date the entry is associated with; resolved from speech where possible by [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api). |
-| `obsidian` | `vault` | `Text` | no | Target Obsidian vault name; resolved from speech where possible by [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api). |
-| `todo` | `deadline` | `Date` | no | Due date for the task; resolved from speech where possible by [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api). |
+| `diary` | `entryDate` | `Date` | no | Calendar date the entry is associated with; resolved from speech where possible by [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api). |
+| `obsidian` | `vault` | `Text` | no | Target Obsidian vault name; resolved from speech where possible by [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api). |
+| `todo` | `deadline` | `Date` | no | Due date for the task; resolved from speech where possible by [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api). |
 
 This inventory is closed; introducing or removing a slot is a spec change. Wire and storage representation of the record (column type, serialization format) is an implementation concern and not described here.
 
 **Validation rules.**
 
 - Strict: missing required slots, slots whose value is not of the declared type, and slot names not declared for the bound `MessageTypeDT` all fail.
-- The audio recording itself is not validated here beyond presence; format and size checks at the upload boundary are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation* and apply at [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api).
+- The audio recording itself is not validated here beyond presence; format and size checks at the upload boundary are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation* and apply at [S1.3](S1-nachbarsysteme.md#s13-nb-02--openai-whisper-api).
 - A failed validation surfaces the offending fields to the operator; no `VoiceNote` is created or updated until the input is accepted.
 
 **When validation runs.** On capture submission ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) Schritt 6) and on edit save ([UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content) Schritt 4), in both cases against the slot inventory above for the bound `VoiceNote.type`. The cross-cutting strategy for input validation is documented in [N2](N2-querschnittskonzepte.md) *Validation*.
@@ -179,7 +179,7 @@ The following multiplicity and composition notations are used in D1 and D2 attri
 |-------|-----------------|
 | [D1](D1-datenmodell.md) | Every type in this catalogue appears as an attribute type in at least one D1 entity. |
 | [F2](F2-anwendungsfaelle.md) | Status transitions in [D2.5](#d25-notestatusdt) are driven by [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note), [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note), [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note); the slot inventory in [D2.7](#d27-typespecificdata) is validated at [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note) and [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content). |
-| [S1](S1-nachbarsysteme.md) | Per-`MessageTypeDT` bindings drive [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) (prompt) and [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) (label). |
+| [S1](S1-nachbarsysteme.md) | Per-`MessageTypeDT` bindings drive [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api) (prompt) and [S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api) (label). |
 | [N1](N1-nichtfunktional.md) | Handling rules for `OpaqueSecret` are reinforced by content-sanitisation and rate-limiting NFRs; failure handling in [D2.5](#d25-notestatusdt) defers to [NFR-12d-01](N1-nichtfunktional.md). |
 | [N2](N2-querschnittskonzepte.md) | [N2.2](N2-querschnittskonzepte.md#n22-type-driven-configuration) operationalises the resolution rule in [D2.4](#d24-messagetypedt); [N2.3](N2-querschnittskonzepte.md#n23-validation) operationalises the rules in [D2.7](#d27-typespecificdata); [N2.5](N2-querschnittskonzepte.md#n25-failure-handling) frames the failure handling on [D2.5](#d25-notestatusdt); [N2.8](N2-querschnittskonzepte.md#n28-secret-handling) frames the handling rules on [D2.6](#d26-opaquesecret). |
 | [E2](E2-glossar.md) | Glossary entries for *fine-grained PAT*, *message type*. |
