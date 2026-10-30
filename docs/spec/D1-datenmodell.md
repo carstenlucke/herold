@@ -67,6 +67,7 @@ Authentication ([NFR-15a-01](N1-nichtfunktional.md) *Two-Factor Browser Authenti
 | `apiKeyHash` | OpaqueSecret [0..1] | First-factor verifier. The operator presents the raw API key at sign-in (UC-01); the system compares its hash in constant time per [D2.6](D2-datentypen.md#d26-opaquesecret). Initially populated from the host configuration on first install; rotated by UC-03. |
 | `totpSecret` | OpaqueSecret [0..1] | Second-factor shared secret. Bound provisionally in UC-02 step 1 and confirmed in step 5; cleared by UC-03. |
 | `totpConfirmedAt` | Timestamp [0..1] | Marks UC-02 completion. While unset, UC-01 cannot succeed. |
+| `totpLastAcceptedStep` | Integer [0..1] | Time step of the last accepted second-factor code (UC-01 step 5, UC-02 step 5). A code whose time step is at or below this value is rejected, so every code completes at most one sign-in ([NFR-15a-01](N1-nichtfunktional.md)). Only ever increases; UC-03 leaves it in place, because time steps grow monotonically and the value stays valid for a re-enrolled secret. |
 
 ### RecoveryToken
 

@@ -87,7 +87,7 @@ Realisation of [N2.3](../spec/N2-querschnittskonzepte.md#n23-validation) — str
 | **Operator input — capture** | `StoreVoiceNoteRequest` (`POST /notes`), a [form request](https://laravel.com/docs/13.x/validation#form-request-validation) | `audio`: required, `file`, `mimetypes:audio/webm,video/webm,audio/ogg,audio/mp4`, max 25 600 KB (= the 25 MB of [NFR-15a-03](../spec/N1-nichtfunktional.md#15a-access-requirements)); `type`: `Rule::in` over the configured type keys; per-slot rules derived from the type's `extra_fields` by `MessageTypeRegistry::metadataRules` (`url` → `url` + max 2 048, `date` → `date_format:Y-m-d`, else `string` + max 255; `required` flag honoured). `validated()` additionally intersects `metadata` against the declared slot names — unknown keys dropped, so nothing undeclared ever reaches the JSON column. | 422 field errors; `audio`/`type` in an alert below the recorder, `metadata.<slot>` inline on the slot's field; nothing persisted. |
 | **Operator input — edit** | `VoiceNoteController::update` (`PUT /notes/{note}`) | Free-text rules for `transcript` (max 500 000), `processed_title` (max `GitHubService::MAX_TITLE_LENGTH` = 255), `processed_body` (max `GitHubService::MAX_BODY_LENGTH` = 65 536 — GitHub's issue-body limit); the same `metadataRules` / `slotNames` derivation and key-intersection filter, evaluated against the note's *bound* type. Edit-form fields render these errors inline. | 422, as above. |
 | **Dispatch — composed issue body** | `VoiceNoteController::send` (`POST /notes/{note}/send`) | The sanitised, metadata-wrapped body (`IssueContentSanitizer::sanitizeAndWrap`) is length-checked against `GitHubService::MAX_BODY_LENGTH` before any GitHub call — this also covers AI-generated bodies that never passed the edit boundary. | Field error on `processed_body`; no external call, note stays `processed`. |
-| **Operator input — authentication** | `AuthController` | TOTP code is format-checked first (`digits:6`); API key, TOTP code, and recovery secret are then verified as credentials (`hash_equals`, RFC 6238 drift window) — see [§ 8.4](#84-authentication-and-session). | Uniform rejection (error flash / 404), throttled, logged with source IP. |
+| **Operator input — authentication** | `AuthController`, `TotpService` | TOTP code is format-checked first (`digits:` + `TotpService::DIGITS` = 6); API key, TOTP code, and recovery secret are then verified as credentials (`hash_equals`; the TOTP code by `TotpService::verify` within the RFC 6238 drift window) — see [§ 8.4](#84-authentication-and-session). | Uniform rejection (error flash / 404), throttled, logged with source IP. |
 | **Machine input — AI responses** | `AIService`, `PreprocessingService` | Non-2xx responses from both OpenAI endpoints throw; `chat()` structurally validates the returned payload — it must decode to a JSON object carrying `title` **and** `body`; `PreprocessingService` rejects notes whose `type` has no config entry, truncates the generated `title` to `GitHubService::MAX_TITLE_LENGTH` (255), and keeps an extracted slot value only if it passes the slot's `metadataRules` — invalid values are dropped, an existing operator value stays. | `RuntimeException` → the [§ 8.6](#86-failure-handling) path (`status = error`, inputs preserved). |
 | **Configuration** | Adapter constructors | `AIService` / `GitHubService` fail fast when their API key/token is unset — see [§ 8.8](#88-secret-handling). | `RuntimeException` before any external call. |
 
@@ -234,10 +234,10 @@ The message names the missing key but never the value ([§ 8.8](#88-secret-handl
 
 ## 8.4 Authentication and session
 
-Realisation of [N2.4](../spec/N2-querschnittskonzepte.md#n24-authentication-and-session), concentrated in `AuthController` ([§ 6.4](A06-runtime-view.md#64-sign-in-with-inline-totp-enrolment)):
+Realisation of [N2.4](../spec/N2-querschnittskonzepte.md#n24-authentication-and-session): the flow is concentrated in `AuthController` ([§ 6.4](A06-runtime-view.md#64-sign-in-with-inline-totp-enrolment)), the TOTP algorithm in `App\Services\TotpService` ([§ 5.2.3](A05-building-block-view.md#523-whitebox-domain-services)):
 
 - **Factor 1 — API key.** Presented at `POST /login/key`, hashed with SHA-256 and compared via `hash_equals` against `users.api_key_hash`. Success is held as the session flag `auth.key_verified` — not yet a login.
-- **Factor 2 — TOTP.** Home-rolled RFC 6238/4226 ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)), no library: 160-bit secret, custom Base32 codec, HMAC-SHA1 with dynamic truncation to 6 digits, 30 s steps, ±1 step clock-drift window, `hash_equals` comparison. Enrolment is inline on first sign-in (secret auto-generated after factor 1; `otpauth://` provisioning URI rendered as a QR client-side via the `qrcode` package; confirmed code sets `totp_confirmed_at`).
+- **Factor 2 — TOTP.** Home-rolled RFC 6238/4226 in `TotpService` ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)), no library: 160-bit secret, custom Base32 codec, HMAC-SHA1 with dynamic truncation to 6 digits, 30 s steps, ±1 step clock-drift window, `hash_equals` comparison, single-use codes (`users.totp_last_counter`, RFC 6238 § 5.2). Enrolment is inline on first sign-in (secret auto-generated after factor 1; `otpauth://` provisioning URI rendered as a QR client-side via the `qrcode` package; confirmed code sets `totp_confirmed_at`). The controller receives the service by method injection and holds no TOTP logic itself; `TotpServiceTest` pins the algorithm to the RFC 6238 Appendix B SHA-1 vectors.
 - **Session as the gate.** Only after factor 2 does `Auth::login()` run, followed by [session-id regeneration](https://laravel.com/docs/13.x/session#regenerating-the-session-id) and removal of the intermediate flags. Every protected route sits behind the stock session [`auth` middleware](https://laravel.com/docs/13.x/authentication#protecting-routes) — the single gate; no per-use-case checks exist. `POST /logout` invalidates the session ([UC-04](../spec/F2-anwendungsfaelle.md#uc-04--sign-out)).
 - **Defence-in-depth at the edge.** `SecurityHeaders` middleware on the whole `web` group: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(self)`.
 - **Recovery** replaces both factors via the out-of-band file token ([§ 6.5](A06-runtime-view.md#65-recover-access)); all rejection reasons collapse to a uniform 404 ([NFR-15a-04](../spec/N1-nichtfunktional.md#15a-access-requirements)).
@@ -257,7 +257,7 @@ These values record that factor 1 succeeded and identify the operator for the ne
 **Step 2 — a TOTP code is accepted only after the API key.** Both endpoints that accept a TOTP code — `verifyTotp` for a returning operator and `confirmTotp` for first-time enrolment — first check the temporary session values from step 1:
 
 ```php
-$request->validate(['totp_code' => 'required|string|size:6']);
+$request->validate(['totp_code' => 'required|digits:'.TotpService::DIGITS]);
 
 if (! $request->session()->get('auth.key_verified')) {
     return redirect()->route('login');           // factor 1 not passed — no error detail
@@ -266,27 +266,31 @@ if (! $request->session()->get('auth.key_verified')) {
 $user = User::findOrFail($request->session()->get('auth.user_id'));
 ```
 
-Without `auth.key_verified`, the request returns to the login page. A direct call to a TOTP endpoint therefore cannot skip the API-key step. The user id also ensures that the code is checked for the same operator whose API key was accepted.
+Without `auth.key_verified`, the request returns to the login page. A direct call to a TOTP endpoint therefore cannot skip the API-key step. The user id also ensures that the code is checked for the same operator whose API key was accepted. The enrolment endpoint (`confirmTotp`) additionally returns to the login page once `totp_confirmed_at` is set, so factor 1 alone can never re-confirm an enrolled second factor. A secret is generated only in `verifyKey` and only while no TOTP is confirmed; there is no other endpoint that writes or returns it.
 
-**Step 3 — the TOTP code is checked against the current time window.** A TOTP code changes every 30 seconds. To tolerate small clock differences between Herold and the authenticator app, `verifyTotpCode` accepts the expected code for the previous, current, or next 30-second interval. Each comparison uses `hash_equals` to avoid timing leaks:
+**Step 3 — the TOTP code is checked against the current time window.** A TOTP code changes every 30 seconds. To tolerate small clock differences between Herold and the authenticator app, `TotpService::verify` accepts the expected code for the previous, current, or next 30-second interval. Each comparison uses `hash_equals` to avoid timing leaks:
 
 ```php
-$currentTimestamp = (int) floor(time() / 30);       // the RFC 6238 time step
+$key = $this->base32Decode($secret);                                // decoded once per attempt
+$current = intdiv(Carbon::now()->getTimestamp(), self::PERIOD);     // the RFC 6238 time step (30 s)
 
-for ($offset = -1; $offset <= 1; $offset++) {       // ±1 step tolerates clock drift
-    if (hash_equals($this->generateTotpCode($secret, $currentTimestamp + $offset), $code)) {
-        return true;
+for ($counter = $current - self::WINDOW; $counter <= $current + self::WINDOW; $counter++) { // ±1 step drift
+    if ($lastCounter !== null && $counter <= $lastCounter) {
+        continue;                                                   // already used — no replay
+    }
+
+    if (hash_equals($this->codeForCounter($key, $counter), $code)) {
+        return $counter;
     }
 }
 
-return false;
+return null;
 ```
 
-`generateTotpCode` implements the underlying RFC 4226 calculation without a library ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the shared secret, and derives a six-digit code from the result:
+The clock is read through Carbon rather than `time()`, so tests move it with `Carbon::setTestNow()` instead of widening the API. The public surface is `generateSecret`, `provisioningUri` and `verify`; the Base32 codec and `codeForCounter` are `protected`, and the test-only subclass `Tests\Support\TestableTotpService` exposes them (plus `codeAt` for generating valid codes). `codeForCounter` implements the underlying RFC 4226 calculation without a library ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the decoded shared secret, and derives a six-digit code from the result:
 
 ```php
-$counterBytes = pack('N*', 0, $counter);                        // 8-byte big-endian counter
-$hash = hash_hmac('sha1', $counterBytes, $this->base32Decode($base32Secret), true);
+$hash = hash_hmac('sha1', pack('J', $counter), $key, true);     // 8-byte big-endian counter
 
 $offset = ord($hash[19]) & 0x0F;                                // dynamic truncation
 $binary = ((ord($hash[$offset]) & 0x7F) << 24)
@@ -294,10 +298,22 @@ $binary = ((ord($hash[$offset]) & 0x7F) << 24)
     | ((ord($hash[$offset + 2]) & 0xFF) << 8)
     | (ord($hash[$offset + 3]) & 0xFF);
 
-return str_pad((string) ($binary % 1_000_000), 6, '0', STR_PAD_LEFT);
+return str_pad((string) ($binary % 10 ** self::DIGITS), self::DIGITS, '0', STR_PAD_LEFT);
 ```
 
-One verification attempt therefore checks at most three candidate codes. For returning operators, `POST /login/totp` is limited to five requests per minute. The first-time enrolment endpoint `POST /login/totp/confirm` currently has no equivalent route-level throttle.
+`verify` returns the matched time step (or `null`) and skips every step at or below `$lastCounter`, the step of the last accepted code. The controller passes `users.totp_last_counter` and then claims the returned step atomically, so a code can complete at most one sign-in (RFC 6238 § 5.2), even when two requests race with the same code:
+
+```php
+$counter = $totp->verify($user->totp_secret, $request->input('totp_code'), $user->totp_last_counter);
+
+if ($counter === null || ! $user->claimTotpCounter($counter)) {   // replay fails like a wrong code
+    return back()->withErrors(['totp_code' => 'Invalid TOTP code.']);
+}
+```
+
+`User::claimTotpCounter` is a conditional `UPDATE … WHERE totp_last_counter IS NULL OR totp_last_counter < ?` and succeeds only if it changed exactly one row. Recovery leaves the column in place: time steps only grow, so the value stays valid for a re-enrolled secret.
+
+One verification attempt therefore checks at most three candidate codes. `POST /login/totp` (returning operators) and the enrolment endpoint `POST /login/totp/confirm` are each limited to five requests per minute.
 
 **Step 4 — a valid TOTP code completes the login.** Only now does Laravel mark the operator as authenticated. The controller then replaces the session id to prevent session-fixation attacks and removes the temporary values from step 1:
 
@@ -640,7 +656,7 @@ Realisation of [N2.8](../spec/N2-querschnittskonzepte.md#n28-secret-handling) / 
 | Secret | At rest | In transit / use |
 |--------|---------|------------------|
 | Operator API key | Never stored — only `users.api_key_hash` (SHA-256). | Presented once per sign-in; constant-time hash comparison; regenerated (not revealed) by recovery. |
-| TOTP secret | `users.totp_secret` under Laravel's [`encrypted` cast](https://laravel.com/docs/13.x/eloquent-mutators#encrypted-casting) ([APP_KEY-encrypted](https://laravel.com/docs/13.x/encryption) ciphertext in SQLite). | Decrypted for code verification and, until enrolment is confirmed, for building the provisioning URI ([§ 8.4](#84-authentication-and-session)). The URI reaches the browser on every load of the sign-in page while enrolment is pending — not just once — and never after `totp_confirmed_at` is set. |
+| TOTP secret | `users.totp_secret` under Laravel's [`encrypted` cast](https://laravel.com/docs/13.x/eloquent-mutators#encrypted-casting) ([APP_KEY-encrypted](https://laravel.com/docs/13.x/encryption) ciphertext in SQLite). | Decrypted on attribute access in `AuthController` and handed to `TotpService` for code verification and, until enrolment is confirmed, for building the provisioning URI ([§ 8.4](#84-authentication-and-session)). The URI reaches the browser on every load of the sign-in page while enrolment is pending — not just once — and never after `totp_confirmed_at` is set. |
 | Recovery token | Operator-chosen file content, deleted on redemption or expiry. | `hash_equals` against trimmed input. |
 | OpenAI key, GitHub PAT | `.env` → `config('herold.openai.api_key')` / `config('herold.github.token')`; `.env` is never deployed and never overwritten ([§ 7.2](A07-deployment-view.md#72-infrastructure-level-2--release-pipeline)). | Attached server-side as Bearer tokens by the adapters; constructors fail fast when unset. |
 
@@ -736,8 +752,6 @@ The browser UI realises the dialogues of [B1](../spec/B1-dialogspezifikation.md)
 - **Design source.** [`DESIGN.md`](../../DESIGN.md) ("Neon Tokyo") is the visual specification B1 defers to. It is realised twice — as Vuetify theme colours in `app.ts` and as CSS custom properties plus glow and typography rules in `resources/css/app.css` — and kept in step with `DESIGN.md` by hand. Fonts load from Google Fonts in `app.blade.php` and again via `@import` in `app.css`.
 - **Types at the Inertia boundary.** `Types/index.ts` declares the prop shapes (`VoiceNote`, `MessageType`, `ExtraField`, `DashboardStats`, `PaginatedData<T>`), mirrored by hand from the PHP models and the `MessageTypeRegistry` projection; pages type `defineProps<…>()` against them. Vite strips the annotations without checking them — no `tsconfig.json`, no `vue-tsc` — so PHP/TS drift passes build and CI unnoticed (debt [D-09](A11-risks-and-technical-debts.md#112-technical-debts)).
 - **Rendering.** Text interpolation only; no `v-html` exists ([§ 8.5](#85-content-sanitisation)).
-
-**Remnants.** `Auth/TotpSetup.vue` and `Auth/TotpVerify.vue` are rendered by no controller — second-factor verification and enrolment ([DLG-02](../spec/B1-dialogspezifikation.md#dlg-02--second-factor-verification), [DLG-03](../spec/B1-dialogspezifikation.md#dlg-03--second-factor-enrolment)) are `step` states of `Auth/Login.vue`, which draws the QR code locally with `qrcode` ([§ 8.4](#84-authentication-and-session)). The dead `TotpSetup.vue` is the only `fetch` caller (`POST /login/totp/setup`, a route with no other client) and would hand the provisioning URI, secret included, to the third-party `api.qrserver.com` if it were ever wired up. Neither participates in a flow.
 
 ## 8.11 Development and test concept
 

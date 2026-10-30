@@ -24,6 +24,7 @@ package "Herold data" <<Frame>> #E8F4FF {
     + apiKeyHash : OpaqueSecret [0..1]
     + totpSecret : OpaqueSecret [0..1]
     + totpConfirmedAt : Timestamp [0..1]
+    + totpLastAcceptedStep : Integer [0..1]
   }
   note left of Operator
     Single-operator system. At most one Operator
@@ -34,6 +35,8 @@ package "Herold data" <<Frame>> #E8F4FF {
     the system compares its hash in constant time.
     **totpSecret** + **totpConfirmedAt** form the
     second factor (RFC 6238 TOTP, UC-02).
+    **totpLastAcceptedStep** makes every code
+    single-use (RFC 6238 § 5.2).
   end note
 
   class RecoveryToken <<file>> {

@@ -43,6 +43,7 @@ class users <<table>> {
   api_key_hash : string [nullable]
   totp_secret : text (encrypted) [nullable]
   totp_confirmed_at : timestamp [nullable]
+  totp_last_counter : bigint unsigned [nullable]
   created_at : timestamp
   updated_at : timestamp
 }
@@ -87,6 +88,9 @@ note bottom of users
   - ""totp_secret"" persists D1 **Operator.totpSecret**
     (Laravel cast ""encrypted"")
   - ""totp_confirmed_at"" persists D1 **Operator.totpConfirmedAt**
+  - ""totp_last_counter"" persists D1 **Operator.totpLastAcceptedStep**
+    (claimed by a conditional UPDATE; codes at or
+    below it are rejected — no replay)
 
   Framework columns ""password"", ""remember_token"" and
   ""email_verified_at"" exist in the migration but are
