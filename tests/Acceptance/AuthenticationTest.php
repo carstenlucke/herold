@@ -167,15 +167,9 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_api_key_alone_cannot_replace_confirmed_totp(): void
+    public function test_api_key_alone_cannot_reconfirm_confirmed_totp(): void
     {
         $session = ['auth.key_verified' => true, 'auth.user_id' => $this->user->id];
-
-        $this->withSession($session)
-            ->post('/login/totp/setup')
-            ->assertRedirect('/login');
-
-        $this->assertSame(self::TOTP_SECRET, $this->user->fresh()->totp_secret);
 
         $code = app(TotpService::class)->codeAt(self::TOTP_SECRET, time());
 

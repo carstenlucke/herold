@@ -76,30 +76,6 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    public function setupTotp(Request $request, TotpService $totp)
-    {
-        if (! $request->session()->get('auth.key_verified')) {
-            return redirect()->route('login');
-        }
-
-        $user = User::findOrFail($request->session()->get('auth.user_id'));
-
-        // Never let factor 1 alone replace a confirmed second factor.
-        if ($user->hasTotpEnabled()) {
-            return redirect()->route('login');
-        }
-
-        $secret = $totp->generateSecret();
-        $user->update(['totp_secret' => $secret]);
-
-        $provisioningUri = $totp->provisioningUri($secret, $user->email);
-
-        return response()->json([
-            'secret' => $secret,
-            'provisioning_uri' => $provisioningUri,
-        ]);
-    }
-
     public function confirmTotp(Request $request, TotpService $totp)
     {
         $request->validate([
@@ -112,6 +88,7 @@ class AuthController extends Controller
 
         $user = User::findOrFail($request->session()->get('auth.user_id'));
 
+        // Never let factor 1 alone re-confirm a confirmed second factor.
         if ($user->hasTotpEnabled()) {
             return redirect()->route('login');
         }

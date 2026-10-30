@@ -5,7 +5,7 @@ skinparam sequenceMessageAlign center
 title Runtime View — Sign in with inline first-time TOTP enrolment (UC-01 / UC-02)
 
 actor Operator as op
-participant "Auth/Login.vue\n(+ TotpSetup / TotpVerify)" as ui
+participant "Auth/Login.vue" as ui
 participant "AuthController" as auth
 participant "TotpService" as totp
 database "Persistence\nSQLite users\n(singleton row)" as db

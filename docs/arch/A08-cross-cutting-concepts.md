@@ -266,7 +266,7 @@ if (! $request->session()->get('auth.key_verified')) {
 $user = User::findOrFail($request->session()->get('auth.user_id'));
 ```
 
-Without `auth.key_verified`, the request returns to the login page. A direct call to a TOTP endpoint therefore cannot skip the API-key step. The user id also ensures that the code is checked for the same operator whose API key was accepted. The enrolment endpoints (`setupTotp`, `confirmTotp`) additionally return to the login page once `totp_confirmed_at` is set, so factor 1 alone can never replace or re-confirm an enrolled second factor.
+Without `auth.key_verified`, the request returns to the login page. A direct call to a TOTP endpoint therefore cannot skip the API-key step. The user id also ensures that the code is checked for the same operator whose API key was accepted. The enrolment endpoint (`confirmTotp`) additionally returns to the login page once `totp_confirmed_at` is set, so factor 1 alone can never re-confirm an enrolled second factor. A secret is generated only in `verifyKey` and only while no TOTP is confirmed; there is no other endpoint that writes or returns it.
 
 **Step 3 — the TOTP code is checked against the current time window.** A TOTP code changes every 30 seconds. To tolerate small clock differences between Herold and the authenticator app, `TotpService::verify` accepts the expected code for the previous, current, or next 30-second interval. Each comparison uses `hash_equals` to avoid timing leaks:
 
@@ -297,7 +297,7 @@ $binary = ((ord($hash[$offset]) & 0x7F) << 24)
 return str_pad((string) ($binary % 10 ** self::DIGITS), self::DIGITS, '0', STR_PAD_LEFT);
 ```
 
-One verification attempt therefore checks at most three candidate codes. `POST /login/totp` (returning operators) and the enrolment endpoints `POST /login/totp/setup` and `POST /login/totp/confirm` are each limited to five requests per minute.
+One verification attempt therefore checks at most three candidate codes. `POST /login/totp` (returning operators) and the enrolment endpoint `POST /login/totp/confirm` are each limited to five requests per minute.
 
 **Step 4 — a valid TOTP code completes the login.** Only now does Laravel mark the operator as authenticated. The controller then replaces the session id to prevent session-fixation attacks and removes the temporary values from step 1:
 
@@ -736,8 +736,6 @@ The browser UI realises the dialogues of [B1](../spec/B1-dialogspezifikation.md)
 - **Design source.** [`DESIGN.md`](../../DESIGN.md) ("Neon Tokyo") is the visual specification B1 defers to. It is realised twice — as Vuetify theme colours in `app.ts` and as CSS custom properties plus glow and typography rules in `resources/css/app.css` — and kept in step with `DESIGN.md` by hand. Fonts load from Google Fonts in `app.blade.php` and again via `@import` in `app.css`.
 - **Types at the Inertia boundary.** `Types/index.ts` declares the prop shapes (`VoiceNote`, `MessageType`, `ExtraField`, `DashboardStats`, `PaginatedData<T>`), mirrored by hand from the PHP models and the `MessageTypeRegistry` projection; pages type `defineProps<…>()` against them. Vite strips the annotations without checking them — no `tsconfig.json`, no `vue-tsc` — so PHP/TS drift passes build and CI unnoticed (debt [D-09](A11-risks-and-technical-debts.md#112-technical-debts)).
 - **Rendering.** Text interpolation only; no `v-html` exists ([§ 8.5](#85-content-sanitisation)).
-
-**Remnants.** `Auth/TotpSetup.vue` and `Auth/TotpVerify.vue` are rendered by no controller — second-factor verification and enrolment ([DLG-02](../spec/B1-dialogspezifikation.md#dlg-02--second-factor-verification), [DLG-03](../spec/B1-dialogspezifikation.md#dlg-03--second-factor-enrolment)) are `step` states of `Auth/Login.vue`, which draws the QR code locally with `qrcode` ([§ 8.4](#84-authentication-and-session)). The dead `TotpSetup.vue` is the only `fetch` caller (`POST /login/totp/setup`, a route with no other client) and would hand the provisioning URI, secret included, to the third-party `api.qrserver.com` if it were ever wired up. Neither participates in a flow.
 
 ## 8.11 Development and test concept
 
