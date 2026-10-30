@@ -237,7 +237,7 @@ The message names the missing key but never the value ([§ 8.8](#88-secret-handl
 Realisation of [N2.4](../spec/N2-querschnittskonzepte.md#n24-authentication-and-session): the flow is concentrated in `AuthController` ([§ 6.4](A06-runtime-view.md#64-sign-in-with-inline-totp-enrolment)), the TOTP algorithm in `App\Services\TotpService` ([§ 5.2.3](A05-building-block-view.md#523-whitebox-domain-services)):
 
 - **Factor 1 — API key.** Presented at `POST /login/key`, hashed with SHA-256 and compared via `hash_equals` against `users.api_key_hash`. Success is held as the session flag `auth.key_verified` — not yet a login.
-- **Factor 2 — TOTP.** Home-rolled RFC 6238/4226 in `TotpService` ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)), no library: 160-bit secret, custom Base32 codec, HMAC-SHA1 with dynamic truncation to 6 digits, 30 s steps, ±1 step clock-drift window, `hash_equals` comparison. Enrolment is inline on first sign-in (secret auto-generated after factor 1; `otpauth://` provisioning URI rendered as a QR client-side via the `qrcode` package; confirmed code sets `totp_confirmed_at`). The controller receives the service by method injection and holds no TOTP logic itself; `TotpServiceTest` pins the algorithm to the RFC 6238 Appendix B SHA-1 vectors.
+- **Factor 2 — TOTP.** Home-rolled RFC 6238/4226 in `TotpService` ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)), no library: 160-bit secret, custom Base32 codec, HMAC-SHA1 with dynamic truncation to 6 digits, 30 s steps, ±1 step clock-drift window, `hash_equals` comparison, single-use codes (`users.totp_last_counter`, RFC 6238 § 5.2). Enrolment is inline on first sign-in (secret auto-generated after factor 1; `otpauth://` provisioning URI rendered as a QR client-side via the `qrcode` package; confirmed code sets `totp_confirmed_at`). The controller receives the service by method injection and holds no TOTP logic itself; `TotpServiceTest` pins the algorithm to the RFC 6238 Appendix B SHA-1 vectors.
 - **Session as the gate.** Only after factor 2 does `Auth::login()` run, followed by [session-id regeneration](https://laravel.com/docs/13.x/session#regenerating-the-session-id) and removal of the intermediate flags. Every protected route sits behind the stock session [`auth` middleware](https://laravel.com/docs/13.x/authentication#protecting-routes) — the single gate; no per-use-case checks exist. `POST /logout` invalidates the session ([UC-04](../spec/F2-anwendungsfaelle.md#uc-04--sign-out)).
 - **Defence-in-depth at the edge.** `SecurityHeaders` middleware on the whole `web` group: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(self)`.
 - **Recovery** replaces both factors via the out-of-band file token ([§ 6.5](A06-runtime-view.md#65-recover-access)); all rejection reasons collapse to a uniform 404 ([NFR-15a-04](../spec/N1-nichtfunktional.md#15a-access-requirements)).
@@ -272,15 +272,19 @@ Without `auth.key_verified`, the request returns to the login page. A direct cal
 
 ```php
 $key = $this->base32Decode($secret);                                // decoded once per attempt
-$counter = intdiv(Carbon::now()->getTimestamp(), self::PERIOD);     // the RFC 6238 time step (30 s)
+$current = intdiv(Carbon::now()->getTimestamp(), self::PERIOD);     // the RFC 6238 time step (30 s)
 
-for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) { // ±1 step tolerates clock drift
-    if (hash_equals($this->codeForCounter($key, $counter + $offset), $code)) {
-        return true;
+for ($counter = $current - self::WINDOW; $counter <= $current + self::WINDOW; $counter++) { // ±1 step drift
+    if ($lastCounter !== null && $counter <= $lastCounter) {
+        continue;                                                   // already used — no replay
+    }
+
+    if (hash_equals($this->codeForCounter($key, $counter), $code)) {
+        return $counter;
     }
 }
 
-return false;
+return null;
 ```
 
 The clock is read through Carbon rather than `time()`, so tests move it with `Carbon::setTestNow()` instead of widening the API. The public surface is `generateSecret`, `provisioningUri` and `verify`; the Base32 codec and `codeForCounter` are `protected`, and the test-only subclass `Tests\Support\TestableTotpService` exposes them (plus `codeAt` for generating valid codes). `codeForCounter` implements the underlying RFC 4226 calculation without a library ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the decoded shared secret, and derives a six-digit code from the result:
@@ -296,6 +300,18 @@ $binary = ((ord($hash[$offset]) & 0x7F) << 24)
 
 return str_pad((string) ($binary % 10 ** self::DIGITS), self::DIGITS, '0', STR_PAD_LEFT);
 ```
+
+`verify` returns the matched time step (or `null`) and skips every step at or below `$lastCounter`, the step of the last accepted code. The controller passes `users.totp_last_counter` and then claims the returned step atomically, so a code can complete at most one sign-in (RFC 6238 § 5.2), even when two requests race with the same code:
+
+```php
+$counter = $totp->verify($user->totp_secret, $request->input('totp_code'), $user->totp_last_counter);
+
+if ($counter === null || ! $user->claimTotpCounter($counter)) {   // replay fails like a wrong code
+    return back()->withErrors(['totp_code' => 'Invalid TOTP code.']);
+}
+```
+
+`User::claimTotpCounter` is a conditional `UPDATE … WHERE totp_last_counter IS NULL OR totp_last_counter < ?` and succeeds only if it changed exactly one row. Recovery leaves the column in place: time steps only grow, so the value stays valid for a re-enrolled secret.
 
 One verification attempt therefore checks at most three candidate codes. `POST /login/totp` (returning operators) and the enrolment endpoint `POST /login/totp/confirm` are each limited to five requests per minute.
 

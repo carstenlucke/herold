@@ -118,6 +118,40 @@ class AuthenticationTest extends TestCase
         $this->assertNotNull($this->user->fresh()->totp_confirmed_at);
     }
 
+    public function test_totp_code_cannot_be_replayed(): void
+    {
+        $code = (new TestableTotpService)->codeAt(self::TOTP_SECRET, now()->getTimestamp());
+
+        $this->post('/login/key', ['api_key' => 'test-api-key-for-testing']);
+        $this->post('/login/totp', ['totp_code' => $code])->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($this->user);
+
+        $this->post('/logout');
+        $this->assertGuest();
+
+        $this->post('/login/key', ['api_key' => 'test-api-key-for-testing']);
+        $this->post('/login/totp', ['totp_code' => $code])->assertSessionHasErrors('totp_code');
+
+        $this->assertGuest();
+    }
+
+    public function test_enrolment_code_cannot_be_reused_for_sign_in(): void
+    {
+        $this->user->update(['totp_secret' => null, 'totp_confirmed_at' => null]);
+
+        $this->post('/login/key', ['api_key' => 'test-api-key-for-testing']);
+        $secret = $this->user->fresh()->totp_secret;
+        $code = (new TestableTotpService)->codeAt($secret, now()->getTimestamp());
+
+        $this->post('/login/totp/confirm', ['totp_code' => $code])->assertRedirect(route('dashboard'));
+        $this->post('/logout');
+
+        $this->post('/login/key', ['api_key' => 'test-api-key-for-testing']);
+        $this->post('/login/totp', ['totp_code' => $code])->assertSessionHasErrors('totp_code');
+
+        $this->assertGuest();
+    }
+
     public function test_login_rate_limiting_on_key_verification(): void
     {
         for ($i = 0; $i < 5; $i++) {

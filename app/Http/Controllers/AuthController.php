@@ -97,7 +97,9 @@ class AuthController extends Controller
             return back()->withErrors(['totp_code' => 'TOTP not set up yet.']);
         }
 
-        if (! $totp->verify($user->totp_secret, $request->input('totp_code'))) {
+        $counter = $totp->verify($user->totp_secret, $request->input('totp_code'), $user->totp_last_counter);
+
+        if ($counter === null || ! $user->claimTotpCounter($counter)) {
             return back()->withErrors(['totp_code' => 'Invalid TOTP code.']);
         }
 
@@ -126,7 +128,10 @@ class AuthController extends Controller
             return redirect()->route('login');
         }
 
-        if (! $totp->verify($user->totp_secret, $request->input('totp_code'))) {
+        $counter = $totp->verify($user->totp_secret, $request->input('totp_code'), $user->totp_last_counter);
+
+        // A replayed code (counter already claimed) fails exactly like a wrong one.
+        if ($counter === null || ! $user->claimTotpCounter($counter)) {
             Log::warning('Failed TOTP verification attempt.', [
                 'ip' => $request->ip(),
                 'user_id' => $user->id,

@@ -173,7 +173,9 @@ Switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) must be a lo
 
 Browser access requires API key + TOTP (Time-based One-Time Password). Two factors: something you know (API key) + something you have (Authenticator app). The cross-cutting authentication concept is [N2.4](N2-querschnittskonzepte.md#n24-authentication-and-session); credential-handling rules apply per [N2.8](N2-querschnittskonzepte.md#n28-secret-handling).
 
-**Fit Criterion:** Access is denied if either factor is missing or incorrect.
+A second-factor code is single-use: once a code has been accepted, it is rejected on every later attempt, even within its validity window (RFC 6238 § 5.2).
+
+**Fit Criterion:** Access is denied if either factor is missing or incorrect, or if the second-factor code has already been accepted once.
 
 **NFR-15a-02: Login Rate Limiting and Lockout**
 

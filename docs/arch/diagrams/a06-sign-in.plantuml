@@ -36,7 +36,8 @@ else key verified
     op -> ui : scan QR (rendered client-side),\nenter first code
     ui -> auth : POST /login/totp/confirm (throttle:5,1)
     auth -> auth : guard: no confirmed TOTP yet
-    auth -> totp : verify(secret, code)\nRFC 6238, ±1 step drift,\nhash_equals
+    auth -> totp : verify(secret, code, last_counter)\nRFC 6238, ±1 step drift,\nhash_equals → matched counter
+    auth -> db : claim totp_last_counter\n(conditional UPDATE, no replay)
     auth -> db : totp_confirmed_at = now()
     auth -> auth : Auth::login + session regenerate,\nforget auth.* flags
     auth --> ui : redirect → intended | dashboard
@@ -44,8 +45,10 @@ else key verified
     auth --> ui : step = "totp"
     op -> ui : enter current code
     ui -> auth : POST /login/totp (throttle:5,1)
-    auth -> totp : verify(secret, code)
-    alt code rejected
+    auth -> totp : verify(secret, code, last_counter)
+    auth -> db : claim totp_last_counter if matched\n(conditional UPDATE)
+    alt code rejected or already used
+      note right of auth : a replayed code\nfails like a wrong one
       auth -> auth : Log::warning(+ source IP)
       auth --> ui : back with error
     else code verified

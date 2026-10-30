@@ -38,11 +38,11 @@ class TotpServiceTest extends TestCase
         parent::tearDown();
     }
 
-    private function verifyAt(string $secret, string $code, int $timestamp): bool
+    private function verifyAt(string $secret, string $code, int $timestamp, ?int $lastCounter = null): ?int
     {
         Carbon::setTestNow(Carbon::createFromTimestamp($timestamp));
 
-        return $this->totp->verify($secret, $code);
+        return $this->totp->verify($secret, $code, $lastCounter);
     }
 
     /**
@@ -69,7 +69,7 @@ class TotpServiceTest extends TestCase
     #[DataProvider('rfc6238Vectors')]
     public function test_verify_accepts_rfc_6238_vector(int $timestamp, string $expected): void
     {
-        $this->assertTrue($this->verifyAt(self::RFC_SECRET_BASE32, $expected, $timestamp));
+        $this->assertNotNull($this->verifyAt(self::RFC_SECRET_BASE32, $expected, $timestamp));
     }
 
     public function test_base32_encodes_rfc_secret(): void
@@ -107,7 +107,7 @@ class TotpServiceTest extends TestCase
         foreach ([-1, 0, 1] as $step) {
             $code = $this->totp->codeAt($secret, $now + $step * TotpService::PERIOD);
 
-            $this->assertTrue($this->verifyAt($secret, $code, $now), "step {$step} should be accepted");
+            $this->assertNotNull($this->verifyAt($secret, $code, $now), "step {$step} should be accepted");
         }
     }
 
@@ -126,7 +126,7 @@ class TotpServiceTest extends TestCase
 
             // Guard against an (astronomically unlikely) collision with a code inside the window.
             $this->assertNotContains($code, $window);
-            $this->assertFalse($this->verifyAt($secret, $code, $now), "step {$step} should be rejected");
+            $this->assertNull($this->verifyAt($secret, $code, $now), "step {$step} should be rejected");
         }
     }
 
@@ -136,7 +136,7 @@ class TotpServiceTest extends TestCase
         $secret = self::RFC_SECRET_BASE32;
 
         foreach (['', '28708', '2870820', ' 287082', '287082 ', '28708a', 'abcdef', '287 082'] as $code) {
-            $this->assertFalse($this->verifyAt($secret, $code, $timestamp), "'{$code}' should be rejected");
+            $this->assertNull($this->verifyAt($secret, $code, $timestamp), "'{$code}' should be rejected");
         }
     }
 
@@ -144,7 +144,40 @@ class TotpServiceTest extends TestCase
     {
         $code = $this->totp->codeAt(self::RFC_SECRET_BASE32, 59);
 
-        $this->assertFalse($this->verifyAt('JBSWY3DPEHPK3PXP', $code, 59));
+        $this->assertNull($this->verifyAt('JBSWY3DPEHPK3PXP', $code, 59));
+    }
+
+    public function test_verify_returns_matched_counter(): void
+    {
+        $now = 1111111111;
+        $current = intdiv($now, TotpService::PERIOD);
+
+        foreach ([-1, 0, 1] as $step) {
+            $code = $this->totp->codeAt(self::RFC_SECRET_BASE32, $now + $step * TotpService::PERIOD);
+
+            $this->assertSame($current + $step, $this->verifyAt(self::RFC_SECRET_BASE32, $code, $now));
+        }
+    }
+
+    public function test_verify_rejects_counter_at_or_below_last_used(): void
+    {
+        $now = 1111111111;
+        $current = intdiv($now, TotpService::PERIOD);
+        $code = $this->totp->codeAt(self::RFC_SECRET_BASE32, $now);
+
+        // RFC 6238 § 5.2: an OTP accepted once must not be accepted again.
+        $this->assertNull($this->verifyAt(self::RFC_SECRET_BASE32, $code, $now, $current));
+        $this->assertNull($this->verifyAt(self::RFC_SECRET_BASE32, $code, $now, $current + 1));
+        $this->assertSame($current, $this->verifyAt(self::RFC_SECRET_BASE32, $code, $now, $current - 1));
+    }
+
+    public function test_verify_rejects_code_of_older_step_once_a_later_step_was_used(): void
+    {
+        $now = 1111111111;
+        $current = intdiv($now, TotpService::PERIOD);
+        $previous = $this->totp->codeAt(self::RFC_SECRET_BASE32, $now - TotpService::PERIOD);
+
+        $this->assertNull($this->verifyAt(self::RFC_SECRET_BASE32, $previous, $now, $current));
     }
 
     public function test_provisioning_uri_carries_secret_and_parameters(): void

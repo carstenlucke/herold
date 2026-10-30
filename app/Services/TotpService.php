@@ -50,21 +50,29 @@ class TotpService
 
     /**
      * Verify a TOTP code against the current time step, allowing a +-WINDOW
-     * step drift. Comparison is constant-time.
+     * step drift. Comparison is constant-time. Steps at or below $lastCounter
+     * are never accepted, so a code that was already used fails.
+     *
+     * Returns the matched time-step counter, or null. Callers must compare
+     * with `=== null`; counter 0 is a valid match.
      */
-    public function verify(string $secret, string $code): bool
+    public function verify(string $secret, string $code, ?int $lastCounter = null): ?int
     {
         $key = $this->base32Decode($secret);
         // Carbon instead of time(), so tests can move the clock (Carbon::setTestNow).
-        $counter = intdiv(Carbon::now()->getTimestamp(), self::PERIOD);
+        $current = intdiv(Carbon::now()->getTimestamp(), self::PERIOD);
 
-        for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) {
-            if (hash_equals($this->codeForCounter($key, $counter + $offset), $code)) {
-                return true;
+        for ($counter = $current - self::WINDOW; $counter <= $current + self::WINDOW; $counter++) {
+            if ($lastCounter !== null && $counter <= $lastCounter) {
+                continue;
+            }
+
+            if (hash_equals($this->codeForCounter($key, $counter), $code)) {
+                return $counter;
             }
         }
 
-        return false;
+        return null;
     }
 
     /**
