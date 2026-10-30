@@ -71,7 +71,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 |----|------------|
 | CON-3a-03 | Low-footprint database — no separate server, minimal operational overhead |
 | CON-3a-04 | Single-user system |
-| CON-3b-01 | Shared hosting (production) — no container runtime, no scheduler, deployment via out-of-band file-store access |
+| CON-3b-01 | Shared hosting (production) — Apache + PHP as the only runtime; no container runtime, no scheduler, no build toolchain, deployment via out-of-band file-store access |
 | CON-3c-01 | OpenAI APIs (Whisper for transcription, Chat Completion for text generation), isolated behind a single integration boundary |
 | CON-3c-02 | GitHub Issues API (fine-grained PAT) |
 | CON-3c-03 | Local AI agents consume tickets via GitHub only |
@@ -79,7 +79,7 @@ Detailed constraints with rationale are kept as an annex in [`P1-constraints.md`
 | CON-3g-01 | Existing hosting (no budget for dedicated infrastructure) |
 | CON-3g-02 | OpenAI API costs unmanaged (low single-user volume) |
 
-Technology choices (language, framework, database product, build toolchain, local development tooling, dependency versions) are *design decisions* and live in [`docs/arch/`](../arch/); architecturally significant choices and their rationale are recorded in [chapter 9 — Architecture Decisions](../arch/A09-architecture-decisions.md).
+The server-side language is fixed by the host (CON-3b-01). Technology choices within that runtime (framework, UI stack, database product, build toolchain, local development tooling, dependency versions) are *design decisions* and live in [`docs/arch/`](../arch/); architecturally significant choices and their rationale are recorded in [chapter 9 — Architecture Decisions](../arch/A09-architecture-decisions.md).
 
 ---
 

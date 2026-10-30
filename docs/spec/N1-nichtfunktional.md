@@ -116,7 +116,7 @@ The application must not depend on container runtimes, scheduled tasks, or backg
 
 **NFR-13c-01: Agent Interoperability**
 
-Local AI agents (Claude Code, OpenCode) interact exclusively with the GitHub Issues neighbour ([S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api)), not with Herold (see [CON-3c-03](P1-constraints.md#con-3c-03-local-ai-agents-claude-code-opencode-)).
+Local AI agents (Claude Code, OpenCode) interact exclusively with the GitHub Issues neighbour ([S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api)), not with Herold (see [CON-3c-03](P1-constraints.md#con-3c-03-local-ai-agents-claude-code-opencode-)).
 
 - Ticket consumption: read dispatched issues and their content.
 - Status updates: comment on or relabel issues to reflect work progress.
@@ -159,7 +159,7 @@ Authentication (API key + TOTP) must be resettable without privileged shell acce
 
 **NFR-14c-01: AI Provider Portability**
 
-Switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) must be a local change. Provider-specific code is confined to a single integration point per neighbour ([S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api) transcription, [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api) content generation); the rest of the application — domain logic, persistence, UI, pipeline orchestration — must remain unchanged. Provider selection and credentials are supplied out-of-band via host configuration.
+Switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) must be a local change. Provider-specific code is confined to a single integration point per neighbour ([S1.3](S1-nachbarsysteme.md#s13-nb-02--openai-whisper-api) transcription, [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api) content generation); the rest of the application — domain logic, persistence, UI, pipeline orchestration — must remain unchanged. Provider selection and credentials are supplied out-of-band via host configuration.
 
 **Fit Criterion:** Replacing the active AI provider requires editing only the single integration point per neighbour plus host configuration. No change is required outside those isolation points for transcription and content generation to continue functioning.
 

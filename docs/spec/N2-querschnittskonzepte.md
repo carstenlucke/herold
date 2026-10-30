@@ -30,10 +30,10 @@ The catalogue is closed at the spec level. Adding a cross-cutting concept is a s
 
 - The catalogue of valid identifiers is closed and lives in [D2.4](D2-datentypen.md#d24-messagetypedt). The slot inventory per identifier is fixed at spec level in [D2.7](D2-datentypen.md#d27-typespecificdata).
 - The prompt and label per identifier are supplied by the host configuration out-of-band; they are not part of the application's persisted data ([D1](D1-datenmodell.md) does not model them).
-- Every consumer ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api), [UC-12](F2-anwendungsfaelle.md#uc-12--view-settings)) obtains its binding through this single resolution point. Unknown identifiers are rejected at the boundary that observes them.
+- Every consumer ([UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note), [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api), [UC-12](F2-anwendungsfaelle.md#uc-12--view-settings)) obtains its binding through this single resolution point. Unknown identifiers are rejected at the boundary that observes them.
 - The split between the spec/code layer (catalogue + slot inventory) and the host-config layer (prompt + label + display attributes) is reinforced by [NFR-14a-01](N1-nichtfunktional.md) *Layered Message-Type Definition*.
 
-**Cross-references.** [D2.4](D2-datentypen.md#d24-messagetypedt), [D2.7](D2-datentypen.md#d27-typespecificdata), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api), [NFR-14a-01](N1-nichtfunktional.md).
+**Cross-references.** [D2.4](D2-datentypen.md#d24-messagetypedt), [D2.7](D2-datentypen.md#d27-typespecificdata), [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api), [NFR-14a-01](N1-nichtfunktional.md).
 
 ---
 
@@ -47,7 +47,7 @@ The catalogue is closed at the spec level. Adding a cross-cutting concept is a s
 - Validation is *schema-driven*: the schema is the slot inventory declared for the bound `MessageTypeDT` in [D2.7](D2-datentypen.md#d27-typespecificdata).
 - Validation is *bounded*: free-text content (transcript, title, body) and every free-text or URL slot of the type-specific extra fields has a maximum length. The body bound follows the issue-body limit of GitHub Issues; because the dispatched issue body also carries the type-specific extra fields, the composed body is checked against the same limit before dispatch, and an oversized note is rejected without contacting GitHub and stays editable; the transcript bound leaves ample headroom for transcripts of admissible recordings and only cuts off abusive input. Generated content is held to the same bounds, because it never passes the edit boundary: an over-long generated title is shortened, and an extracted extra-field value that violates its slot rules is discarded.
 - Validation is performed at the boundary that accepts the input. Nothing is persisted before the input is accepted; on rejection the offending fields are surfaced to the operator. The dialogue layer ([B1](B1-dialogspezifikation.md)) cites where each violation appears on screen — *how* it is computed lives here.
-- The audio recording itself is not validated against this schema; its format and size constraints are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation* and apply at the upload boundary that feeds [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api).
+- The audio recording itself is not validated against this schema; its format and size constraints are governed by [NFR-15a-03](N1-nichtfunktional.md) *Audio Upload Validation* and apply at the upload boundary that feeds [S1.3](S1-nachbarsysteme.md#s13-nb-02--openai-whisper-api).
 
 **Cross-references.** [D2.7](D2-datentypen.md#d27-typespecificdata), [UC-05](F2-anwendungsfaelle.md#uc-05--capture-voice-note), [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content), [NFR-15a-03](N1-nichtfunktional.md), [B1](B1-dialogspezifikation.md).
 
@@ -71,14 +71,14 @@ The catalogue is closed at the spec level. Adding a cross-cutting concept is a s
 
 ## N2.5 Failure handling
 
-**Concern.** The processing pipeline ([F1](F1-geschaeftsprozesse.md)) crosses three external services in succession ([S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api)) and each step completes while the operator waits ([NFR-12a-01](N1-nichtfunktional.md)). Failures at any of the three boundaries must be handled the same way: visibly, without data loss, and without speculative state advancement.
+**Concern.** The processing pipeline ([F1](F1-geschaeftsprozesse.md)) crosses three external services in succession ([S1.3](S1-nachbarsysteme.md#s13-nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api)) and each step completes while the operator waits ([NFR-12a-01](N1-nichtfunktional.md)). Failures at any of the three boundaries must be handled the same way: visibly, without data loss, and without speculative state advancement.
 
 **Strategy.**
 
 - *Status does not advance on failure.* Allowed status transitions for `VoiceNote` are listed in [D2.5](D2-datentypen.md#d25-notestatusdt) *NoteStatusDT*. A transition fires only on the successful completion of the corresponding use case. Provider errors leave the status untouched.
 - *Failure is recorded as data, not as state.* The failure reason is populated into `VoiceNote.errorMessage` ([D1.1](D1-datenmodell.md#voicenote)). `errorMessage` is an orthogonal failure flag, not a status value. A successful retry clears it.
 - *Retry is an explicit operator action.* No automatic retries, no queues, no background workers ([NG-04](P1-ziele-rahmenbedingungen.md)). The operator re-invokes the same use case from the dialogue ([B1](B1-dialogspezifikation.md)).
-- *Boundary errors propagate verbatim.* Errors at any of [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) are treated identically: the use case surfaces the failure to the operator and the rules above apply. Mid-call network failure on [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) is treated as a failure; the system does not assume the issue was created.
+- *Boundary errors propagate verbatim.* Errors at any of [S1.3](S1-nachbarsysteme.md#s13-nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api) are treated identically: the use case surfaces the failure to the operator and the rules above apply. Mid-call network failure on [S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api) is treated as a failure; the system does not assume the issue was created.
 - *Validation rejection is not a failure.* Validation rejections ([N2.3](#n23-validation)) surface inline at the field level and do not populate `errorMessage`; nothing is persisted, so there is no failed state to flag.
 
 **Cross-references.** [NFR-12a-01](N1-nichtfunktional.md), [NFR-12d-01](N1-nichtfunktional.md), [D2.5](D2-datentypen.md#d25-notestatusdt), [D1.1 *VoiceNote*](D1-datenmodell.md#voicenote), [S1.1](S1-nachbarsysteme.md#s11-conventions), [NG-04](P1-ziele-rahmenbedingungen.md).
@@ -103,7 +103,7 @@ The catalogue is closed at the spec level. Adding a cross-cutting concept is a s
 
 ## N2.7 Content sanitisation
 
-**Concern.** Three content sources are *untrusted* from the system's perspective: the speech-to-text transcript ([S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api)), the generated title and body ([S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api)), and the operator's manual edits ([UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content)). All three flow into `VoiceNote.processedBody` ([D1.1](D1-datenmodell.md#voicenote)) and onward to the dispatched issue ([S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api)), where downstream readers — humans and AI agents alike — may render or follow what they find.
+**Concern.** Three content sources are *untrusted* from the system's perspective: the speech-to-text transcript ([S1.3](S1-nachbarsysteme.md#s13-nb-02--openai-whisper-api)), the generated title and body ([S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api)), and the operator's manual edits ([UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content)). All three flow into `VoiceNote.processedBody` ([D1.1](D1-datenmodell.md#voicenote)) and onward to the dispatched issue ([S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api)), where downstream readers — humans and AI agents alike — may render or follow what they find.
 
 **Strategy.**
 
@@ -118,7 +118,7 @@ The catalogue is closed at the spec level. Adding a cross-cutting concept is a s
 
 ## N2.8 Secret handling
 
-**Concern.** Secret material exists at four sites: the operator's API key (held as a hash in `Operator.apiKeyHash`), the operator's TOTP secret (`Operator.totpSecret`), the recovery token (`RecoveryToken.token`), and the host-supplied third-party credentials (OpenAI, GitHub) that travel with every outbound call from [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api). Each must be handled identically: present where it is needed, absent everywhere else.
+**Concern.** Secret material exists at four sites: the operator's API key (held as a hash in `Operator.apiKeyHash`), the operator's TOTP secret (`Operator.totpSecret`), the recovery token (`RecoveryToken.token`), and the host-supplied third-party credentials (OpenAI, GitHub) that travel with every outbound call from [S1.3](S1-nachbarsysteme.md#s13-nb-02--openai-whisper-api), [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api). Each must be handled identically: present where it is needed, absent everywhere else.
 
 **Strategy.**
 
@@ -156,5 +156,5 @@ These are noted explicitly so the absence of the corresponding strategy is a del
 | [B1](B1-dialogspezifikation.md) | Surfaces validation outcomes from [N2.3](#n23-validation), failure messages from [N2.5](#n25-failure-handling), and the sign-in / recovery dialogues that gate [N2.4](#n24-authentication-and-session). |
 | [D1](D1-datenmodell.md) | `VoiceNote.metadata` shape is governed by [N2.2](#n22-type-driven-configuration) / [N2.3](#n23-validation); `errorMessage` carries [N2.5](#n25-failure-handling); `Operator` and `RecoveryToken` underpin [N2.4](#n24-authentication-and-session) and [N2.8](#n28-secret-handling). |
 | [D2](D2-datentypen.md) | [D2.4](D2-datentypen.md#d24-messagetypedt) and [D2.7](D2-datentypen.md#d27-typespecificdata) back [N2.2](#n22-type-driven-configuration) / [N2.3](#n23-validation); [D2.5](D2-datentypen.md#d25-notestatusdt) backs [N2.5](#n25-failure-handling); [D2.6](D2-datentypen.md#d26-opaquesecret) backs [N2.8](#n28-secret-handling). |
-| [S1](S1-nachbarsysteme.md) | [S1.1](S1-nachbarsysteme.md#s11-conventions) and [S1.3](S1-nachbarsysteme.md#s13--nb-02--openai-whisper-api)–[S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) operationalise [N2.5](#n25-failure-handling) and [N2.8](#n28-secret-handling); [S1.4](S1-nachbarsysteme.md#s14--nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) consume the bindings resolved by [N2.2](#n22-type-driven-configuration). |
+| [S1](S1-nachbarsysteme.md) | [S1.1](S1-nachbarsysteme.md#s11-conventions) and [S1.3](S1-nachbarsysteme.md#s13-nb-02--openai-whisper-api)–[S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api) operationalise [N2.5](#n25-failure-handling) and [N2.8](#n28-secret-handling); [S1.4](S1-nachbarsysteme.md#s14-nb-03--openai-chat-completion-api), [S1.5](S1-nachbarsysteme.md#s15-nb-04--github-issues-api) consume the bindings resolved by [N2.2](#n22-type-driven-configuration). |
 | [N1](N1-nichtfunktional.md) | NFRs 12a-01, 12d-01, 14a-01, 14a-02, 14c-01, 15a-01, 15a-02, 15a-03, 15a-04, 15b-01, 15b-02, 15b-03, 15b-04 are the binding requirements that the strategies above implement at the boundaries. |
