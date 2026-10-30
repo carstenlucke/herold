@@ -3,8 +3,8 @@
 namespace Tests\Acceptance;
 
 use App\Models\User;
-use App\Services\TotpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\TestableTotpService;
 use Tests\TestCase;
 
 /**
@@ -85,7 +85,7 @@ class AuthenticationTest extends TestCase
 
         $this->assertGuest();
 
-        $code = app(TotpService::class)->codeAt(self::TOTP_SECRET, time());
+        $code = (new TestableTotpService)->codeAt(self::TOTP_SECRET, now()->getTimestamp());
 
         $this->post('/login/totp', ['totp_code' => $code])
             ->assertSessionHasNoErrors()
@@ -108,7 +108,7 @@ class AuthenticationTest extends TestCase
         $secret = $this->user->fresh()->totp_secret;
         $this->assertMatchesRegularExpression('/^[A-Z2-7]{32}$/', $secret);
 
-        $code = app(TotpService::class)->codeAt($secret, time());
+        $code = (new TestableTotpService)->codeAt($secret, now()->getTimestamp());
 
         $this->post('/login/totp/confirm', ['totp_code' => $code])
             ->assertSessionHasNoErrors()
@@ -171,7 +171,7 @@ class AuthenticationTest extends TestCase
     {
         $session = ['auth.key_verified' => true, 'auth.user_id' => $this->user->id];
 
-        $code = app(TotpService::class)->codeAt(self::TOTP_SECRET, time());
+        $code = (new TestableTotpService)->codeAt(self::TOTP_SECRET, now()->getTimestamp());
 
         $this->withSession($session)
             ->post('/login/totp/confirm', ['totp_code' => $code])

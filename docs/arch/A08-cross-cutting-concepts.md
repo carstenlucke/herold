@@ -272,7 +272,7 @@ Without `auth.key_verified`, the request returns to the login page. A direct cal
 
 ```php
 $key = $this->base32Decode($secret);                                // decoded once per attempt
-$counter = intdiv($timestamp ?? time(), self::PERIOD);              // the RFC 6238 time step (30 s)
+$counter = intdiv(Carbon::now()->getTimestamp(), self::PERIOD);     // the RFC 6238 time step (30 s)
 
 for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) { // ±1 step tolerates clock drift
     if (hash_equals($this->codeForCounter($key, $counter + $offset), $code)) {
@@ -283,7 +283,7 @@ for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) { // ±1 step 
 return false;
 ```
 
-The optional `$timestamp` (and the public `codeAt(string $secret, int $timestamp)`) exist for tests; the controller always verifies against the current time. `codeForCounter` implements the underlying RFC 4226 calculation without a library ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the decoded shared secret, and derives a six-digit code from the result:
+The clock is read through Carbon rather than `time()`, so tests move it with `Carbon::setTestNow()` instead of widening the API. The public surface is `generateSecret`, `provisioningUri` and `verify`; the Base32 codec and `codeForCounter` are `protected`, and the test-only subclass `Tests\Support\TestableTotpService` exposes them (plus `codeAt` for generating valid codes). `codeForCounter` implements the underlying RFC 4226 calculation without a library ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the decoded shared secret, and derives a six-digit code from the result:
 
 ```php
 $hash = hash_hmac('sha1', pack('J', $counter), $key, true);     // 8-byte big-endian counter

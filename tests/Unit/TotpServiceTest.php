@@ -3,8 +3,10 @@
 namespace Tests\Unit;
 
 use App\Services\TotpService;
+use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\TestableTotpService;
 
 /**
  * Home-rolled TOTP (ADR-010) against RFC 6238 / RFC 4648.
@@ -20,13 +22,27 @@ class TotpServiceTest extends TestCase
 
     private const RFC_SECRET_BASE32 = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 
-    private TotpService $totp;
+    private TestableTotpService $totp;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->totp = new TotpService;
+        $this->totp = new TestableTotpService;
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
+
+    private function verifyAt(string $secret, string $code, int $timestamp): bool
+    {
+        Carbon::setTestNow(Carbon::createFromTimestamp($timestamp));
+
+        return $this->totp->verify($secret, $code);
     }
 
     /**
@@ -53,7 +69,7 @@ class TotpServiceTest extends TestCase
     #[DataProvider('rfc6238Vectors')]
     public function test_verify_accepts_rfc_6238_vector(int $timestamp, string $expected): void
     {
-        $this->assertTrue($this->totp->verify(self::RFC_SECRET_BASE32, $expected, $timestamp));
+        $this->assertTrue($this->verifyAt(self::RFC_SECRET_BASE32, $expected, $timestamp));
     }
 
     public function test_base32_encodes_rfc_secret(): void
@@ -91,7 +107,7 @@ class TotpServiceTest extends TestCase
         foreach ([-1, 0, 1] as $step) {
             $code = $this->totp->codeAt($secret, $now + $step * TotpService::PERIOD);
 
-            $this->assertTrue($this->totp->verify($secret, $code, $now), "step {$step} should be accepted");
+            $this->assertTrue($this->verifyAt($secret, $code, $now), "step {$step} should be accepted");
         }
     }
 
@@ -110,7 +126,7 @@ class TotpServiceTest extends TestCase
 
             // Guard against an (astronomically unlikely) collision with a code inside the window.
             $this->assertNotContains($code, $window);
-            $this->assertFalse($this->totp->verify($secret, $code, $now), "step {$step} should be rejected");
+            $this->assertFalse($this->verifyAt($secret, $code, $now), "step {$step} should be rejected");
         }
     }
 
@@ -120,7 +136,7 @@ class TotpServiceTest extends TestCase
         $secret = self::RFC_SECRET_BASE32;
 
         foreach (['', '28708', '2870820', ' 287082', '287082 ', '28708a', 'abcdef', '287 082'] as $code) {
-            $this->assertFalse($this->totp->verify($secret, $code, $timestamp), "'{$code}' should be rejected");
+            $this->assertFalse($this->verifyAt($secret, $code, $timestamp), "'{$code}' should be rejected");
         }
     }
 
@@ -128,7 +144,7 @@ class TotpServiceTest extends TestCase
     {
         $code = $this->totp->codeAt(self::RFC_SECRET_BASE32, 59);
 
-        $this->assertFalse($this->totp->verify('JBSWY3DPEHPK3PXP', $code, 59));
+        $this->assertFalse($this->verifyAt('JBSWY3DPEHPK3PXP', $code, 59));
     }
 
     public function test_provisioning_uri_carries_secret_and_parameters(): void

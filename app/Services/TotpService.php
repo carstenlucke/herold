@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Carbon;
+
 /**
  * Home-rolled TOTP (RFC 6238 on top of RFC 4226 HOTP): HMAC-SHA1,
  * 6 digits, 30-second steps, Base32-encoded shared secret.
@@ -47,13 +49,14 @@ class TotpService
     }
 
     /**
-     * Verify a TOTP code against the time step of $timestamp (default: now),
-     * allowing a +-WINDOW step drift. Comparison is constant-time.
+     * Verify a TOTP code against the current time step, allowing a +-WINDOW
+     * step drift. Comparison is constant-time.
      */
-    public function verify(string $secret, string $code, ?int $timestamp = null): bool
+    public function verify(string $secret, string $code): bool
     {
         $key = $this->base32Decode($secret);
-        $counter = intdiv($timestamp ?? time(), self::PERIOD);
+        // Carbon instead of time(), so tests can move the clock (Carbon::setTestNow).
+        $counter = intdiv(Carbon::now()->getTimestamp(), self::PERIOD);
 
         for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) {
             if (hash_equals($this->codeForCounter($key, $counter + $offset), $code)) {
@@ -65,17 +68,9 @@ class TotpService
     }
 
     /**
-     * The TOTP code valid at the given Unix timestamp.
-     */
-    public function codeAt(string $secret, int $timestamp): string
-    {
-        return $this->codeForCounter($this->base32Decode($secret), intdiv($timestamp, self::PERIOD));
-    }
-
-    /**
      * Encode raw bytes as unpadded RFC 4648 Base32.
      */
-    public function base32Encode(string $bytes): string
+    protected function base32Encode(string $bytes): string
     {
         $output = '';
         $buffer = 0;
@@ -102,7 +97,7 @@ class TotpService
      * Decode RFC 4648 Base32 (case-insensitive, padding optional;
      * characters outside the alphabet are skipped).
      */
-    public function base32Decode(string $input): string
+    protected function base32Decode(string $input): string
     {
         $input = strtoupper(rtrim($input, '='));
         $output = '';
@@ -130,7 +125,7 @@ class TotpService
      * HOTP value (RFC 4226) for a counter and raw (decoded) key,
      * zero-padded to DIGITS digits.
      */
-    private function codeForCounter(string $key, int $counter): string
+    protected function codeForCounter(string $key, int $counter): string
     {
         // 8-byte big-endian counter
         $hash = hash_hmac('sha1', pack('J', $counter), $key, true);
