@@ -640,7 +640,7 @@ Realisation of [N2.8](../spec/N2-querschnittskonzepte.md#n28-secret-handling) / 
 | Secret | At rest | In transit / use |
 |--------|---------|------------------|
 | Operator API key | Never stored — only `users.api_key_hash` (SHA-256). | Presented once per sign-in; constant-time hash comparison; regenerated (not revealed) by recovery. |
-| TOTP secret | `users.totp_secret` under Laravel's [`encrypted` cast](https://laravel.com/docs/13.x/eloquent-mutators#encrypted-casting) ([APP_KEY-encrypted](https://laravel.com/docs/13.x/encryption) ciphertext in SQLite). | Decrypted only inside `verifyTotpCode`; surfaced exactly once at enrolment as the provisioning URI. |
+| TOTP secret | `users.totp_secret` under Laravel's [`encrypted` cast](https://laravel.com/docs/13.x/eloquent-mutators#encrypted-casting) ([APP_KEY-encrypted](https://laravel.com/docs/13.x/encryption) ciphertext in SQLite). | Decrypted for code verification and, until enrolment is confirmed, for building the provisioning URI ([§ 8.4](#84-authentication-and-session)). The URI reaches the browser on every load of the sign-in page while enrolment is pending — not just once — and never after `totp_confirmed_at` is set. |
 | Recovery token | Operator-chosen file content, deleted on redemption or expiry. | `hash_equals` against trimmed input. |
 | OpenAI key, GitHub PAT | `.env` → `config('herold.openai.api_key')` / `config('herold.github.token')`; `.env` is never deployed and never overwritten ([§ 7.2](A07-deployment-view.md#72-infrastructure-level-2--release-pipeline)). | Attached server-side as Bearer tokens by the adapters; constructors fail fast when unset. |
 
