@@ -8,6 +8,7 @@ package "Domain Services (whitebox) — app/Services/" {
   [PreprocessingService\nprompt assembly,\ncontent post-processing] as prep
   [IssueContentSanitizer\nmarkdown sanitisation +\nissue-body composition] as sani
   [MessageTypeRegistry\nbrowser-safe type projection] as reg
+  [TotpService\nRFC 6238 secret, provisioning URI,\ncode verification] as totp
 }
 
 ' Level-1 neighbours of this whitebox
@@ -19,6 +20,7 @@ file "config/herold.php\ntypes catalogue" as cfg
 edge --> prep : process(note)\n[UC-06]
 edge --> sani : sanitizeAndWrap(note)\n[UC-08]
 edge --> reg : all(), get(), keys()\n[Inertia props, /types]
+edge --> totp : generateSecret(), provisioningUri(),\nverify()\n[UC-01, UC-02]
 prep --> adapters : chat(systemPrompt,\nuserMessage, 0.3)
 prep --> persistence : title/body/metadata,\nstatus = processed
 prep ..> cfg : preprocessing_prompt,\nextra_fields,\nneeds_current_date_context

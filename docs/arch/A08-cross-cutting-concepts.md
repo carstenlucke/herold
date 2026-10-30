@@ -84,7 +84,7 @@ Realisation of [N2.3](../spec/N2-querschnittskonzepte.md#n23-validation) — str
 | **Operator input — capture** | `StoreVoiceNoteRequest` (`POST /notes`), a [form request](https://laravel.com/docs/13.x/validation#form-request-validation) | `audio`: required, `file`, `mimetypes:audio/webm,video/webm,audio/ogg,audio/mp4`, max 25 600 KB (= the 25 MB of [NFR-15a-03](../spec/N1-nichtfunktional.md#15a-access-requirements)); `type`: `Rule::in` over the configured type keys; per-slot rules derived from the type's `extra_fields` by `MessageTypeRegistry::metadataRules` (`url` → `url` + max 2 048, `date` → `date_format:Y-m-d`, else `string` + max 255; `required` flag honoured). `validated()` additionally intersects `metadata` against the declared slot names — unknown keys dropped, so nothing undeclared ever reaches the JSON column. | 422 field errors; `audio`/`type` in an alert below the recorder, `metadata.<slot>` inline on the slot's field; nothing persisted. |
 | **Operator input — edit** | `VoiceNoteController::update` (`PUT /notes/{note}`) | Free-text rules for `transcript` (max 500 000), `processed_title` (max `GitHubService::MAX_TITLE_LENGTH` = 255), `processed_body` (max `GitHubService::MAX_BODY_LENGTH` = 65 536 — GitHub's issue-body limit); the same `metadataRules` / `slotNames` derivation and key-intersection filter, evaluated against the note's *bound* type. Edit-form fields render these errors inline. | 422, as above. |
 | **Dispatch — composed issue body** | `VoiceNoteController::send` (`POST /notes/{note}/send`) | The sanitised, metadata-wrapped body (`IssueContentSanitizer::sanitizeAndWrap`) is length-checked against `GitHubService::MAX_BODY_LENGTH` before any GitHub call — this also covers AI-generated bodies that never passed the edit boundary. | Field error on `processed_body`; no external call, note stays `processed`. |
-| **Operator input — authentication** | `AuthController` | TOTP code is format-checked first (`digits:6`); API key, TOTP code, and recovery secret are then verified as credentials (`hash_equals`, RFC 6238 drift window) — see [§ 8.4](#84-authentication-and-session). | Uniform rejection (error flash / 404), throttled, logged with source IP. |
+| **Operator input — authentication** | `AuthController`, `TotpService` | TOTP code is format-checked first (`digits:6`); API key, TOTP code, and recovery secret are then verified as credentials (`hash_equals`; the TOTP code by `TotpService::verify` within the RFC 6238 drift window) — see [§ 8.4](#84-authentication-and-session). | Uniform rejection (error flash / 404), throttled, logged with source IP. |
 | **Machine input — AI responses** | `AIService`, `PreprocessingService` | Non-2xx responses from both OpenAI endpoints throw; `chat()` structurally validates the returned payload — it must decode to a JSON object carrying `title` **and** `body`; `PreprocessingService` rejects notes whose `type` has no config entry, truncates the generated `title` to `GitHubService::MAX_TITLE_LENGTH` (255), and keeps an extracted slot value only if it passes the slot's `metadataRules` — invalid values are dropped, an existing operator value stays. | `RuntimeException` → the [§ 8.6](#86-failure-handling) path (`status = error`, inputs preserved). |
 | **Configuration** | Adapter constructors | `AIService` / `GitHubService` fail fast when their API key/token is unset — see [§ 8.8](#88-secret-handling). | `RuntimeException` before any external call. |
 
@@ -231,10 +231,10 @@ The message names the missing key but never the value ([§ 8.8](#88-secret-handl
 
 ## 8.4 Authentication and session
 
-Realisation of [N2.4](../spec/N2-querschnittskonzepte.md#n24-authentication-and-session), concentrated in `AuthController` ([§ 6.4](A06-runtime-view.md#64-sign-in-with-inline-totp-enrolment)):
+Realisation of [N2.4](../spec/N2-querschnittskonzepte.md#n24-authentication-and-session): the flow is concentrated in `AuthController` ([§ 6.4](A06-runtime-view.md#64-sign-in-with-inline-totp-enrolment)), the TOTP algorithm in `App\Services\TotpService` ([§ 5.2.3](A05-building-block-view.md#523-whitebox-domain-services)):
 
 - **Factor 1 — API key.** Presented at `POST /login/key`, hashed with SHA-256 and compared via `hash_equals` against `users.api_key_hash`. Success is held as the session flag `auth.key_verified` — not yet a login.
-- **Factor 2 — TOTP.** Home-rolled RFC 6238/4226 ([TECH-13](A02-architecture-constraints.md#21-technical-constraints)), no library: 160-bit secret, custom Base32 codec, HMAC-SHA1 with dynamic truncation to 6 digits, 30 s steps, ±1 step clock-drift window, `hash_equals` comparison. Enrolment is inline on first sign-in (secret auto-generated after factor 1; `otpauth://` provisioning URI rendered as a QR client-side via the `qrcode` package; confirmed code sets `totp_confirmed_at`).
+- **Factor 2 — TOTP.** Home-rolled RFC 6238/4226 in `TotpService` ([TECH-13](A02-architecture-constraints.md#21-technical-constraints)), no library: 160-bit secret, custom Base32 codec, HMAC-SHA1 with dynamic truncation to 6 digits, 30 s steps, ±1 step clock-drift window, `hash_equals` comparison. Enrolment is inline on first sign-in (secret auto-generated after factor 1; `otpauth://` provisioning URI rendered as a QR client-side via the `qrcode` package; confirmed code sets `totp_confirmed_at`). The controller receives the service by method injection and holds no TOTP logic itself; `TotpServiceTest` pins the algorithm to the RFC 6238 Appendix B SHA-1 vectors.
 - **Session as the gate.** Only after factor 2 does `Auth::login()` run, followed by [session-id regeneration](https://laravel.com/docs/13.x/session#regenerating-the-session-id) and removal of the intermediate flags. Every protected route sits behind the stock session [`auth` middleware](https://laravel.com/docs/13.x/authentication#protecting-routes) — the single gate; no per-use-case checks exist. `POST /logout` invalidates the session ([UC-04](../spec/F2-anwendungsfaelle.md#uc-04--sign-out)).
 - **Defence-in-depth at the edge.** `SecurityHeaders` middleware on the whole `web` group: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(self)`.
 - **Recovery** replaces both factors via the out-of-band file token ([§ 6.5](A06-runtime-view.md#65-recover-access)); all rejection reasons collapse to a uniform 404 ([NFR-15a-04](../spec/N1-nichtfunktional.md#15a-access-requirements)).
@@ -254,7 +254,7 @@ These values record that factor 1 succeeded and identify the operator for the ne
 **Step 2 — a TOTP code is accepted only after the API key.** Both endpoints that accept a TOTP code — `verifyTotp` for a returning operator and `confirmTotp` for first-time enrolment — first check the temporary session values from step 1:
 
 ```php
-$request->validate(['totp_code' => 'required|string|size:6']);
+$request->validate(['totp_code' => 'required|digits:6']);
 
 if (! $request->session()->get('auth.key_verified')) {
     return redirect()->route('login');           // factor 1 not passed — no error detail
@@ -265,13 +265,13 @@ $user = User::findOrFail($request->session()->get('auth.user_id'));
 
 Without `auth.key_verified`, the request returns to the login page. A direct call to a TOTP endpoint therefore cannot skip the API-key step. The user id also ensures that the code is checked for the same operator whose API key was accepted.
 
-**Step 3 — the TOTP code is checked against the current time window.** A TOTP code changes every 30 seconds. To tolerate small clock differences between Herold and the authenticator app, `verifyTotpCode` accepts the expected code for the previous, current, or next 30-second interval. Each comparison uses `hash_equals` to avoid timing leaks:
+**Step 3 — the TOTP code is checked against the current time window.** A TOTP code changes every 30 seconds. To tolerate small clock differences between Herold and the authenticator app, `TotpService::verify` accepts the expected code for the previous, current, or next 30-second interval. Each comparison uses `hash_equals` to avoid timing leaks:
 
 ```php
-$currentTimestamp = (int) floor(time() / 30);       // the RFC 6238 time step
+$counter = intdiv($timestamp ?? time(), self::PERIOD);              // the RFC 6238 time step (30 s)
 
-for ($offset = -1; $offset <= 1; $offset++) {       // ±1 step tolerates clock drift
-    if (hash_equals($this->generateTotpCode($secret, $currentTimestamp + $offset), $code)) {
+for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) { // ±1 step tolerates clock drift
+    if (hash_equals($this->codeForCounter($secret, $counter + $offset), $code)) {
         return true;
     }
 }
@@ -279,7 +279,7 @@ for ($offset = -1; $offset <= 1; $offset++) {       // ±1 step tolerates clock 
 return false;
 ```
 
-`generateTotpCode` implements the underlying RFC 4226 calculation without a library (`TECH-13`): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the shared secret, and derives a six-digit code from the result:
+The optional `$timestamp` (and the public `codeAt(string $secret, int $timestamp)`) exist for tests; the controller always verifies against the current time. `codeForCounter` implements the underlying RFC 4226 calculation without a library (`TECH-13`): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the shared secret, and derives a six-digit code from the result:
 
 ```php
 $counterBytes = pack('N*', 0, $counter);                        // 8-byte big-endian counter
@@ -291,7 +291,7 @@ $binary = ((ord($hash[$offset]) & 0x7F) << 24)
     | ((ord($hash[$offset + 2]) & 0xFF) << 8)
     | (ord($hash[$offset + 3]) & 0xFF);
 
-return str_pad((string) ($binary % 1_000_000), 6, '0', STR_PAD_LEFT);
+return str_pad((string) ($binary % 10 ** self::DIGITS), self::DIGITS, '0', STR_PAD_LEFT);
 ```
 
 One verification attempt therefore checks at most three candidate codes. For returning operators, `POST /login/totp` is limited to five requests per minute. The first-time enrolment endpoint `POST /login/totp/confirm` currently has no equivalent route-level throttle.
@@ -637,7 +637,7 @@ Realisation of [N2.8](../spec/N2-querschnittskonzepte.md#n28-secret-handling) / 
 | Secret | At rest | In transit / use |
 |--------|---------|------------------|
 | Operator API key | Never stored — only `users.api_key_hash` (SHA-256). | Presented once per sign-in; constant-time hash comparison; regenerated (not revealed) by recovery. |
-| TOTP secret | `users.totp_secret` under Laravel's [`encrypted` cast](https://laravel.com/docs/13.x/eloquent-mutators#encrypted-casting) ([APP_KEY-encrypted](https://laravel.com/docs/13.x/encryption) ciphertext in SQLite). | Decrypted only inside `verifyTotpCode`; surfaced exactly once at enrolment as the provisioning URI. |
+| TOTP secret | `users.totp_secret` under Laravel's [`encrypted` cast](https://laravel.com/docs/13.x/eloquent-mutators#encrypted-casting) ([APP_KEY-encrypted](https://laravel.com/docs/13.x/encryption) ciphertext in SQLite). | Decrypted on attribute access in `AuthController` and handed to `TotpService` for verification; surfaced exactly once at enrolment as the provisioning URI. |
 | Recovery token | Operator-chosen file content, deleted on redemption or expiry. | `hash_equals` against trimmed input. |
 | OpenAI key, GitHub PAT | `.env` → `config('herold.openai.api_key')` / `config('herold.github.token')`; `.env` is never deployed and never overwritten ([§ 7.2](A07-deployment-view.md#72-infrastructure-level-2--release-pipeline)). | Attached server-side as Bearer tokens by the adapters; constructors fail fast when unset. |
 

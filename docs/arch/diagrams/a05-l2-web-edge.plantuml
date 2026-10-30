@@ -23,7 +23,7 @@ routes --> ctrl : one route group\nper controller
 mw .. routes : appended to the\nweb group
 ctrl ..> req : validates capture via
 req ..> cfg : type keys +\nextra-field rules
-ctrl --> domain : preprocessing, sanitisation,\ntype catalogue
+ctrl --> domain : preprocessing, sanitisation,\ntype catalogue, TOTP
 ctrl --> adapters : transcription seam (Process),\nticket seam (Send)
 ctrl --> persistence : note CRUD, status, audio path;\nuser record, dashboard aggregates
 ctrl ..> cfg : github target\n(settings view)

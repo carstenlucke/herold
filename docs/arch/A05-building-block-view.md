@@ -102,15 +102,15 @@ The UI Shell is *served by* the deployable but *executes in* the browser; the de
 
 | Blackbox | Content |
 |----------|---------|
-| **Purpose/Responsibility** | Herold-owned logic that is neither HTTP handling nor external integration: prompt assembly and content post-processing, markdown sanitisation, message-type resolution. |
-| **Interface(s) provided** | `process(VoiceNote)`, `sanitizeAndWrap(VoiceNote)`, `all()/get()/keys()`. |
+| **Purpose/Responsibility** | Herold-owned logic that is neither HTTP handling nor external integration: prompt assembly and content post-processing, markdown sanitisation, message-type resolution, TOTP computation and verification. |
+| **Interface(s) provided** | `process(VoiceNote)`, `sanitizeAndWrap(VoiceNote)`, `all()/get()/keys()`, `generateSecret()/provisioningUri()/verify()`. |
 | **Interface(s) required** | The generation seam of the Integration Adapters (`chat()`), Persistence (Eloquent writes), and the type catalogue in `config/herold.php`. |
 | **Quality/performance** | Pure in-process work; the seconds inside `process()` belong to the delegated `chat()` call. |
-| **Dependencies** | The note's type must resolve in the catalogue (unknown type → exception); no dependency among the three services. |
-| **Code artefacts** | `app/Services/` (`PreprocessingService`, `IssueContentSanitizer`, `MessageTypeRegistry`). |
-| **Fulfilled requirements** | [NFR-14a-01](../spec/N1-nichtfunktional.md#14a-maintenance-requirements), [NFR-15b-02](../spec/N1-nichtfunktional.md#15b-integrity-requirements), [NFR-15b-04](../spec/N1-nichtfunktional.md#15b-integrity-requirements). |
+| **Dependencies** | The note's type must resolve in the catalogue (unknown type → exception); `TotpService` depends on nothing but PHP's HMAC; no dependency among the four services. |
+| **Code artefacts** | `app/Services/` (`PreprocessingService`, `IssueContentSanitizer`, `MessageTypeRegistry`, `TotpService`). |
+| **Fulfilled requirements** | [NFR-14a-01](../spec/N1-nichtfunktional.md#14a-maintenance-requirements), [NFR-15a-01](../spec/N1-nichtfunktional.md#15a-access-requirements), [NFR-15b-02](../spec/N1-nichtfunktional.md#15b-integrity-requirements), [NFR-15b-04](../spec/N1-nichtfunktional.md#15b-integrity-requirements). |
 | **Variability** | Prompts, extra-field schemas, and labels are configuration, not code ([§ 8.2](A08-cross-cutting-concepts.md#82-type-driven-configuration)); sanitisation rules sit in one class ([§ 8.5](A08-cross-cutting-concepts.md#85-content-sanitisation)). |
-| **Tests** | Acceptance coverage for the pipeline, sanitisation (incl. injection cases), and catalogue-driven extensibility ([§ 8.11](A08-cross-cutting-concepts.md#811-development-and-test-concept)). |
+| **Tests** | Acceptance coverage for the pipeline, sanitisation (incl. injection cases), and catalogue-driven extensibility; a unit test pins `TotpService` to the RFC 6238 Appendix B vectors ([§ 8.11](A08-cross-cutting-concepts.md#811-development-and-test-concept)). |
 | **Open issues** | Sanitisation runs only at the dispatch boundary, not at the process/edit boundaries as specified — [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(b). |
 | **Refined in** | [§ 5.2.3](#523-whitebox-domain-services). |
 
@@ -214,7 +214,7 @@ Local relationships:
 | **Overview diagram** | Figure above; source [`diagrams/a05-l2-web-edge.plantuml`](diagrams/a05-l2-web-edge.plantuml). |
 | **Contained building blocks** | Four local blocks — table below. |
 | **Local relationships** | Table below; outbound towards Domain Services, Integration Adapters, Persistence, and the type catalogue. |
-| **Design decisions** | One controller per dialogue area; validation extracted where it is schema-driven (capture); everything auth-related concentrated in a single class so the gate has one owner. Security headers are middleware, not per-response code. |
+| **Design decisions** | One controller per dialogue area; validation extracted where it is schema-driven (capture); the auth flow concentrated in a single class so the gate has one owner, with the TOTP algorithm delegated to `TotpService` ([§ 5.2.3](#523-whitebox-domain-services)). Security headers are middleware, not per-response code. |
 | **Rejected alternatives** | Separate controllers per pipeline step — both actions operate on the same aggregate and share its guards; middleware-based API-key auth for the browser UI — the class exists but stays unwired. |
 | **References** | [§ 8.4](A08-cross-cutting-concepts.md#84-authentication-and-session), [§ 8.3](A08-cross-cutting-concepts.md#83-validation), [F2](../spec/F2-anwendungsfaelle.md), [chapter 6](A06-runtime-view.md). |
 | **Open issues** | `Middleware/VerifyApiKey` exists in the tree but is wired nowhere — [D-06](A11-risks-and-technical-debts.md#112-technical-debts). |
@@ -224,7 +224,7 @@ Contained black boxes (all under `app/Http/` unless noted):
 | Block | Responsibility |
 |-------|----------------|
 | `routes/web.php` | The single route table: the public sign-in, TOTP, and recovery routes, everything else behind the session `auth` guard, and the per-route rate limits of [NFR-15a-02](../spec/N1-nichtfunktional.md#15a-access-requirements) ([§ 8.3](A08-cross-cutting-concepts.md#83-validation)). |
-| `Controllers/` (×4) | One controller per dialogue area: authentication (both factors, enrolment, recovery — including the home-rolled RFC-6238 implementation of [TECH-13](A02-architecture-constraints.md#21-technical-constraints), [§ 8.4](A08-cross-cutting-concepts.md#84-authentication-and-session)); voice notes — the pipeline orchestrator of [UC-05](../spec/F2-anwendungsfaelle.md#uc-05--capture-voice-note)–[UC-11](../spec/F2-anwendungsfaelle.md#uc-11--delete-a-voice-note) with the two long-running synchronous actions of [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing) ([chapter 6](A06-runtime-view.md)); dashboard ([UC-13](../spec/F2-anwendungsfaelle.md#uc-13--view-dashboard)); settings ([UC-12](../spec/F2-anwendungsfaelle.md#uc-12--view-settings)). |
+| `Controllers/` (×4) | One controller per dialogue area: authentication (both factors, enrolment, recovery — the home-rolled RFC-6238 computation of [TECH-13](A02-architecture-constraints.md#21-technical-constraints) is delegated to `TotpService`, [§ 8.4](A08-cross-cutting-concepts.md#84-authentication-and-session)); voice notes — the pipeline orchestrator of [UC-05](../spec/F2-anwendungsfaelle.md#uc-05--capture-voice-note)–[UC-11](../spec/F2-anwendungsfaelle.md#uc-11--delete-a-voice-note) with the two long-running synchronous actions of [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing) ([chapter 6](A06-runtime-view.md)); dashboard ([UC-13](../spec/F2-anwendungsfaelle.md#uc-13--view-dashboard)); settings ([UC-12](../spec/F2-anwendungsfaelle.md#uc-12--view-settings)). |
 | `Requests/` (×1) | Capture validation, derived from the type catalogue rather than hard-coded, plus the strip of undeclared metadata keys ([§ 8.3](A08-cross-cutting-concepts.md#83-validation)). |
 | `Middleware/` (×2) | The response hardening headers on the whole `web` group ([§ 8.4](A08-cross-cutting-concepts.md#84-authentication-and-session)); the second class is unwired dead code (see *Open issues*). |
 
@@ -236,7 +236,7 @@ Local relationships:
 | `routes/web.php` → `Controllers/` | One route group per controller: the authentication routes (throttled, public), the note routes (auth guard, capture throttled), the dashboard, and the settings view. |
 | `Middleware/` ∙ `routes/web.php` | Not called but interposed: the header middleware is appended to the `web` group, not invoked per response. |
 | `Controllers/` → `Requests/` → type catalogue | Capture validation delegated to the form request, whose rules derive from the catalogue. |
-| `Controllers/` → Domain Services (outbound) | Preprocessing on *Process*, sanitisation on *Send*, and the type-catalogue projection for Inertia props and `GET /types`. |
+| `Controllers/` → Domain Services (outbound) | Preprocessing on *Process*, sanitisation on *Send*, the type-catalogue projection for Inertia props and `GET /types`, and TOTP secret generation, provisioning URI, and code verification on sign-in. |
 | `Controllers/` → Integration Adapters (outbound) | The transcription seam on *Process*, the ticket seam on *Send*. |
 | `Controllers/` → Persistence (outbound) | Note CRUD, status, and audio path; the single user record with its credential material; dashboard aggregates. |
 | `Controllers/` → type catalogue (outbound) | The GitHub target for the read-only settings view. |
@@ -249,11 +249,11 @@ Local relationships:
 |----------|---------|
 | **Whitebox of** | [§ 5.1.3 Blackbox Domain Services](#513-blackbox-domain-services). |
 | **Overview diagram** | Figure above; source [`diagrams/a05-l2-domain-services.plantuml`](diagrams/a05-l2-domain-services.plantuml). |
-| **Contained building blocks** | Three services — table below. |
-| **Local relationships** | Table below — note the absence of relationships *between* the three services. |
-| **Design decisions** | Three services, three concerns, no mutual dependencies — each consumes the type catalogue independently, which keeps [N2.2](../spec/N2-querschnittskonzepte.md#n22-type-driven-configuration)'s single resolution point honest. Prompt-stripping lives in the registry, so the leak surface of [NFR-15b-02](../spec/N1-nichtfunktional.md#15b-integrity-requirements) is one method wide. |
-| **Rejected alternatives** | One combined `NoteProcessingService` — sanitisation is needed at the dispatch boundary independently of preprocessing. |
-| **References** | [§ 8.2](A08-cross-cutting-concepts.md#82-type-driven-configuration), [§ 8.5](A08-cross-cutting-concepts.md#85-content-sanitisation), [chapter 6](A06-runtime-view.md). |
+| **Contained building blocks** | Four services — table below. |
+| **Local relationships** | Table below — note the absence of relationships *between* the four services. |
+| **Design decisions** | Four services, four concerns, no mutual dependencies — the three content services each consume the type catalogue independently, which keeps [N2.2](../spec/N2-querschnittskonzepte.md#n22-type-driven-configuration)'s single resolution point honest. Prompt-stripping lives in the registry, so the leak surface of [NFR-15b-02](../spec/N1-nichtfunktional.md#15b-integrity-requirements) is one method wide. `TotpService` is pure computation with no I/O, so the RFC 6238 algorithm is unit-testable with a fixed timestamp. |
+| **Rejected alternatives** | One combined `NoteProcessingService` — sanitisation is needed at the dispatch boundary independently of preprocessing; TOTP as private `AuthController` methods (the original form) — not testable in isolation against the RFC vectors. |
+| **References** | [§ 8.2](A08-cross-cutting-concepts.md#82-type-driven-configuration), [§ 8.4](A08-cross-cutting-concepts.md#84-authentication-and-session), [§ 8.5](A08-cross-cutting-concepts.md#85-content-sanitisation), [chapter 6](A06-runtime-view.md). |
 | **Open issues** | Sanitisation is invoked only on `send` — [D-07](A11-risks-and-technical-debts.md#112-technical-debts)(b). |
 
 Contained black boxes (all under `app/Services/`):
@@ -263,15 +263,16 @@ Contained black boxes (all under `app/Services/`):
 | `PreprocessingService` | `process(VoiceNote): void` | Assembles the type-specific prompt from the catalogue (unknown type → exception), calls the generation seam, and persists the generated title, body, and extracted extra fields together with the new status ([§ 8.2](A08-cross-cutting-concepts.md#82-type-driven-configuration), [chapter 6](A06-runtime-view.md)). |
 | `IssueContentSanitizer` | `sanitizeAndWrap(VoiceNote): string` | Composes the dispatched issue body from sanitised note content plus a generated metadata section — the neutralisation and visual delimitation demanded by [NFR-15b-04](../spec/N1-nichtfunktional.md#15b-integrity-requirements); rules in [§ 8.5](A08-cross-cutting-concepts.md#85-content-sanitisation). |
 | `MessageTypeRegistry` | `all(): array`, `get(string): ?array`, `keys(): array` | The browser-safe projection of the type catalogue: the prompt-bearing entries are stripped before anything reaches the UI Shell — the enforcement point of [NFR-15b-02](../spec/N1-nichtfunktional.md#15b-integrity-requirements). |
+| `TotpService` | `generateSecret(): string`, `provisioningUri(string, string): string`, `verify(string, string, ?int): bool`, `codeAt(string, int): string` | The home-rolled RFC 6238/4226 second factor of [TECH-13](A02-architecture-constraints.md#21-technical-constraints): 160-bit Base32 secret, `otpauth://` provisioning URI, HMAC-SHA1 6-digit codes on 30 s steps, ±1 step drift window, constant-time comparison ([§ 8.4](A08-cross-cutting-concepts.md#84-authentication-and-session)). |
 
 Local relationships:
 
 | Relationship | Contract |
 |--------------|----------|
-| Web Edge → the three services (inbound) | `process(note)` on *Process* ([UC-06](../spec/F2-anwendungsfaelle.md#uc-06--process-voice-note)); `sanitizeAndWrap(note)` on *Send* ([UC-08](../spec/F2-anwendungsfaelle.md#uc-08--dispatch-voice-note)); `all()`/`get()`/`keys()` for Inertia props and `GET /types`. |
+| Web Edge → the four services (inbound) | `process(note)` on *Process* ([UC-06](../spec/F2-anwendungsfaelle.md#uc-06--process-voice-note)); `sanitizeAndWrap(note)` on *Send* ([UC-08](../spec/F2-anwendungsfaelle.md#uc-08--dispatch-voice-note)); `all()`/`get()`/`keys()` for Inertia props and `GET /types`; `generateSecret()`/`provisioningUri()`/`verify()` on sign-in and enrolment ([UC-01](../spec/F2-anwendungsfaelle.md#uc-01--sign-in), [UC-02](../spec/F2-anwendungsfaelle.md#uc-02--enrol-second-factor)). |
 | `PreprocessingService` → Integration Adapters (outbound) | `chat()` — the generation seam. |
 | `PreprocessingService` → Persistence (outbound) | Generated title and body, merged metadata, new status. |
-| all three → type catalogue (outbound) | Prompt and extraction schema (preprocessing); extra-field labels for the metadata section (sanitizer); the stripped catalogue (registry). |
+| the three content services → type catalogue (outbound) | Prompt and extraction schema (preprocessing); extra-field labels for the metadata section (sanitizer); the stripped catalogue (registry). |
 
 ### 5.2.4 Whitebox Integration Adapters
 

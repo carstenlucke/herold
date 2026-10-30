@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\TotpService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\MultipleRecordsFoundException;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Inertia\Response as InertiaResponse;
 
 class AuthController extends Controller
 {
-    public function showLogin(Request $request): InertiaResponse
+    public function showLogin(Request $request, TotpService $totp): InertiaResponse
     {
         $step = 'key';
         $needsSetup = false;
@@ -28,7 +29,7 @@ class AuthController extends Controller
                 $step = $needsSetup ? 'totp_setup' : 'totp';
 
                 if ($needsSetup && $user->totp_secret) {
-                    $provisioningUri = $this->buildProvisioningUri($user->totp_secret, $user->email);
+                    $provisioningUri = $totp->provisioningUri($user->totp_secret, $user->email);
                 }
             }
         }
@@ -40,7 +41,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function verifyKey(Request $request)
+    public function verifyKey(Request $request, TotpService $totp)
     {
         $request->validate([
             'api_key' => 'required|string',
@@ -68,14 +69,14 @@ class AuthController extends Controller
         $needsSetup = ! $user->hasTotpEnabled();
 
         if ($needsSetup) {
-            $secret = $this->generateTotpSecret();
+            $secret = $totp->generateSecret();
             $user->update(['totp_secret' => $secret]);
         }
 
         return redirect()->route('login');
     }
 
-    public function setupTotp(Request $request)
+    public function setupTotp(Request $request, TotpService $totp)
     {
         if (! $request->session()->get('auth.key_verified')) {
             return redirect()->route('login');
@@ -83,10 +84,10 @@ class AuthController extends Controller
 
         $user = User::findOrFail($request->session()->get('auth.user_id'));
 
-        $secret = $this->generateTotpSecret();
+        $secret = $totp->generateSecret();
         $user->update(['totp_secret' => $secret]);
 
-        $provisioningUri = $this->buildProvisioningUri($secret, $user->email);
+        $provisioningUri = $totp->provisioningUri($secret, $user->email);
 
         return response()->json([
             'secret' => $secret,
@@ -94,7 +95,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function confirmTotp(Request $request)
+    public function confirmTotp(Request $request, TotpService $totp)
     {
         $request->validate([
             'totp_code' => 'required|digits:6',
@@ -110,7 +111,7 @@ class AuthController extends Controller
             return back()->withErrors(['totp_code' => 'TOTP not set up yet.']);
         }
 
-        if (! $this->verifyTotpCode($user->totp_secret, $request->input('totp_code'))) {
+        if (! $totp->verify($user->totp_secret, $request->input('totp_code'))) {
             return back()->withErrors(['totp_code' => 'Invalid TOTP code.']);
         }
 
@@ -123,7 +124,7 @@ class AuthController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
-    public function verifyTotp(Request $request)
+    public function verifyTotp(Request $request, TotpService $totp)
     {
         $request->validate([
             'totp_code' => 'required|digits:6',
@@ -139,7 +140,7 @@ class AuthController extends Controller
             return redirect()->route('login');
         }
 
-        if (! $this->verifyTotpCode($user->totp_secret, $request->input('totp_code'))) {
+        if (! $totp->verify($user->totp_secret, $request->input('totp_code'))) {
             Log::warning('Failed TOTP verification attempt.', [
                 'ip' => $request->ip(),
                 'user_id' => $user->id,
@@ -252,126 +253,5 @@ class AuthController extends Controller
         } catch (ModelNotFoundException|MultipleRecordsFoundException) {
             return null;
         }
-    }
-
-    /**
-     * Generate a random Base32-encoded TOTP secret (160 bits).
-     */
-    private function generateTotpSecret(): string
-    {
-        $bytes = random_bytes(20);
-        $base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-        $secret = '';
-
-        $buffer = 0;
-        $bitsLeft = 0;
-
-        foreach (str_split($bytes) as $byte) {
-            $buffer = ($buffer << 8) | ord($byte);
-            $bitsLeft += 8;
-
-            while ($bitsLeft >= 5) {
-                $bitsLeft -= 5;
-                $secret .= $base32Chars[($buffer >> $bitsLeft) & 0x1F];
-            }
-        }
-
-        if ($bitsLeft > 0) {
-            $secret .= $base32Chars[($buffer << (5 - $bitsLeft)) & 0x1F];
-        }
-
-        return $secret;
-    }
-
-    /**
-     * Build a Google Authenticator compatible provisioning URI.
-     */
-    private function buildProvisioningUri(string $secret, string $accountName): string
-    {
-        $issuer = 'Herold';
-        $label = rawurlencode("{$issuer}:{$accountName}");
-        $params = http_build_query([
-            'secret' => $secret,
-            'issuer' => $issuer,
-            'algorithm' => 'SHA1',
-            'digits' => 6,
-            'period' => 30,
-        ]);
-
-        return "otpauth://totp/{$label}?{$params}";
-    }
-
-    /**
-     * Verify a TOTP code using HMAC-SHA1 (RFC 6238).
-     * Allows a +-1 time step window to account for clock drift.
-     */
-    private function verifyTotpCode(string $secret, string $code): bool
-    {
-        $timeStep = 30;
-        $currentTimestamp = (int) floor(time() / $timeStep);
-
-        // Check current and adjacent time steps (+-1 window)
-        for ($offset = -1; $offset <= 1; $offset++) {
-            $expectedCode = $this->generateTotpCode($secret, $currentTimestamp + $offset);
-
-            if (hash_equals($expectedCode, $code)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Generate a 6-digit TOTP code for a given counter value.
-     */
-    private function generateTotpCode(string $base32Secret, int $counter): string
-    {
-        $secretBytes = $this->base32Decode($base32Secret);
-
-        // Pack counter as 8-byte big-endian
-        $counterBytes = pack('N*', 0, $counter);
-
-        $hash = hash_hmac('sha1', $counterBytes, $secretBytes, true);
-
-        // Dynamic truncation (RFC 4226)
-        $offset = ord($hash[19]) & 0x0F;
-        $binary = ((ord($hash[$offset]) & 0x7F) << 24)
-            | ((ord($hash[$offset + 1]) & 0xFF) << 16)
-            | ((ord($hash[$offset + 2]) & 0xFF) << 8)
-            | (ord($hash[$offset + 3]) & 0xFF);
-
-        $otp = $binary % 1_000_000;
-
-        return str_pad((string) $otp, 6, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * Decode a Base32-encoded string.
-     */
-    private function base32Decode(string $input): string
-    {
-        $map = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-        $input = strtoupper(rtrim($input, '='));
-
-        $buffer = 0;
-        $bitsLeft = 0;
-        $output = '';
-
-        foreach (str_split($input) as $char) {
-            $value = strpos($map, $char);
-            if ($value === false) {
-                continue;
-            }
-            $buffer = ($buffer << 5) | $value;
-            $bitsLeft += 5;
-
-            if ($bitsLeft >= 8) {
-                $bitsLeft -= 8;
-                $output .= chr(($buffer >> $bitsLeft) & 0xFF);
-            }
-        }
-
-        return $output;
     }
 }

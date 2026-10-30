@@ -76,9 +76,11 @@ package "Level 2 — Domain Services\n(whitebox, § 5.2.3)" as L2dom {
   folder "PreprocessingService" as f_prep #DDDDDD
   folder "IssueContentSanitizer" as f_sani #DDDDDD
   folder "MessageTypeRegistry" as f_reg #DDDDDD
+  folder "TotpService" as f_totp #DDDDDD
 
   f_prep -[hidden]d-> f_sani
   f_sani -[hidden]d-> f_reg
+  f_reg -[hidden]d-> f_totp
 }
 
 package "Level 2 — Integration Adapters\n(whitebox, § 5.2.4)" as L2ad {
