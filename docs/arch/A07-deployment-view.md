@@ -35,7 +35,7 @@ The deployment view maps the building blocks of [chapter 5](A05-building-block-v
 
 *Source: [`diagrams/a07-deployment-dev.plantuml`](diagrams/a07-deployment-dev.plantuml).*
 
-**Motivation.** [TECH-02](A02-architecture-constraints.md#21-technical-constraints)/[ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing): reproduce the production runtime as closely as Docker allows, with zero local PHP/Node installation.
+**Motivation.** [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing): reproduce the production runtime as closely as Docker allows, with zero local PHP/Node installation.
 
 | Service | Image / build | Role |
 |---------|---------------|------|

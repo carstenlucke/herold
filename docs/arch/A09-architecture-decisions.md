@@ -4,6 +4,8 @@ This document records key architecture decisions made for the project. Each deci
 
 For detailed variant comparisons see [`adr/*.md`](../../adr/).
 
+These decisions are taken inside the constraint space of [chapter 2](A02-architecture-constraints.md); technology choices are recorded here, not as constraints. Versions named in a decision are traceability information only — `composer.lock` and `package-lock.json` are authoritative for installed dependency versions. Routine upgrades do not change an ADR unless they alter the documented boundary or trade-off.
+
 ---
 
 ## ADR-001: Inertia.js as Frontend Bridge (no separate API layer for the browser UI)
@@ -79,7 +81,7 @@ For detailed variant comparisons see [`adr/*.md`](../../adr/).
 |--------|-------------|------|------|
 | **A -- Separate backend and SPA** | JSON API and independently deployed browser application. | Independent releases, explicit network boundary | Two deployment units, duplicate routing/auth concerns, CORS/API overhead |
 | **B -- Multiple backend services** | Capture, processing, persistence, and dispatch run separately. | Runtime isolation, independent scaling | Unsupported by the host, distributed failure modes, disproportionate operations |
-| **C -- Laravel monolith** | One Laravel application with the Vue/Inertia UI compiled into the same release artefact. | One codebase and deployment, full reactive UI, minimal operations | Coupled releases, binding PHP/Laravel platform |
+| **C -- Laravel monolith** | One Laravel application with the Vue/Inertia UI compiled into the same release artefact. | One codebase and deployment, full reactive UI, minimal operations | Coupled releases, binding Laravel platform (PHP itself is host-given, TECH-01) |
 
 **Decision:** Option C -- one Laravel application and one deployable.
 
@@ -144,3 +146,64 @@ For detailed variant comparisons see [`adr/*.md`](../../adr/).
 **Decision:** Option C -- direct Laravel HTTP calls confined to `AIService`.
 
 **Rationale:** Two small integration surfaces do not justify another abstraction layer. Provider portability comes from the application-owned adapter contract: controllers and pipeline services contain no OpenAI request knowledge. A possible migration to `laravel/ai` is tracked in [issue #41](https://github.com/carstenlucke/herold/issues/41) and must preserve that boundary. Detailed variant comparison: [`adr/007-application-owned-ai-adapter.md`](../../adr/007-application-owned-ai-adapter.md).
+
+---
+
+## ADR-008: Laravel as Server-Side Framework
+
+**Status:** Accepted
+
+**Context:** The host fixes PHP as the only server-side runtime (TECH-01). ADR-004 decides the topology (one deployable) but not the framework. Herold needs routing, session authentication, CSRF protection, validation, relational persistence with migrations on SQLite (ADR-005), an HTTP client for two external APIs (ADR-007), encrypted model attributes, and a server-side adapter for the Inertia bridge (ADR-001).
+
+**Options:**
+
+| Option | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **A -- Plain PHP / micro-framework** | Slim or hand-written front controller plus selected components. | Smallest footprint, full control | Session, CSRF, validation, migrations, encryption, and testing support must be assembled and maintained by hand |
+| **B -- Symfony** | Full-stack component framework. | Mature, explicit configuration, long-term support releases | More configuration for the same feature set; Inertia adapter is community-maintained |
+| **C -- Laravel** | Full-stack framework with Eloquent, migrations, HTTP client, and first-party Inertia and Vite integration. | Every needed concern built in; first-party Inertia adapter and Vite plugin; runs on plain Apache + PHP via `.htaccess` | Large `vendor/` tree in every release upload; annual major releases; operations use `artisan` |
+
+**Decision:** Option C -- Laravel.
+
+**Rationale:** Laravel covers every server-side concern Herold needs without assembling additional platform components, and it runs on the host as delivered — Apache rewrites to `public/index.php`, no daemon, no extension beyond `pdo_sqlite`/`mbstring`/`xml`. The first-party Inertia adapter and Vite plugin make the UI stack of ADR-001/ADR-009 a supported configuration rather than an integration project. The framework ships inside the release artefact; the host only provides PHP. Detailed variant comparison: [`adr/008-laravel-server-side-framework.md`](../../adr/008-laravel-server-side-framework.md).
+
+---
+
+## ADR-009: Vue 3 + Vuetify + TypeScript as Browser UI Stack
+
+**Status:** Accepted
+
+**Context:** ADR-001 rules out server-rendered Blade for the audio UI and selects Inertia as the bridge, but it does not compare client frameworks, component libraries, or the source language. The UI must be responsive from 320 px with touch targets ≥ 48 dp ([NFR-10a-01](../spec/N1-nichtfunktional.md#10a-appearance-requirements)) and serve smartphone and desktop equally (TECH-07).
+
+**Options:**
+
+| Option | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **A -- React + MUI** | React with a Material component library. | Largest ecosystem, first-party Inertia adapter | Existing Vue 3 + Vuetify experience (ADR-001) not reused; JSX-based component style |
+| **B -- Svelte** | Compiler-based framework, custom or small component library. | Small bundles, little runtime | Smaller component ecosystem; most UI components to be built |
+| **C -- Vue 3 + Tailwind / headless components** | Vue with utility CSS and unstyled primitives. | Full visual control | Accessibility, touch sizing, and responsive behaviour must be designed per component |
+| **D -- Vue 3 + Vuetify** | Vue 3 Composition API with Vuetify's Material Design 3 components; TypeScript in SFCs. | First-party Inertia adapter; existing Vue 3 + Vuetify experience (ADR-001); responsive grid and touch-sized components out of the box | Vuetify's visual language and major-version upgrades; Material look must be adapted rather than designed freely |
+
+**Decision:** Option D -- Vue 3 with Vuetify; components and scripts are written in TypeScript.
+
+**Rationale:** Vue 3 and Vuetify are already known from earlier work (ADR-001), Inertia supports Vue first-party, and Vuetify's Material Design 3 components satisfy the responsive and touch-target requirements without per-component design work. TypeScript documents props, page payloads, and type projections at the Inertia boundary. Type annotations are currently stripped by Vite without a type check; adding `vue-tsc` as a CI gate is tracked in [issue #53](https://github.com/carstenlucke/herold/issues/53). Detailed variant comparison: [`adr/009-vue-vuetify-typescript-ui-stack.md`](../../adr/009-vue-vuetify-typescript-ui-stack.md).
+
+---
+
+## ADR-010: Home-Rolled TOTP instead of a Library
+
+**Status:** Accepted
+
+**Context:** The second authentication factor ([NFR-15a-01](../spec/N1-nichtfunktional.md#15a-access-requirements)) is a time-based one-time password. It runs inside Herold's own two-step sign-in flow (API key, then TOTP, with inline enrolment) and its file-based recovery ([UC-03](../spec/F2-anwendungsfaelle.md#uc-03--recover-access)). The question is whether TOTP generation and verification come from a package or from application code.
+
+**Options:**
+
+| Option | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **A -- Laravel Fortify** | First-party authentication backend with two-factor support. | Maintained, complete 2FA flow | Brings its own routes, flows, and recovery codes that compete with Herold's API-key login and file-based recovery |
+| **B -- TOTP library** | e.g. `pragmarx/google2fa` for secret generation and code verification. | Externally reviewed algorithm implementation | Additional dependency for a few functions; drift window and comparison semantics follow the library |
+| **C -- Home-rolled RFC 6238/4226** | Secret generation, Base32 codec, HOTP/TOTP calculation, and verification in `AuthController` using PHP built-ins. | No dependency; algorithm fully visible and testable; exact control over drift window and constant-time comparison | Security-relevant code owned by the project and verified only by its own tests |
+
+**Decision:** Option C -- home-rolled TOTP per RFC 6238/4226.
+
+**Rationale:** The algorithm is short, standardised, and stable; PHP's `random_bytes`, `hash_hmac`, and `hash_equals` provide every primitive it needs. Fortify would replace rather than support Herold's sign-in and recovery flows, and a library would add a dependency for a handful of functions. The acceptance tests currently exercise the rejection paths (wrong, malformed, or out-of-order codes); a positive check against the RFC 6238 test vectors is not yet part of the suite. Detailed variant comparison: [`adr/010-home-rolled-totp.md`](../../adr/010-home-rolled-totp.md).

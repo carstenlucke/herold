@@ -1,11 +1,11 @@
 # 4 Solution Strategy
 
-Short summary of the fundamental decisions. The stack itself is catalogued in [§ 2.1](A02-architecture-constraints.md#21-technical-constraints); the decisions are developed in chapters 5 (building blocks), 6 (runtime), 7 (deployment), 8 (cross-cutting) and 9 (ADRs).
+Short summary of the fundamental decisions. The constraints that bound these decisions are listed in [chapter 2](A02-architecture-constraints.md); the decisions are developed in chapters 5 (building blocks), 6 (runtime), 7 (deployment), 8 (cross-cutting) and 9 (ADRs).
 
 ## 4.1 Technology
 
-- **Laravel monolith** on **Apache + PHP 8.5**, one deployable in production ([ADR-004](A09-architecture-decisions.md#adr-004-laravel-monolith-as-a-single-deployable-application-platform)); Apache is mirrored in development by Docker Compose ([ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing)).
-- **Inertia.js + Vue + Vuetify** as the browser UI — no separate JSON API for the browser ([ADR-001](A09-architecture-decisions.md#adr-001-inertiajs-as-frontend-bridge-no-separate-api-layer-for-the-browser-ui)).
+- **Laravel monolith** on the host-given **Apache + PHP** ([TECH-01](A02-architecture-constraints.md#21-technical-constraints)), one deployable in production ([ADR-004](A09-architecture-decisions.md#adr-004-laravel-monolith-as-a-single-deployable-application-platform), [ADR-008](A09-architecture-decisions.md#adr-008-laravel-as-server-side-framework)); Apache is mirrored in development by Docker Compose ([ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing)).
+- **Inertia.js + Vue + Vuetify** (TypeScript) as the browser UI — no separate JSON API for the browser ([ADR-001](A09-architecture-decisions.md#adr-001-inertiajs-as-frontend-bridge-no-separate-api-layer-for-the-browser-ui), [ADR-009](A09-architecture-decisions.md#adr-009-vue-3--vuetify--typescript-as-browser-ui-stack)).
 - **SQLite** as the embedded flat-file RDBMS ([ADR-005](A09-architecture-decisions.md#adr-005-sqlite-as-embedded-persistence)); uploaded audio on the local filesystem.
 - **HTTPS** outbound to **OpenAI** through an application-owned Laravel HTTP adapter ([ADR-007](A09-architecture-decisions.md#adr-007-application-owned-ai-adapter-over-laravel-http)) and to **GitHub Issues** — synchronous, blocking, no queue or worker ([ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing)).
 - **GitHub Issues as the sole ticket store**; local AI agents are indirect via GitHub, never via Herold ([ADR-003](A09-architecture-decisions.md#adr-003-github-issues-as-sole-ticket-store)).

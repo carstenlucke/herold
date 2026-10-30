@@ -52,7 +52,7 @@ The decision is about the application topology and deployment unit. The communic
 
 **Cons:**
 - Backend and browser UI release together
-- The application is tied to the PHP/Laravel ecosystem
+- The application is tied to the Laravel ecosystem (ADR-008)
 - Horizontal decomposition would require a later architectural change
 
 ---
@@ -71,8 +71,8 @@ Herold is implemented as a Laravel monolith and delivered as one deployable appl
 
 ## Consequences
 
-- PHP and Laravel are binding platform choices for the server-side architecture.
-- The UI source uses Vue, Inertia, and Vuetify in the same repository; ADR-001 governs the bridge and the absence of a separate browser API.
+- Laravel is a binding platform choice for the server-side architecture (ADR-008); PHP itself is given by the host (TECH-01).
+- The UI source uses Vue, Inertia, and Vuetify in the same repository; ADR-001 governs the bridge and the absence of a separate browser API, ADR-009 the UI stack.
 - Server and UI changes are versioned and released together.
 - Built frontend assets are included in the production artefact; ADR-006 decides where and how they are built.
 - Framework and library versions are traceability information, not permanent architecture constraints. `composer.lock` and `package-lock.json` are authoritative for installed versions.

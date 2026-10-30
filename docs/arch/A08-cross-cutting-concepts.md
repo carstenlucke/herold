@@ -234,7 +234,7 @@ The message names the missing key but never the value ([§ 8.8](#88-secret-handl
 Realisation of [N2.4](../spec/N2-querschnittskonzepte.md#n24-authentication-and-session), concentrated in `AuthController` ([§ 6.4](A06-runtime-view.md#64-sign-in-with-inline-totp-enrolment)):
 
 - **Factor 1 — API key.** Presented at `POST /login/key`, hashed with SHA-256 and compared via `hash_equals` against `users.api_key_hash`. Success is held as the session flag `auth.key_verified` — not yet a login.
-- **Factor 2 — TOTP.** Home-rolled RFC 6238/4226 ([TECH-13](A02-architecture-constraints.md#21-technical-constraints)), no library: 160-bit secret, custom Base32 codec, HMAC-SHA1 with dynamic truncation to 6 digits, 30 s steps, ±1 step clock-drift window, `hash_equals` comparison. Enrolment is inline on first sign-in (secret auto-generated after factor 1; `otpauth://` provisioning URI rendered as a QR client-side via the `qrcode` package; confirmed code sets `totp_confirmed_at`).
+- **Factor 2 — TOTP.** Home-rolled RFC 6238/4226 ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)), no library: 160-bit secret, custom Base32 codec, HMAC-SHA1 with dynamic truncation to 6 digits, 30 s steps, ±1 step clock-drift window, `hash_equals` comparison. Enrolment is inline on first sign-in (secret auto-generated after factor 1; `otpauth://` provisioning URI rendered as a QR client-side via the `qrcode` package; confirmed code sets `totp_confirmed_at`).
 - **Session as the gate.** Only after factor 2 does `Auth::login()` run, followed by [session-id regeneration](https://laravel.com/docs/13.x/session#regenerating-the-session-id) and removal of the intermediate flags. Every protected route sits behind the stock session [`auth` middleware](https://laravel.com/docs/13.x/authentication#protecting-routes) — the single gate; no per-use-case checks exist. `POST /logout` invalidates the session ([UC-04](../spec/F2-anwendungsfaelle.md#uc-04--sign-out)).
 - **Defence-in-depth at the edge.** `SecurityHeaders` middleware on the whole `web` group: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(self)`.
 - **Recovery** replaces both factors via the out-of-band file token ([§ 6.5](A06-runtime-view.md#65-recover-access)); all rejection reasons collapse to a uniform 404 ([NFR-15a-04](../spec/N1-nichtfunktional.md#15a-access-requirements)).
@@ -279,7 +279,7 @@ for ($offset = -1; $offset <= 1; $offset++) {       // ±1 step tolerates clock 
 return false;
 ```
 
-`generateTotpCode` implements the underlying RFC 4226 calculation without a library (`TECH-13`): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the shared secret, and derives a six-digit code from the result:
+`generateTotpCode` implements the underlying RFC 4226 calculation without a library ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the shared secret, and derives a six-digit code from the result:
 
 ```php
 $counterBytes = pack('N*', 0, $counter);                        // 8-byte big-endian counter

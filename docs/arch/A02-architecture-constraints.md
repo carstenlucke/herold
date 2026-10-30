@@ -1,10 +1,11 @@
 # 2 Architecture Constraints
 
-Constraints fix the non-negotiable design space for the architect. They come from three sources:
+Constraints fix the non-negotiable design space for the architect. They come from two sources:
 
 - **Externally mandated constraints** from the specification — see [`../spec/P1-constraints.md`](../spec/P1-constraints.md) (Volere § 3) and the cultural / standards requirements in [`../spec/N1-nichtfunktional.md`](../spec/N1-nichtfunktional.md) (§ 16, § 17).
-- **Inherited technology decisions** that are now binding for further design. Architecturally significant ones are captured as ADRs in [`A09-architecture-decisions.md`](A09-architecture-decisions.md); the binding facts are summarised here.
 - **Project-wide conventions** governing the spec/arch split, documentation structure, and source-tree hygiene — see [`../README.md`](../README.md) and [`../spec/README.md`](../spec/README.md). For the conventions in § 2.3, this chapter is itself the normative source; tooling configuration merely restates them.
+
+Technology choices taken *inside* this space — framework, UI stack, database product, build toolchain, development environment, home-grown components — are architecture decisions, not constraints. They are recorded with their alternatives in [chapter 9](A09-architecture-decisions.md), even where they are binding for further design.
 
 The tables below are the architect's working index; detailed rationale stays in the linked sources.
 
@@ -12,23 +13,26 @@ The tables below are the architect's working index; detailed rationale stays in 
 
 ## 2.1 Technical Constraints
 
-For inherited technology choices (TECH-08 through TECH-12), versions are recorded only for traceability — the binding constraint is the technology or runtime boundary, not a specific release. `composer.lock` and `package-lock.json` are authoritative for installed dependency versions. Routine upgrades do not change an ADR unless they alter the documented boundary or trade-off.
-
 | ID | Constraint | Description / Source |
 |----|------------|----------------------|
-| TECH-01 | Shared hosting in production | Apache + PHP on a shared host. No container runtime, no `cron`, no long-running workers; HTTPS at the public edge; out-of-band file-store write access (e.g. FTP) for deployment and recovery. Mandated by [`CON-3b-01`](../spec/P1-constraints.md#con-3b-01-shared-hosting-production); realised by [ADR-002](A09-architecture-decisions.md). |
-| TECH-02 | Docker Compose in development | All development services run inside Docker Compose (`docker compose up -d`); no local PHP or Node installation is required. Two services: an `app` container running the same `php:8.5-apache` image used to model production (TECH-10), and a `node` container for the frontend toolchain (TECH-12). Decided in [ADR-002](A09-architecture-decisions.md) to minimise dev/prod drift. |
-| TECH-03 | Low-footprint database | No separate database server, schema-management service, or external credential store. Mandated by [`CON-3a-03`](../spec/P1-constraints.md#con-3a-03-low-footprint-database); realised by SQLite (TECH-11). |
-| TECH-04 | OpenAI APIs for AI workloads | OpenAI transcription and Chat Completion for content generation. The integration point per neighbour must be replaceable without touching the rest of the application. Mandated by [`CON-3c-01`](../spec/P1-constraints.md#con-3c-01-openai-apis-speech-to-text-and-chat-completion); realised as an application-owned adapter over Laravel HTTP by [ADR-007](A09-architecture-decisions.md#adr-007-application-owned-ai-adapter-over-laravel-http). |
-| TECH-05 | GitHub Issues as sole ticket sink | One private repository, accessed via a fine-grained PAT (`Issues: Read & Write`). Mandated by [`CON-3c-02`](../spec/P1-constraints.md#con-3c-02-github-issues-api); decided in [ADR-003](A09-architecture-decisions.md). |
-| TECH-06 | Agent interoperability via GitHub only | Local AI agents (Claude Code, OpenCode, …) read tickets through `gh`/the GitHub API. Herold exposes no agent-facing API and stores no agent memory. Mandated by [`CON-3c-03`](../spec/P1-constraints.md#con-3c-03-local-ai-agents-claude-code-opencode-) and ADR-003. |
+| TECH-01 | Shared hosting with Apache + PHP | The host provides Apache (with per-directory `.htaccess` configuration) and a PHP runtime, invoked per HTTP request, as the only server-side execution environment. No container runtime, no `cron`, no long-running workers, no Node.js or other build toolchain; HTTPS at the public edge; out-of-band file-store write access (e.g. FTP) for deployment and recovery. The concrete PHP version and extensions are set by the host and recorded in [§ 7.1.1](A07-deployment-view.md#711-production--shared-hosting). Mandated by [`CON-3b-01`](../spec/P1-constraints.md#con-3b-01-shared-hosting-production); shapes [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing), [ADR-004](A09-architecture-decisions.md#adr-004-laravel-monolith-as-a-single-deployable-application-platform), and [ADR-006](A09-architecture-decisions.md#adr-006-off-host-frontend-build-with-vite). |
+| TECH-03 | Low-footprint database | No separate database server, schema-management service, or external credential store. Mandated by [`CON-3a-03`](../spec/P1-constraints.md#con-3a-03-low-footprint-database); realised by [ADR-005](A09-architecture-decisions.md#adr-005-sqlite-as-embedded-persistence). |
+| TECH-04 | OpenAI APIs for AI workloads | OpenAI transcription and Chat Completion for content generation. Mandated by [`CON-3c-01`](../spec/P1-constraints.md#con-3c-01-openai-apis-speech-to-text-and-chat-completion). Provider portability is a quality requirement ([NFR-14c-01](../spec/N1-nichtfunktional.md#14c-adaptability-requirements), [QG-04](A01-introduction-and-goals.md#12-quality-goals)), realised by [ADR-007](A09-architecture-decisions.md#adr-007-application-owned-ai-adapter-over-laravel-http). |
+| TECH-05 | GitHub Issues as ticket target | One private repository, accessed via a fine-grained PAT (`Issues: Read & Write`). Mandated by [`CON-3c-02`](../spec/P1-constraints.md#con-3c-02-github-issues-api). That GitHub is the *sole* ticket store, with no local ticket lifecycle, is decided in [ADR-003](A09-architecture-decisions.md#adr-003-github-issues-as-sole-ticket-store). |
+| TECH-06 | Agent interoperability via GitHub only | Local AI agents (Claude Code, OpenCode, …) read tickets through `gh`/the GitHub API. Mandated by [`CON-3c-03`](../spec/P1-constraints.md#con-3c-03-local-ai-agents-claude-code-opencode-); the consequence that Herold exposes no agent-facing API and stores no agent memory is recorded in [ADR-003](A09-architecture-decisions.md#adr-003-github-issues-as-sole-ticket-store). |
 | TECH-07 | Mobile and desktop equally supported | Voice recording on smartphone; review and editing on desktop. Neither context is privileged. Mandated by [`CON-3e-01`](../spec/P1-constraints.md#con-3e-01-mobile-and-desktop-equally-supported). |
-| TECH-08 | PHP + Laravel | Server-side runtime and framework (PHP 8.5, Laravel 13.4 at the time of this decision). Binding for routing, persistence, validation, and the single-deployable application topology selected in [ADR-004](A09-architecture-decisions.md#adr-004-laravel-monolith-as-a-single-deployable-application-platform). AI calls use Laravel's HTTP client behind ADR-007's adapter; no AI SDK is assumed. |
-| TECH-09 | Vue + TypeScript + Inertia.js + Vuetify | Browser UI stack (Vue 3.5, Inertia.js 3, Vuetify 4 at the time of this decision; TypeScript source is transpiled by Vite). Inertia bridges Laravel routing/auth and Vue rendering — no separate JSON API for the browser. Decided in [ADR-001](A09-architecture-decisions.md) within the application platform of [ADR-004](A09-architecture-decisions.md#adr-004-laravel-monolith-as-a-single-deployable-application-platform). |
-| TECH-10 | Apache in development and production | Identical webserver in both environments so that `.htaccess` is exercised continuously. Dev environment uses the official `php:8.5-apache` Docker image (via TECH-02); production runs Apache natively on the host. Decided in [ADR-002](A09-architecture-decisions.md). |
-| TECH-11 | SQLite as application database | Concrete realisation of TECH-03 (SQLite 3.51 at the time of this decision). Persisted through a bind-mounted directory in development and as a flat file on the host in production; never overwritten by deployment. Decided in [ADR-005](A09-architecture-decisions.md#adr-005-sqlite-as-embedded-persistence). |
-| TECH-12 | Vite + Node LTS at build time only | Frontend bundling toolchain (Vite 8 with Rolldown, Node 24 LTS at the time of this decision). Node is absent from the production runtime; only assets built off-host are deployed, as decided in [ADR-006](A09-architecture-decisions.md#adr-006-off-host-frontend-build-with-vite). |
-| TECH-13 | Home-rolled TOTP | Encrypted `users.totp_secret` plus `users.totp_confirmed_at`; no third-party TOTP package. Surface satisfies [`NFR-15a-01`](../spec/N1-nichtfunktional.md#15a-access-requirements). |
+
+IDs are stable. TECH-02 and TECH-08 – TECH-13 were technology decisions rather than constraints and have been retired; their content now lives in chapter 9:
+
+| Retired ID | Former entry | Now recorded in |
+|------------|--------------|-----------------|
+| TECH-02 | Docker Compose in development | [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing) |
+| TECH-08 | PHP + Laravel | PHP: TECH-01 (host-given). Laravel: [ADR-008](A09-architecture-decisions.md#adr-008-laravel-as-server-side-framework) |
+| TECH-09 | Vue + TypeScript + Inertia.js + Vuetify | Inertia: [ADR-001](A09-architecture-decisions.md#adr-001-inertiajs-as-frontend-bridge-no-separate-api-layer-for-the-browser-ui). Vue, Vuetify, TypeScript: [ADR-009](A09-architecture-decisions.md#adr-009-vue-3--vuetify--typescript-as-browser-ui-stack) |
+| TECH-10 | Apache in development and production | Production: TECH-01 (host-given). Development parity: [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing) |
+| TECH-11 | SQLite as application database | [ADR-005](A09-architecture-decisions.md#adr-005-sqlite-as-embedded-persistence) |
+| TECH-12 | Vite + Node LTS at build time only | No build toolchain on the host: TECH-01. Off-host Vite build: [ADR-006](A09-architecture-decisions.md#adr-006-off-host-frontend-build-with-vite) |
+| TECH-13 | Home-rolled TOTP | [ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library) |
 
 ---
 
