@@ -7,7 +7,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Home-rolled TOTP (TECH-13) against RFC 6238 / RFC 4648.
+ * Home-rolled TOTP (ADR-010) against RFC 6238 / RFC 4648.
  *
  * NFR-15a-01: Two-Factor Browser Authentication
  */

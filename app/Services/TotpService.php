@@ -52,10 +52,11 @@ class TotpService
      */
     public function verify(string $secret, string $code, ?int $timestamp = null): bool
     {
+        $key = $this->base32Decode($secret);
         $counter = intdiv($timestamp ?? time(), self::PERIOD);
 
         for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) {
-            if (hash_equals($this->codeForCounter($secret, $counter + $offset), $code)) {
+            if (hash_equals($this->codeForCounter($key, $counter + $offset), $code)) {
                 return true;
             }
         }
@@ -68,7 +69,7 @@ class TotpService
      */
     public function codeAt(string $secret, int $timestamp): string
     {
-        return $this->codeForCounter($secret, intdiv($timestamp, self::PERIOD));
+        return $this->codeForCounter($this->base32Decode($secret), intdiv($timestamp, self::PERIOD));
     }
 
     /**
@@ -126,14 +127,13 @@ class TotpService
     }
 
     /**
-     * HOTP value (RFC 4226) for a counter, zero-padded to DIGITS digits.
+     * HOTP value (RFC 4226) for a counter and raw (decoded) key,
+     * zero-padded to DIGITS digits.
      */
-    private function codeForCounter(string $base32Secret, int $counter): string
+    private function codeForCounter(string $key, int $counter): string
     {
-        // 8-byte big-endian counter (high word 0; sufficient until counter >= 2^32)
-        $counterBytes = pack('N*', 0, $counter);
-
-        $hash = hash_hmac('sha1', $counterBytes, $this->base32Decode($base32Secret), true);
+        // 8-byte big-endian counter
+        $hash = hash_hmac('sha1', pack('J', $counter), $key, true);
 
         // Dynamic truncation (RFC 4226 § 5.3)
         $offset = ord($hash[19]) & 0x0F;

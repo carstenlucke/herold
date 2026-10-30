@@ -64,7 +64,8 @@ Notable aspects:
 - **One controller, three steps, one session.** `showLogin` derives the current step (`key` → `totp_setup` → `totp`) from session flags and the user's enrolment state; the intermediate first-factor success is held as `auth.key_verified` in the session, never as a half-authenticated login.
 - **Enrolment is lazy and inline.** The first successful key verification auto-generates a TOTP secret (160-bit random, Base32) and drives the operator through provisioning-URI capture and code confirmation before any session is issued — [UC-02](../spec/F2-anwendungsfaelle.md#uc-02--enrol-second-factor) as an inline branch of [UC-01](../spec/F2-anwendungsfaelle.md#uc-01--sign-in), exactly as specified.
 - **The session attests both factors.** `Auth::login` fires only after the second factor verifies; the session id is regenerated and the intermediate flags are dropped. Every protected route then relies solely on the stock session `auth` guard ([§ 8.4](A08-cross-cutting-concepts.md#84-authentication-and-session)).
-- **Rate limits sit in front of the credential checks.** `throttle:5,1` guards both factor endpoints; failures are logged with source IP ([NFR-15a-02](../spec/N1-nichtfunktional.md#15a-access-requirements), [N2.6](../spec/N2-querschnittskonzepte.md#n26-logging)).
+- **Enrolment cannot replace a confirmed second factor.** The enrolment endpoints bounce back to `/login` once `totp_confirmed_at` is set, so the API key alone can never mint a fresh TOTP secret for an enrolled operator.
+- **Rate limits sit in front of the credential checks.** `throttle:5,1` guards both factor endpoints and the enrolment endpoints; failures are logged with source IP ([NFR-15a-02](../spec/N1-nichtfunktional.md#15a-access-requirements), [N2.6](../spec/N2-querschnittskonzepte.md#n26-logging)).
 
 ## 6.5 Recover access
 

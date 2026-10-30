@@ -257,7 +257,7 @@ These values record that factor 1 succeeded and identify the operator for the ne
 **Step 2 — a TOTP code is accepted only after the API key.** Both endpoints that accept a TOTP code — `verifyTotp` for a returning operator and `confirmTotp` for first-time enrolment — first check the temporary session values from step 1:
 
 ```php
-$request->validate(['totp_code' => 'required|digits:6']);
+$request->validate(['totp_code' => 'required|digits:'.TotpService::DIGITS]);
 
 if (! $request->session()->get('auth.key_verified')) {
     return redirect()->route('login');           // factor 1 not passed — no error detail
@@ -266,15 +266,16 @@ if (! $request->session()->get('auth.key_verified')) {
 $user = User::findOrFail($request->session()->get('auth.user_id'));
 ```
 
-Without `auth.key_verified`, the request returns to the login page. A direct call to a TOTP endpoint therefore cannot skip the API-key step. The user id also ensures that the code is checked for the same operator whose API key was accepted.
+Without `auth.key_verified`, the request returns to the login page. A direct call to a TOTP endpoint therefore cannot skip the API-key step. The user id also ensures that the code is checked for the same operator whose API key was accepted. The enrolment endpoints (`setupTotp`, `confirmTotp`) additionally return to the login page once `totp_confirmed_at` is set, so factor 1 alone can never replace or re-confirm an enrolled second factor.
 
 **Step 3 — the TOTP code is checked against the current time window.** A TOTP code changes every 30 seconds. To tolerate small clock differences between Herold and the authenticator app, `TotpService::verify` accepts the expected code for the previous, current, or next 30-second interval. Each comparison uses `hash_equals` to avoid timing leaks:
 
 ```php
+$key = $this->base32Decode($secret);                                // decoded once per attempt
 $counter = intdiv($timestamp ?? time(), self::PERIOD);              // the RFC 6238 time step (30 s)
 
 for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) { // ±1 step tolerates clock drift
-    if (hash_equals($this->codeForCounter($secret, $counter + $offset), $code)) {
+    if (hash_equals($this->codeForCounter($key, $counter + $offset), $code)) {
         return true;
     }
 }
@@ -282,11 +283,10 @@ for ($offset = -self::WINDOW; $offset <= self::WINDOW; $offset++) { // ±1 step 
 return false;
 ```
 
-The optional `$timestamp` (and the public `codeAt(string $secret, int $timestamp)`) exist for tests; the controller always verifies against the current time. `codeForCounter` implements the underlying RFC 4226 calculation without a library ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the shared secret, and derives a six-digit code from the result:
+The optional `$timestamp` (and the public `codeAt(string $secret, int $timestamp)`) exist for tests; the controller always verifies against the current time. `codeForCounter` implements the underlying RFC 4226 calculation without a library ([ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library)): it encodes the time counter as eight bytes, calculates HMAC-SHA1 with the decoded shared secret, and derives a six-digit code from the result:
 
 ```php
-$counterBytes = pack('N*', 0, $counter);                        // 8-byte big-endian counter
-$hash = hash_hmac('sha1', $counterBytes, $this->base32Decode($base32Secret), true);
+$hash = hash_hmac('sha1', pack('J', $counter), $key, true);     // 8-byte big-endian counter
 
 $offset = ord($hash[19]) & 0x0F;                                // dynamic truncation
 $binary = ((ord($hash[$offset]) & 0x7F) << 24)
@@ -297,7 +297,7 @@ $binary = ((ord($hash[$offset]) & 0x7F) << 24)
 return str_pad((string) ($binary % 10 ** self::DIGITS), self::DIGITS, '0', STR_PAD_LEFT);
 ```
 
-One verification attempt therefore checks at most three candidate codes. For returning operators, `POST /login/totp` is limited to five requests per minute. The first-time enrolment endpoint `POST /login/totp/confirm` currently has no equivalent route-level throttle.
+One verification attempt therefore checks at most three candidate codes. `POST /login/totp` (returning operators) and the enrolment endpoints `POST /login/totp/setup` and `POST /login/totp/confirm` are each limited to five requests per minute.
 
 **Step 4 — a valid TOTP code completes the login.** Only now does Laravel mark the operator as authenticated. The controller then replaces the session id to prevent session-fixation attacks and removes the temporary values from step 1:
 

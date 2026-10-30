@@ -84,6 +84,11 @@ class AuthController extends Controller
 
         $user = User::findOrFail($request->session()->get('auth.user_id'));
 
+        // Never let factor 1 alone replace a confirmed second factor.
+        if ($user->hasTotpEnabled()) {
+            return redirect()->route('login');
+        }
+
         $secret = $totp->generateSecret();
         $user->update(['totp_secret' => $secret]);
 
@@ -98,7 +103,7 @@ class AuthController extends Controller
     public function confirmTotp(Request $request, TotpService $totp)
     {
         $request->validate([
-            'totp_code' => 'required|digits:6',
+            'totp_code' => 'required|digits:'.TotpService::DIGITS,
         ]);
 
         if (! $request->session()->get('auth.key_verified')) {
@@ -106,6 +111,10 @@ class AuthController extends Controller
         }
 
         $user = User::findOrFail($request->session()->get('auth.user_id'));
+
+        if ($user->hasTotpEnabled()) {
+            return redirect()->route('login');
+        }
 
         if (! $user->totp_secret) {
             return back()->withErrors(['totp_code' => 'TOTP not set up yet.']);
@@ -127,7 +136,7 @@ class AuthController extends Controller
     public function verifyTotp(Request $request, TotpService $totp)
     {
         $request->validate([
-            'totp_code' => 'required|digits:6',
+            'totp_code' => 'required|digits:'.TotpService::DIGITS,
         ]);
 
         if (! $request->session()->get('auth.key_verified')) {

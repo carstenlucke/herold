@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login/key', [AuthController::class, 'verifyKey'])->middleware('throttle:5,1');
 Route::post('/login/totp', [AuthController::class, 'verifyTotp'])->middleware('throttle:5,1');
-Route::post('/login/totp/setup', [AuthController::class, 'setupTotp']);
-Route::post('/login/totp/confirm', [AuthController::class, 'confirmTotp']);
+Route::post('/login/totp/setup', [AuthController::class, 'setupTotp'])->middleware('throttle:5,1');
+Route::post('/login/totp/confirm', [AuthController::class, 'confirmTotp'])->middleware('throttle:5,1');
 Route::post('/logout', [AuthController::class, 'logout']);
 
 // Recovery
