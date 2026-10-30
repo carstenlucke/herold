@@ -163,12 +163,6 @@ Switching the AI provider (e.g. from OpenAI to Anthropic or Gemini) must be a lo
 
 **Fit Criterion:** Replacing the active AI provider requires editing only the single integration point per neighbour plus host configuration. No change is required outside those isolation points for transcription and content generation to continue functioning.
 
-**NFR-14c-02: Ticket Target Portability**
-
-Switching the ticket target (e.g. from GitHub Issues to GitLab Issues or Linear) must be achievable with bounded development effort. Target-specific behaviour is confined to a single integration point ([S1.5](S1-nachbarsysteme.md#s15--nb-04--github-issues-api) ticket dispatch); the issue reference recorded on a dispatched note, the per-type label binding, and the limits applied to title and body are expressed in target-neutral terms or supplied by that integration point. Target selection, coordinates, and credentials are supplied out-of-band via host configuration.
-
-**Fit Criterion:** Replacing the active ticket target with another issue tracker that offers a comparable create-issue operation takes at most one developer-day, including tests. Domain logic, pipeline orchestration, and dialogue structure remain unchanged.
-
 ---
 
 ## 15. Security Requirements
