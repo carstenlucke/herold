@@ -165,7 +165,7 @@ These decisions are taken inside the constraint space of [chapter 2](A02-archite
 
 **Decision:** Option C -- Laravel.
 
-**Rationale:** Laravel covers every server-side concern Herold needs without assembling additional platform components, and it runs on the host as delivered — Apache rewrites to `public/index.php`, no daemon, no extension beyond `pdo_sqlite`/`mbstring`/`xml`. The first-party Inertia adapter and Vite plugin make the UI stack of ADR-001/ADR-009 a supported configuration rather than an integration project. The framework ships inside the release artefact; the host only provides PHP. Detailed variant comparison: [`adr/008-laravel-server-side-framework.md`](../../adr/008-laravel-server-side-framework.md).
+**Rationale:** Laravel covers every server-side concern Herold needs without assembling additional platform components, and it runs on the host as delivered — Apache rewrites to `public/index.php`, no daemon, only standard PHP extensions (notably `pdo_sqlite`/`openssl`/`mbstring`/`fileinfo`/`xml`). The first-party Inertia adapter and Vite plugin make the UI stack of ADR-001/ADR-009 a supported configuration rather than an integration project. The framework ships inside the release artefact; the host only provides PHP. Detailed variant comparison: [`adr/008-laravel-server-side-framework.md`](../../adr/008-laravel-server-side-framework.md).
 
 ---
 
@@ -186,7 +186,7 @@ These decisions are taken inside the constraint space of [chapter 2](A02-archite
 
 **Decision:** Option D -- Vue 3 with Vuetify; components and scripts are written in TypeScript.
 
-**Rationale:** Vue 3 and Vuetify are already known from earlier work (ADR-001), Inertia supports Vue first-party, and Vuetify's Material Design 3 components satisfy the responsive and touch-target requirements without per-component design work. TypeScript documents props, page payloads, and type projections at the Inertia boundary. Type annotations are currently stripped by Vite without a type check; adding `vue-tsc` as a CI gate is tracked in [issue #53](https://github.com/carstenlucke/herold/issues/53). Detailed variant comparison: [`adr/009-vue-vuetify-typescript-ui-stack.md`](../../adr/009-vue-vuetify-typescript-ui-stack.md).
+**Rationale:** Vue 3 and Vuetify are already known from earlier work (ADR-001), Inertia supports Vue first-party, and Vuetify's Material Design 3 components satisfy the responsive and touch-target requirements without per-component design work. TypeScript documents props, page payloads, and type projections at the Inertia boundary. Vite strips type annotations without checking them; the missing type-check gate is tracked as technical debt [D-09](A11-risks-and-technical-debts.md#112-technical-debts). Detailed variant comparison: [`adr/009-vue-vuetify-typescript-ui-stack.md`](../../adr/009-vue-vuetify-typescript-ui-stack.md).
 
 ---
 
@@ -206,4 +206,4 @@ These decisions are taken inside the constraint space of [chapter 2](A02-archite
 
 **Decision:** Option C -- home-rolled TOTP per RFC 6238/4226.
 
-**Rationale:** The algorithm is short, standardised, and stable; PHP's `random_bytes`, `hash_hmac`, and `hash_equals` provide every primitive it needs. Fortify would replace rather than support Herold's sign-in and recovery flows, and a library would add a dependency for a handful of functions. The acceptance tests currently exercise the rejection paths (wrong, malformed, or out-of-order codes); a positive check against the RFC 6238 test vectors is not yet part of the suite. Detailed variant comparison: [`adr/010-home-rolled-totp.md`](../../adr/010-home-rolled-totp.md).
+**Rationale:** The algorithm is short, standardised, and stable; PHP's `random_bytes`, `hash_hmac`, and `hash_equals` provide every primitive it needs. Fortify would replace rather than support Herold's sign-in and recovery flows, and a library would add a dependency for a handful of functions. Missing positive-path test coverage is tracked as technical debt [D-10](A11-risks-and-technical-debts.md#112-technical-debts). Detailed variant comparison: [`adr/010-home-rolled-totp.md`](../../adr/010-home-rolled-totp.md).

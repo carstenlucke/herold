@@ -73,11 +73,11 @@ Requirements that shape the choice:
 
 1. Existing Vue 3 + Vuetify experience makes the UI productive from the start (ADR-001).
 2. Vuetify's components meet the responsive and touch-target requirements without per-component design work.
-3. Inertia supports Vue first-party; Laravel's Vite plugin and `vite-plugin-vuetify` integrate the stack into one build (ADR-006).
+3. Inertia supports Vue first-party; Laravel's Vite plugin and `@vitejs/plugin-vue` integrate the stack into one build (ADR-006); Vuetify is registered at application start.
 4. TypeScript makes the data shapes crossing the Inertia boundary explicit in the source.
 
 ## Consequences
 
 - All pages and components are Vue SFCs using Vuetify; design guidance lives in `DESIGN.md`.
-- TypeScript is transpiled by Vite, which strips type annotations without checking them. There is currently no `typescript`/`vue-tsc` dependency and no `tsconfig.json`, so type errors do not fail a build. Adding `vue-tsc` as a CI gate is tracked in [issue #53](https://github.com/carstenlucke/herold/issues/53).
+- TypeScript is transpiled by Vite, which strips type annotations without checking them; type errors therefore do not fail a build unless a separate type check is added. The missing gate is tracked as technical debt D-09 (§ 11.2).
 - Library versions are traceability information; `package-lock.json` is authoritative.

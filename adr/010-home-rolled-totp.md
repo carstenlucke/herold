@@ -63,6 +63,6 @@ The question is whether secret generation, provisioning, and code verification c
 ## Consequences
 
 - The TOTP code lives in `AuthController` and is described in § 8.4 / § 8.4.1.
-- The acceptance tests currently cover the rejection paths (wrong code, malformed code, TOTP before API key, unconfirmed enrolment, rate limiting). A positive check against the RFC 6238 test vectors is not yet part of the suite.
+- Correctness rests on the project's own tests; the missing positive-path check against the RFC 6238 test vectors is tracked as technical debt D-10 (§ 11.2).
 - The provisioning QR code is rendered client-side by the `qrcode` package; only the `otpauth://` URI crosses the Inertia boundary.
 - Replacing the implementation by a library later is local to `AuthController` and does not change the stored secret format (Base32, SHA-1, 6 digits, 30 s).

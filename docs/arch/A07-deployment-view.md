@@ -12,7 +12,7 @@ The deployment view maps the building blocks of [chapter 5](A05-building-block-v
 
 *Source: [`diagrams/a07-deployment-prod.plantuml`](diagrams/a07-deployment-prod.plantuml).*
 
-**Motivation.** [TECH-01](A02-architecture-constraints.md#21-technical-constraints)/[ORG-03](A02-architecture-constraints.md#22-organisational-constraints): existing shared hosting, no infrastructure budget. The single deployable selected by [ADR-004](A09-architecture-decisions.md#adr-004-laravel-monolith-as-a-single-deployable-application-platform) needs only Apache, PHP 8.5 with `pdo_sqlite`/`mbstring`/`xml`, HTTPS at the provider edge, outbound HTTPS egress, and a writable file area — exactly the precondition set of [S3.2](../spec/S3-inbetriebnahme.md#s32-host-preconditions).
+**Motivation.** [TECH-01](A02-architecture-constraints.md#21-technical-constraints)/[ORG-03](A02-architecture-constraints.md#22-organisational-constraints): existing shared hosting, no infrastructure budget. The single deployable selected by [ADR-004](A09-architecture-decisions.md#adr-004-laravel-monolith-as-a-single-deployable-application-platform) needs only Apache, PHP 8.5 with the extensions required by `composer.lock` (notably `pdo_sqlite`, `openssl` for encrypted attributes, `mbstring`, `fileinfo` for upload MIME validation, `xml`, `ctype`, `tokenizer`), HTTPS at the provider edge, outbound HTTPS egress, and a writable file area — exactly the precondition set of [S3.2](../spec/S3-inbetriebnahme.md#s32-host-preconditions).
 
 **Nodes and channels.**
 

@@ -65,7 +65,7 @@ Laravel is the server-side framework. It is delivered with the application in `v
 ## Rationale
 
 1. Laravel covers every server-side concern Herold needs without assembling further platform components.
-2. It runs on the host as delivered: Apache rewrites to `public/index.php`, no daemon, no extension beyond `pdo_sqlite`, `mbstring`, and `xml`.
+2. It runs on the host as delivered: Apache rewrites to `public/index.php`, no daemon, only standard PHP extensions (notably `pdo_sqlite`, `openssl`, `mbstring`, `fileinfo`, `xml`; `composer.lock` is authoritative).
 3. The first-party Inertia adapter and Vite plugin make the UI stack of ADR-001 and ADR-009 a supported configuration rather than an integration project.
 4. Built-in fakes for the HTTP client keep the integration seams of ADR-007 and the GitHub dispatch testable.
 
