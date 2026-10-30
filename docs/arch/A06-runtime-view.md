@@ -50,7 +50,7 @@ Notable aspects:
 
 - **Guarded entry.** `send` admits only `status = processed`; anything else bounces back with an inline error. This makes double-dispatch of an already-`sent` note impossible through the UI or a replayed request.
 - **Sanitise-then-push.** `IssueContentSanitizer::sanitizeAndWrap` produces the outbound body immediately before the API call: markup neutralised, operator-derived content and the generated `## Metadata` section visually delimited by horizontal rules ([NFR-15b-04](../spec/N1-nichtfunktional.md#15b-integrity-requirements)). The persisted `processed_body` is left as-is; only the dispatched artefact is transformed.
-- **Exactly one label.** The type's `github_label` from `config/herold.php` is the only label attached — triage beyond that is downstream ([S1.5](../spec/S1-nachbarsysteme.md#s15--nb-04--github-issues-api)).
+- **Exactly one label.** The type's `github_label` from `config/herold.php` is the only label attached — triage beyond that is downstream ([S1.5](../spec/S1-nachbarsysteme.md#s15-nb-04--github-issues-api)).
 - **Mid-call failure stores nothing speculative.** On any `Throwable` the note flips to `status = error` without an issue reference; Herold never assumes the issue was created. The retry path runs through *Process* first (which resets the note to `processed`), then *Send* — a consequence of the entry guard, documented as part of the failure concept ([§ 8.6](A08-cross-cutting-concepts.md#86-failure-handling)).
 
 ## 6.4 Sign in with inline TOTP enrolment

@@ -10,10 +10,10 @@ The system context below (reproduced from [P2.1](P2-architekturueberblick.md#p21
 
 The C4 context diagram is one level coarser than the S1 inventory. The mapping to S1 sections is:
 
-- *Operator* + the inbound HTTPS edge → [S1.2](#s12--nb-01--operator-browser) *Operator browser* (the Person is the actor; the browser is the channel S1 contracts against).
-- *OpenAI API* → split in S1 into [S1.3](#s13--nb-02--openai-whisper-api) *Whisper API* and [S1.4](#s14--nb-03--openai-chat-completion-api) *Chat Completion API*; the edge label "Audio → transcript; prompt → title + body" already foreshadows the split.
-- *GitHub Issues* → [S1.5](#s15--nb-04--github-issues-api).
-- *Local AI agents* → [S1.6](#s16--nb-05--local-ai-agents).
+- *Operator* + the inbound HTTPS edge → [S1.2](#s12-nb-01--operator-browser) *Operator browser* (the Person is the actor; the browser is the channel S1 contracts against).
+- *OpenAI API* → split in S1 into [S1.3](#s13-nb-02--openai-whisper-api) *Whisper API* and [S1.4](#s14-nb-03--openai-chat-completion-api) *Chat Completion API*; the edge label "Audio → transcript; prompt → title + body" already foreshadows the split.
+- *GitHub Issues* → [S1.5](#s15-nb-04--github-issues-api).
+- *Local AI agents* → [S1.6](#s16-nb-05--local-ai-agents).
 
 ---
 
@@ -58,7 +58,7 @@ Title and Markdown body generation from a transcript, parametrised by message ty
 |--------|---------|
 | **Operation** | `generate(transcript, model, prompt, extraFieldSchema?) → { title, body, extras? }` |
 | **Direction** | Bidirectional (request: prompt + transcript; response: structured content). |
-| **Inputs** | The transcript produced by [S1.3](#s13--nb-02--openai-whisper-api); the chat-completion model identifier supplied by host configuration (per [NFR-14c-01](N1-nichtfunktional.md) *AI Provider Portability*); the prompt and optional extra-field schema bound to the note's `MessageTypeDT` ([D2.4](D2-datentypen.md#d24-messagetypedt)). |
+| **Inputs** | The transcript produced by [S1.3](#s13-nb-02--openai-whisper-api); the chat-completion model identifier supplied by host configuration (per [NFR-14c-01](N1-nichtfunktional.md) *AI Provider Portability*); the prompt and optional extra-field schema bound to the note's `MessageTypeDT` ([D2.4](D2-datentypen.md#d24-messagetypedt)). |
 | **Outputs** | Title, Markdown body, and optionally the message-type-specific extras declared by [D2.7](D2-datentypen.md#d27-typespecificdata). The body is **not** sanitised at this stage — [F3.AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) must run before persistence and before dispatch. The operator may overwrite any field via [UC-07](F2-anwendungsfaelle.md#uc-07--edit-generated-content). |
 | **Triggered by** | [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note) Schritt 4. |
 | **Semantics** | All message-type knowledge is supplied through the resolution declared in [D2.4](D2-datentypen.md#d24-messagetypedt); message types are never hard-coded at this boundary. |
@@ -84,7 +84,7 @@ One-way push of a reviewed voice note as a GitHub issue.
 
 ## S1.6 NB-05 — Local AI agents
 
-Local AI agents (Claude Code, OpenCode, …) are listed in P2.2 for completeness. They interact with [GitHub Issues](#s15--nb-04--github-issues-api) — reading dispatched tickets, commenting, closing — but never with Herold directly. Herold has no interface contract with the agents and exposes none.
+Local AI agents (Claude Code, OpenCode, …) are listed in P2.2 for completeness. They interact with [GitHub Issues](#s15-nb-04--github-issues-api) — reading dispatched tickets, commenting, closing — but never with Herold directly. Herold has no interface contract with the agents and exposes none.
 
 ---
 
@@ -102,7 +102,7 @@ Local AI agents (Claude Code, OpenCode, …) are listed in P2.2 for completeness
 | Block | Relevance to S1 |
 |-------|-----------------|
 | [P2](P2-architekturueberblick.md) | P2.2 enumerates the neighbouring systems; each NB-XX entry there is detailed in one S1 section. |
-| [F2](F2-anwendungsfaelle.md) | [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note) invokes [S1.3](#s13--nb-02--openai-whisper-api) and [S1.4](#s14--nb-03--openai-chat-completion-api); [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note) invokes [S1.5](#s15--nb-04--github-issues-api). |
+| [F2](F2-anwendungsfaelle.md) | [UC-06](F2-anwendungsfaelle.md#uc-06--process-voice-note) invokes [S1.3](#s13-nb-02--openai-whisper-api) and [S1.4](#s14-nb-03--openai-chat-completion-api); [UC-08](F2-anwendungsfaelle.md#uc-08--dispatch-voice-note) invokes [S1.5](#s15-nb-04--github-issues-api). |
 | [F3](F3-anwendungsfunktionen.md) | [AF-03](F3-anwendungsfunktionen.md#af-03--markdown-sanitisation) sanitises content produced by S1.4 before it is dispatched via S1.5. |
 | [D1](D1-datenmodell.md) | S1.3 populates `VoiceNote.transcript`; S1.4 populates `VoiceNote.processedTitle` / `processedBody` / `metadata`; S1.5 populates `VoiceNote.githubIssueNumber` / `githubIssueUrl`. |
 | [D2](D2-datentypen.md) | The prompt and label bound to a `MessageTypeDT` ([D2.4](D2-datentypen.md#d24-messagetypedt)) drive S1.4 and S1.5 respectively; the slot inventory in [D2.7](D2-datentypen.md#d27-typespecificdata) shapes the optional extras returned by S1.4. |

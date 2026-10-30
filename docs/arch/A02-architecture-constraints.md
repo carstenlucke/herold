@@ -22,17 +22,7 @@ The tables below are the architect's working index; detailed rationale stays in 
 | TECH-06 | Agent interoperability via GitHub only | Local AI agents (Claude Code, OpenCode, …) read tickets through `gh`/the GitHub API. Mandated by [`CON-3c-03`](../spec/P1-constraints.md#con-3c-03-local-ai-agents-claude-code-opencode-); the consequence that Herold exposes no agent-facing API and stores no agent memory is recorded in [ADR-003](A09-architecture-decisions.md#adr-003-github-issues-as-sole-ticket-store). |
 | TECH-07 | Mobile and desktop equally supported | Voice recording on smartphone; review and editing on desktop. Neither context is privileged. Mandated by [`CON-3e-01`](../spec/P1-constraints.md#con-3e-01-mobile-and-desktop-equally-supported). |
 
-IDs are stable. TECH-02 and TECH-08 – TECH-13 were technology decisions rather than constraints and have been retired; their content now lives in chapter 9:
-
-| Retired ID | Former entry | Now recorded in |
-|------------|--------------|-----------------|
-| TECH-02 | Docker Compose in development | [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing) |
-| TECH-08 | PHP + Laravel | PHP: TECH-01 (host-given). Laravel: [ADR-008](A09-architecture-decisions.md#adr-008-laravel-as-server-side-framework) |
-| TECH-09 | Vue + TypeScript + Inertia.js + Vuetify | Inertia: [ADR-001](A09-architecture-decisions.md#adr-001-inertiajs-as-frontend-bridge-no-separate-api-layer-for-the-browser-ui). Vue, Vuetify, TypeScript: [ADR-009](A09-architecture-decisions.md#adr-009-vue-3--vuetify--typescript-as-browser-ui-stack) |
-| TECH-10 | Apache in development and production | Production: TECH-01 (host-given). Development parity: [ADR-002](A09-architecture-decisions.md#adr-002-devprod-parity----apache--synchronous-processing) |
-| TECH-11 | SQLite as application database | [ADR-005](A09-architecture-decisions.md#adr-005-sqlite-as-embedded-persistence) |
-| TECH-12 | Vite + Node LTS at build time only | No build toolchain on the host: TECH-01. Off-host Vite build: [ADR-006](A09-architecture-decisions.md#adr-006-off-host-frontend-build-with-vite) |
-| TECH-13 | Home-rolled TOTP | [ADR-010](A09-architecture-decisions.md#adr-010-home-rolled-totp-instead-of-a-library) |
+IDs are stable and never reused; gaps in the numbering are intentional. Technology choices are recorded as decisions in [chapter 9](A09-architecture-decisions.md), not as constraints.
 
 ---
 

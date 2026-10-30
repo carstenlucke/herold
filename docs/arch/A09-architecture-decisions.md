@@ -12,7 +12,7 @@ These decisions are taken inside the constraint space of [chapter 2](A02-archite
 
 **Status:** Accepted
 
-**Context:** Herold is a Laravel monolith with a Vue frontend. The question was how Laravel and Vue should communicate for the operator-facing browser UI. ADR-003 subsequently established that agents interact with GitHub rather than Herold.
+**Context:** Herold is a Laravel monolith with a reactive client-side UI (framework: ADR-009). The question was how server and client should communicate for the operator-facing browser UI. ADR-003 subsequently established that agents interact with GitHub rather than Herold.
 
 **Options:**
 
@@ -20,11 +20,11 @@ These decisions are taken inside the constraint space of [chapter 2](A02-archite
 |--------|------------|------|------|
 | **A -- SPA + JSON API** | Vue as standalone SPA, Laravel serves only JSON. Own router, own auth in frontend. | Clear separation, one API for all | Duplicate routing logic, frontend auth overhead, CORS, more boilerplate |
 | **B -- Blade + Alpine.js** | Server-side rendering with Blade, Alpine for interactivity. | Simplest setup, no JS build | Audio UI too complex for Alpine, no SPA feeling |
-| **C -- Inertia.js** | Laravel routing + auth + validation, Vue only for rendering. SPA feeling without a separate API layer. | One routing system, no frontend auth overhead, Vue experience reusable | No general-purpose JSON API, additional concept |
+| **C -- Inertia.js** | Laravel routing + auth + validation, Vue only for rendering. SPA feeling without a separate API layer. | One routing system, no frontend auth overhead, first-party adapters for Vue, React, and Svelte | No general-purpose JSON API, additional concept |
 
 **Decision:** Option C -- Inertia.js.
 
-**Rationale:** A monolith does not need a separate API layer for the browser UI. Inertia eliminates duplicate routing, frontend auth, and manual error handling. The complex audio UI (MediaRecorder, waveform) requires Vue -- Blade would not suffice. The browser UI runs via Inertia (`web.php` + session). Agents interact directly with GitHub, not with Herold (see ADR-003). Detailed variant comparison: [`adr/001-inertia-frontend-bridge.md`](../../adr/001-inertia-frontend-bridge.md).
+**Rationale:** A monolith does not need a separate API layer for the browser UI. Inertia eliminates duplicate routing, frontend auth, and manual error handling. The complex audio UI (MediaRecorder, waveform) requires a reactive client framework -- Blade would not suffice. The browser UI runs via Inertia (`web.php` + session). Agents interact directly with GitHub, not with Herold (see ADR-003). Detailed variant comparison: [`adr/001-inertia-frontend-bridge.md`](../../adr/001-inertia-frontend-bridge.md).
 
 ---
 
@@ -151,7 +151,7 @@ These decisions are taken inside the constraint space of [chapter 2](A02-archite
 
 ## ADR-008: Laravel as Server-Side Framework
 
-**Status:** Accepted
+**Status:** Accepted — in effect since 2026-04-09 (initial implementation), documented retrospectively on 2026-10-30
 
 **Context:** The host fixes PHP as the only server-side runtime (TECH-01). ADR-004 decides the topology (one deployable) but not the framework. Herold needs routing, session authentication, CSRF protection, validation, relational persistence with migrations on SQLite (ADR-005), an HTTP client for two external APIs (ADR-007), encrypted model attributes, and a server-side adapter for the Inertia bridge (ADR-001).
 
@@ -160,50 +160,57 @@ These decisions are taken inside the constraint space of [chapter 2](A02-archite
 | Option | Description | Pros | Cons |
 |--------|-------------|------|------|
 | **A -- Plain PHP / micro-framework** | Slim or hand-written front controller plus selected components. | Smallest footprint, full control | Session, CSRF, validation, migrations, encryption, and testing support must be assembled and maintained by hand |
-| **B -- Symfony** | Full-stack component framework. | Mature, explicit configuration, long-term support releases | More configuration for the same feature set; Inertia adapter is community-maintained |
-| **C -- Laravel** | Full-stack framework with Eloquent, migrations, HTTP client, and first-party Inertia and Vite integration. | Every needed concern built in; first-party Inertia adapter and Vite plugin; runs on plain Apache + PHP via `.htaccess` | Large `vendor/` tree in every release upload; annual major releases; operations use `artisan` |
+| **B -- Symfony** | Full-stack component framework. | Mature, explicit configuration, long-term support releases | Encrypted entity attributes need a third-party Doctrine extension; rate limiter, HTTP client and test doubles are separate components to wire; Inertia adapter is community-maintained |
+| **C -- Laravel** | Full-stack framework with Eloquent, migrations, HTTP client, and first-party Inertia and Vite integration. | Every needed concern built in; first-party Inertia adapter and Vite plugin; runs on plain Apache + PHP via `.htaccess` | Large `vendor/` tree in every release upload; annual major releases; operations use `artisan`, which needs a PHP CLI on the host ([R-08](A11-risks-and-technical-debts.md#111-risks)) |
 
 **Decision:** Option C -- Laravel.
 
-**Rationale:** Laravel covers every server-side concern Herold needs without assembling additional platform components, and it runs on the host as delivered — Apache rewrites to `public/index.php`, no daemon, only standard PHP extensions (notably `pdo_sqlite`/`openssl`/`mbstring`/`fileinfo`/`xml`). The first-party Inertia adapter and Vite plugin make the UI stack of ADR-001/ADR-009 a supported configuration rather than an integration project. The framework ships inside the release artefact; the host only provides PHP. Detailed variant comparison: [`adr/008-laravel-server-side-framework.md`](../../adr/008-laravel-server-side-framework.md).
+**Rationale:** Laravel covers every server-side concern Herold needs without assembling additional platform components, and it runs on the host as delivered — Apache rewrites to `public/index.php`, no daemon, only standard PHP extensions (listed in [§ 7.1.1](A07-deployment-view.md#711-production--shared-hosting)). The first-party Inertia adapter and Vite plugin make the UI stack of ADR-001/ADR-009 a supported configuration rather than an integration project. The framework ships inside the release artefact; the host only provides PHP. Detailed variant comparison: [`adr/008-laravel-server-side-framework.md`](../../adr/008-laravel-server-side-framework.md).
 
 ---
 
 ## ADR-009: Vue 3 + Vuetify + TypeScript as Browser UI Stack
 
-**Status:** Accepted
+**Status:** Accepted — in effect since 2026-04-09 (initial implementation), documented retrospectively on 2026-10-30
 
-**Context:** ADR-001 rules out server-rendered Blade for the audio UI and selects Inertia as the bridge, but it does not compare client frameworks, component libraries, or the source language. The UI must be responsive from 320 px with touch targets ≥ 48 dp ([NFR-10a-01](../spec/N1-nichtfunktional.md#10a-appearance-requirements)) and serve smartphone and desktop equally (TECH-07).
+**Context:** ADR-001 rules out server-rendered Blade for the audio UI and selects Inertia as the bridge; Inertia has first-party adapters for Vue, React, and Svelte, so the bridge does not presuppose a framework. Two choices remain: the client framework with its component library, and the source language. Criteria: the product requirements — responsive from 320 px with touch targets ≥ 48 dp ([NFR-10a-01](../spec/N1-nichtfunktional.md#10a-appearance-requirements)), smartphone and desktop equally (TECH-07); delivery effort for one developer ([ORG-01](A02-architecture-constraints.md#22-organisational-constraints)); and familiarity — the developer already works with Vue 3 and Vuetify, an explicitly weighted criterion that lowers delivery risk but is no product benefit.
 
-**Options:**
+**Options — framework and component library:**
 
 | Option | Description | Pros | Cons |
 |--------|-------------|------|------|
-| **A -- React + MUI** | React with a Material component library. | Largest ecosystem, first-party Inertia adapter | Existing Vue 3 + Vuetify experience (ADR-001) not reused; JSX-based component style |
-| **B -- Svelte** | Compiler-based framework, custom or small component library. | Small bundles, little runtime | Smaller component ecosystem; most UI components to be built |
+| **A -- React + MUI** | React with a Material component library. | Largest ecosystem, first-party Inertia adapter; meets the product requirements as well as D | Unfamiliar (JSX, hook rules, MUI) |
+| **B -- Svelte** | Compiler-based framework, custom or small component library. | Small bundles, little runtime | Smaller component ecosystem; most UI components to be built; unfamiliar |
 | **C -- Vue 3 + Tailwind / headless components** | Vue with utility CSS and unstyled primitives. | Full visual control | Accessibility, touch sizing, and responsive behaviour must be designed per component |
-| **D -- Vue 3 + Vuetify** | Vue 3 Composition API with Vuetify's Material Design 3 components; TypeScript in SFCs. | First-party Inertia adapter; existing Vue 3 + Vuetify experience (ADR-001); responsive grid and touch-sized components out of the box | Vuetify's visual language and major-version upgrades; Material look must be adapted rather than designed freely |
+| **D -- Vue 3 + Vuetify** | Vue 3 Composition API with Vuetify's Material Design 3 components. | First-party Inertia adapter; responsive grid and touch-sized components out of the box; familiar | Vuetify's visual language and major-version upgrades; Material look must be adapted rather than designed freely |
+
+**Options — source language:**
+
+| Option | Pros | Cons |
+|--------|------|------|
+| **JavaScript** | No annotations to maintain | Prop and payload shapes at the Inertia boundary stay implicit |
+| **TypeScript** | Props, page payloads, and type projections explicit in the source; editor support | Vite strips annotations without checking them; enforcement needs a separate `vue-tsc` check; types kept in step with PHP by hand |
 
 **Decision:** Option D -- Vue 3 with Vuetify; components and scripts are written in TypeScript.
 
-**Rationale:** Vue 3 and Vuetify are already known from earlier work (ADR-001), Inertia supports Vue first-party, and Vuetify's Material Design 3 components satisfy the responsive and touch-target requirements without per-component design work. TypeScript documents props, page payloads, and type projections at the Inertia boundary. Vite strips type annotations without checking them; the missing type-check gate is tracked as technical debt [D-09](A11-risks-and-technical-debts.md#112-technical-debts). Detailed variant comparison: [`adr/009-vue-vuetify-typescript-ui-stack.md`](../../adr/009-vue-vuetify-typescript-ui-stack.md).
+**Rationale:** On the product requirements, A and D are equivalent; familiarity decides between them, which for a single developer without deadline ([ORG-05](A02-architecture-constraints.md#22-organisational-constraints)) is the cheapest way to lower delivery risk. B and C fail the delivery-effort criterion independently of familiarity. TypeScript makes the data shapes at the Inertia boundary explicit; enforced types need the type-check gate that is still missing, tracked as technical debt [D-09](A11-risks-and-technical-debts.md#112-technical-debts). Detailed variant comparison: [`adr/009-vue-vuetify-typescript-ui-stack.md`](../../adr/009-vue-vuetify-typescript-ui-stack.md).
 
 ---
 
 ## ADR-010: Home-Rolled TOTP instead of a Library
 
-**Status:** Accepted
+**Status:** Accepted — in effect since 2026-04-09 (initial implementation), documented retrospectively on 2026-10-30
 
-**Context:** The second authentication factor ([NFR-15a-01](../spec/N1-nichtfunktional.md#15a-access-requirements)) is a time-based one-time password. It runs inside Herold's own two-step sign-in flow (API key, then TOTP, with inline enrolment) and its file-based recovery ([UC-03](../spec/F2-anwendungsfaelle.md#uc-03--recover-access)). The question is whether TOTP generation and verification come from a package or from application code.
+**Context:** The second authentication factor ([NFR-15a-01](../spec/N1-nichtfunktional.md#15a-access-requirements)) is a time-based one-time password. It runs inside Herold's own two-step sign-in flow (API key, then TOTP, with inline enrolment) and its file-based recovery ([UC-03](../spec/F2-anwendungsfaelle.md#uc-03--recover-access)). The question is whether TOTP generation and verification come from a package or from application code. The deciding criterion is the size of the supply chain: every package, including its transitive dependencies, is an entry point for a compromised release and must be watched for advisories.
 
 **Options:**
 
 | Option | Description | Pros | Cons |
 |--------|-------------|------|------|
-| **A -- Laravel Fortify** | First-party authentication backend with two-factor support. | Maintained, complete 2FA flow | Brings its own routes, flows, and recovery codes that compete with Herold's API-key login and file-based recovery |
-| **B -- TOTP library** | e.g. `pragmarx/google2fa` for secret generation and code verification. | Externally reviewed algorithm implementation | Additional dependency for a few functions; drift window and comparison semantics follow the library |
-| **C -- Home-rolled RFC 6238/4226** | Secret generation, Base32 codec, HOTP/TOTP calculation, and verification in `AuthController` using PHP built-ins. | No dependency; algorithm fully visible and testable; exact control over drift window and constant-time comparison | Security-relevant code owned by the project and verified only by its own tests |
+| **A -- Laravel Fortify** | First-party authentication backend with two-factor support. | Maintained, complete 2FA flow | Brings its own routes, flows, and recovery codes that compete with Herold's API-key login and file-based recovery; mostly unused code in the supply chain |
+| **B -- TOTP library** | e.g. `pragmarx/google2fa` for secret generation and code verification. | Widely reviewed implementation; drift window configurable per call; constant-time comparison built in | Adds the library and its transitive dependency to the supply chain for about a hundred lines of algorithm |
+| **C -- Home-rolled RFC 6238/4226** | Secret generation, Base32 codec, HOTP/TOTP calculation, and verification in a dedicated `TotpService` on PHP built-ins. | No additional package; small, isolated, unit-testable against the RFC test vectors | Security-relevant code owned by the project; edge cases (32-bit counter, lenient Base32 decoding) must be known and tested by the project |
 
 **Decision:** Option C -- home-rolled TOTP per RFC 6238/4226.
 
-**Rationale:** The algorithm is short, standardised, and stable; PHP's `random_bytes`, `hash_hmac`, and `hash_equals` provide every primitive it needs. Fortify would replace rather than support Herold's sign-in and recovery flows, and a library would add a dependency for a handful of functions. Missing positive-path test coverage is tracked as technical debt [D-10](A11-risks-and-technical-debts.md#112-technical-debts). Detailed variant comparison: [`adr/010-home-rolled-totp.md`](../../adr/010-home-rolled-totp.md).
+**Rationale:** The algorithm is short, standardised, and stable; PHP's `random_bytes`, `hash_hmac`, and `hash_equals` provide every primitive it needs, and the published RFC 6238 test vectors cover the implementation risk. A library would grow the supply chain without removing any flow logic from Herold; Fortify would replace rather than support Herold's sign-in and recovery flows. Detailed variant comparison: [`adr/010-home-rolled-totp.md`](../../adr/010-home-rolled-totp.md).

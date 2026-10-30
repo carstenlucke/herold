@@ -1,5 +1,7 @@
 # Laravel as Server-Side Framework -- Variant Comparison
 
+**Status:** Accepted — in effect since 2026-04-09 (initial implementation), documented retrospectively on 2026-10-30.
+
 ## Context
 
 The production host provides Apache and PHP as the only server-side runtime (TECH-01). PHP is therefore given, not chosen. ADR-004 decides that Herold is one deployable application but leaves open which framework structures it.
@@ -34,7 +36,7 @@ Herold's server side needs routing, session authentication with CSRF protection,
 - Runs on Apache + PHP without additional services
 
 **Cons:**
-- More configuration for the same feature set
+- Encrypted entity attributes need a third-party Doctrine extension; rate limiting, the HTTP client and its test doubles are separate components to install and wire via service configuration
 - Inertia support is community-maintained
 - Doctrine migrations and entity mapping are heavier than Herold's small schema needs
 
@@ -65,7 +67,7 @@ Laravel is the server-side framework. It is delivered with the application in `v
 ## Rationale
 
 1. Laravel covers every server-side concern Herold needs without assembling further platform components.
-2. It runs on the host as delivered: Apache rewrites to `public/index.php`, no daemon, only standard PHP extensions (notably `pdo_sqlite`, `openssl`, `mbstring`, `fileinfo`, `xml`; `composer.lock` is authoritative).
+2. It runs on the host as delivered: Apache rewrites to `public/index.php`, no daemon, only standard PHP extensions (listed in § 7.1.1 of the deployment view; `composer.lock` is authoritative).
 3. The first-party Inertia adapter and Vite plugin make the UI stack of ADR-001 and ADR-009 a supported configuration rather than an integration project.
 4. Built-in fakes for the HTTP client keep the integration seams of ADR-007 and the GitHub dispatch testable.
 
@@ -74,4 +76,4 @@ Laravel is the server-side framework. It is delivered with the application in `v
 - Laravel is a binding platform choice for the server-side architecture; replacing it would touch every server-side building block.
 - The release artefact includes `vendor/` (ADR-006, § 7.2).
 - Framework versions are traceability information; `composer.lock` is authoritative. Major upgrades are maintenance unless they change a documented boundary.
-- Operator procedures that use `artisan` (migrations, first-commissioning bootstrap) depend on shell access to the host (CON-3b-01, optional limited shell).
+- Operator procedures that use `artisan` (migrations, first-commissioning bootstrap) need a PHP CLI. The host offers shell access only optionally (CON-3b-01); without it, these procedures run off-host against a copy of the SQLite file that is transferred via FTP. The risk and the fallback are recorded as R-08 (§ 11.1).
